@@ -1,88 +1,115 @@
 <div align="center">
 
+<br />
+
 # 🪐 WDesignKit Orbit
 
-### **Complete UAT for WDesignKit Products**
+### **The QA Automation Layer for WDesignKit Products**
 
-*Every perspective. Every release. QA → Dev → PM → Designer → End User.*
+*Structured. Repeatable. Release-ready.*
 
-![Playwright](https://img.shields.io/badge/Playwright-E2E-2EAD33?style=for-the-badge&logo=playwright&logoColor=white)
+<br />
+
+![Playwright](https://img.shields.io/badge/Playwright-E2E_Tests-2EAD33?style=for-the-badge&logo=playwright&logoColor=white)
 ![Lighthouse](https://img.shields.io/badge/Lighthouse-Performance-F44B21?style=for-the-badge&logo=lighthouse&logoColor=white)
-![WDesignKit](https://img.shields.io/badge/WDesignKit-QA-6366F1?style=for-the-badge)
-![Sproutos](https://img.shields.io/badge/Sproutos.ai-QA-10B981?style=for-the-badge)
+![Axe Core](https://img.shields.io/badge/axe--core-Accessibility-7C3AED?style=for-the-badge)
+![Visual Regression](https://img.shields.io/badge/Visual-Regression-0EA5E9?style=for-the-badge)
+![POSIMYTH](https://img.shields.io/badge/POSIMYTH-Internal_QA-1E293B?style=for-the-badge)
 
-**🧪 QA** → structured test coverage &nbsp;·&nbsp; **🎨 Designer** → visual regression + UI audits &nbsp;·&nbsp; **📊 PM** → Lighthouse scores + release sign-off &nbsp;·&nbsp; **👤 End User** → real browser, real flows
+<br />
 
-Covers **wdesignkit.com · sproutos.ai · learn.wdesignkit.com**
+**One products. One pipeline. Zero regressions.**
 
-[Quick Start](#quick-start) · [What It Tests](#what-it-tests) · [Running Tests](#running-tests) · [Folder Structure](#folder-structure)
+`wdesignkit.com` &nbsp;·&nbsp; `learn.wdesignkit.com`
+
+<br />
+
+[What It Tests](#what-it-tests) &nbsp;·&nbsp; [Quick Start](#quick-start) &nbsp;·&nbsp; [Running Tests](#running-tests) &nbsp;·&nbsp; [Folder Structure](#folder-structure) &nbsp;·&nbsp; [Checklists](#checklists) &nbsp;·&nbsp; [Coverage Status](#coverage-status)
+
+<br />
 
 </div>
 
 ---
 
-## What This Is
+## Overview
 
-**WDesignKit Orbit is the UAT automation layer for all POSIMYTH WDesignKit products.** Not just smoke tests — every angle a release gets judged from before users touch it: functional correctness, visual regression, accessibility, responsive behavior, and security basics.
+**WDesignKit Orbit is the end-to-end QA automation platform for all POSIMYTH WDesignKit products.**
 
-One command and you get:
+Every release goes through a structured, multi-layer audit before it reaches users — not just "does it load" but functional correctness, visual regression, accessibility compliance, responsive behavior, performance benchmarks, and security basics. All automated. All from one command.
 
-- ✅ Playwright E2E tests across all WDesignKit properties
-- ✅ Visual regression snapshots — pixel diff between releases
-- ✅ Responsive tests — mobile (375px), tablet (768px), desktop (1440px)
-- ✅ Accessibility scans — WCAG 2.1 AA via axe-core
-- ✅ Console error detection — zero JS errors policy
-- ✅ Lighthouse performance scores — Core Web Vitals per property
-- ✅ Security basics — HTTPS enforcement, no mixed content, user enumeration checks
+```bash
+bash scripts/run-all-tests.sh
+```
 
-**Products covered**:
-- `wdesignkit.com` — Auth pages, Dashboard, Widget Builder AI chat
-- `learn.wdesignkit.com` — Learning Center documentation site
+**What that one command does:**
+
+- ✅ Runs all Playwright E2E tests across `wdesignkit.com`, and `learn.wdesignkit.com`
+- ✅ Tests across desktop (1440px), tablet (768px), and mobile (375px) viewports
+- ✅ Catches JS console errors — zero tolerance policy enforced automatically
+- ✅ Runs visual regression — pixel-diffs every key page against the last approved baseline
+- ✅ Runs WCAG 2.1 AA accessibility scans via axe-core
+- ✅ Runs Lighthouse performance scans on all three properties
+- ✅ Generates a full HTML report with screenshots, video replays, and traces on failure
+
+**Exit codes**: `0` = all passed, safe to release &nbsp;·&nbsp; `1` = failures found, do not release.
 
 ---
 
 ## What It Tests
 
-### Auth Pages — wdesignkit.com & sproutos.ai
+### 🔐 Auth Pages — wdesignkit.com & sproutos.ai
 
-| Area | What It Catches |
+Every authentication flow validated for functionality, security, and UX:
+
+| Area | Coverage |
 |---|---|
-| **Login** | Empty/invalid form, wrong credentials, show/hide password, successful login, already-logged-in redirect, mobile responsive, visual snapshot |
-| **Signup** | Required fields, weak password rejection, duplicate email error, mobile responsive |
-| **Forgot Password** | Empty/invalid submit, user enumeration protection, success message, back to login link |
-| **Reset Password** | Invalid token handling, missing token redirect, mobile responsive |
+| **Login** | Valid/invalid credentials · empty form · JS errors · successful redirect · already-logged-in redirect · mobile responsive · HTTPS enforcement · visual snapshot |
+| **Signup** | Required fields · weak password rejection · duplicate email handling · mobile responsive · login link presence |
+| **Forgot Password** | Empty/invalid submit · user enumeration protection · success message · back to login link |
+| **Reset Password** | Invalid token handling · missing token redirect · mobile responsive |
 
-### Dashboard — wdesignkit.com
+> **Security focus**: user enumeration is explicitly tested — the system must never reveal whether an email address is registered.
 
-| Area | What It Catches |
+---
+
+### 🖥️ Dashboard — wdesignkit.com
+
+| Area | Coverage |
 |---|---|
-| **Prompt Field** | Load, input, submission, character limits |
-| **File Attach** | Supported formats, oversized file rejection, multiple files |
-| **Link Insertion** | Valid/invalid URL handling, duplicate links |
-| **Language Selector** | Dropdown visibility, selection, persistence |
+| **Prompt Field** | Load · input · submission · character limits · empty submit behavior |
+| **File Attach** | Supported formats · oversized file rejection · multiple file handling |
+| **Link Insertion** | Valid/invalid URL handling · duplicate link behavior |
+| **Language Selector** | Dropdown visibility · selection · persistence across sessions |
+| **Responsive** | All features tested at 375px · 768px · 1440px |
 
-### Widget Builder AI Chat — wdesignkit.com
+---
 
-| Area | What It Catches |
+### 🤖 Widget Builder AI Chat — wdesignkit.com
+
+| Area | Coverage |
 |---|---|
-| **Attach Files** | File type validation, size limits |
-| **Prompt Enhancer** | Toggle, enhancement output |
-| **Strict Mode** | Toggle behavior, mode persistence |
-| **AI Model Selection** | Dropdown, model switching |
-| **User Credits** | Display, deduction on use |
-| **Suggested Widgets** | Visibility, clickability |
-| **Chat Management** | New chat, history, deletion |
-| **Chat Controls** | Copy, regenerate, feedback |
+| **Attach Files** | File type validation · size limits · error messaging |
+| **Prompt Enhancer** | Toggle behavior · enhancement output |
+| **Strict Mode** | Toggle behavior · mode persistence |
+| **AI Model Selection** | Dropdown visibility · model switching · persistence |
+| **User Credits** | Display accuracy · deduction on use · zero-credit state |
+| **Suggested Widgets** | Visibility · clickability · relevance |
+| **Chat Management** | New chat · history access · deletion |
+| **Chat Controls** | Copy · regenerate · feedback submission |
 
+---
 
-### Learning Center — learn.wdesignkit.com
+### 📚 Learning Center — learn.wdesignkit.com
 
-| Area | What It Catches |
+| Area | Coverage |
 |---|---|
-| **Core Pages** | Load without errors, navigation, search |
-| **Security Headers** | CSRF, HTTP security headers, WordPress version exposure |
-| **SEO** | Meta tags, canonical URLs, sitemap |
-| **Responsive** | Mobile/tablet/desktop layout |
+| **Core Pages** | Homepage · article pages — load without errors |
+| **Navigation** | All nav links resolve · no 404s |
+| **Search** | Search returns relevant results |
+| **Security** | WordPress version exposure check · security HTTP headers |
+| **SEO** | Meta tags · canonical URLs · Open Graph |
+| **Responsive** | Mobile and tablet layout correctness |
 
 ---
 
@@ -90,9 +117,11 @@ One command and you get:
 
 ### Prerequisites
 
-- Node.js v18+ installed
-- Git installed
-- A WDesignKit QA test account
+| Tool | Version | Check |
+|---|---|---|
+| Node.js | v18+ | `node --version` |
+| npm | v8+ | `npm --version` |
+| Git | any | `git --version` |
 
 ### 1 — Clone the Repo
 
@@ -108,69 +137,108 @@ npm install
 npx playwright install chromium
 ```
 
-### 3 — Create Your `.env` File
+### 3 — Configure Environment
 
-Create a `.env` file in the root (already gitignored):
-
-```
-WDK_USER= tester0107@yopmail.com
-WDK_PASS=Tester
-WDK_URL=https://wdesignkit.com
-LEARNING_URL=https://learn.wdesignkit.com
-```
-
-### 4 — Run Your First Test
+Copy the example config:
 
 ```bash
-npx playwright test tests/wdesignkit/auth.spec.js --headed
+cp qa.config.example.json qa.config.json
 ```
+
+Create a `.env` file at the root — fill in your QA test account credentials:
+
+```
+WDK_URL=https://wdesignkit.com
+LEARNING_URL=https://learn.wdesignkit.com
+WDK_USER= 
+WDK_PASS= 
+```
+
+> ⚠️ **Never commit `.env` or `qa.config.json`** — both are gitignored. Credentials must stay local only.
+
+### 4 — Verify Setup
+
+```bash
+npx playwright test --list
+```
+
+You should see all test files listed grouped by project. If they appear — you're ready.
 
 ---
 
 ## Running Tests
 
-### Run All WDesignKit Tests
+### Full Run — Before Any Release
+
 ```bash
-npx playwright test tests/wdesignkit/
+bash scripts/run-all-tests.sh
 ```
 
-### Run All Sproutos Tests
-```bash
-npx playwright test tests/sproutos/
-```
+| Flag | Effect |
+|---|---|
+| *(no flags)* | Runs all tests + Lighthouse on all 3 properties |
+| `--skip-lighthouse` | Skips Lighthouse — faster for dev iteration |
+| `--property=wdesignkit` | Tests wdesignkit.com only |
+| `--property=sproutos` | Tests sproutos.ai only |
+| `--property=learning` | Tests learn.wdesignkit.com only |
 
-### Run a Specific Spec File
+---
+
+### Run Individual Spec Files
+
 ```bash
 npx playwright test tests/wdesignkit/auth.spec.js
 npx playwright test tests/wdesignkit/dashboard.spec.js
 npx playwright test tests/wdesignkit/widget-builder.spec.js
+npx playwright test tests/sproutos/auth.spec.js
+npx playwright test tests/learning-center/core.spec.js
 ```
 
-### Run in Headed Mode (Watch the Browser)
+---
+
+### Run by Viewport
+
 ```bash
-npx playwright test --headed --slowMo=500
+npx playwright test --project=wdk-desktop
+npx playwright test --project=wdk-mobile
+npx playwright test --project=wdk-tablet
+npx playwright test --project=sproutos-desktop
+npx playwright test --project=sproutos-mobile
+npx playwright test --project=learning-desktop
 ```
 
-### Run in UI Mode (Interactive — Recommended)
-```bash
-npx playwright test --ui
-```
-Opens a full GUI — click any test to run it individually, time-travel through DOM snapshots.
+---
 
-### Run in Debug Mode (Step Through Line by Line)
-```bash
-npx playwright test --debug
-```
+### Watch Modes
 
-### Run on Mobile Viewport Only
-```bash
-npx playwright test --project=mobile
-```
+| Mode | Command | Best For |
+|---|---|---|
+| **UI Mode** | `npx playwright test --ui` | Writing and debugging tests interactively |
+| **Headed** | `npx playwright test --headed --slowMo=500` | Watching the browser execute a flow |
+| **Debug** | `npx playwright test --debug` | Stepping through a failing test line by line |
+| **Trace Viewer** | `npx playwright show-trace test-results/.../trace.zip` | Post-mortem forensics on failures |
 
-### View HTML Report After Any Run
+---
+
+### View HTML Report
+
 ```bash
 npx playwright show-report
 ```
+
+Shows pass/fail per test, failure screenshots, video replays, and trace files.
+
+---
+
+### Lighthouse Performance Scan
+
+```bash
+bash scripts/lighthouse.sh
+```
+
+Scans all three properties and reports Performance, Accessibility, SEO, and Best Practices scores.
+
+> Requires Lighthouse: `npm install -g lighthouse`
 
 ---
 
@@ -178,90 +246,115 @@ npx playwright show-report
 
 ```
 wdesignkit-orbit/
+│
 ├── tests/
 │   ├── wdesignkit/
-│   │   ├── auth.spec.js            ← Login, Signup, Forgot Password, Reset Password
-│   │   ├── dashboard.spec.js       ← Prompt field, File attach, Link insert, Language selector
-│   │   ├── widget-builder.spec.js  ← AI chat, Prompt enhancer, Strict mode, Credits, Models
-│   │   └── homepage.spec.js        ← Homepage load, Nav, CTAs, Responsive
-│   ├── sproutos/
-│   │   ├── auth.spec.js            ← Sproutos.ai auth pages
-│   │   └── dashboard.spec.js       ← Sproutos.ai dashboard prompt area
-│   └── learning-center/
-│       └── core.spec.js            ← learn.wdesignkit.com pages
+│   │   ├── auth.spec.js             ← Login · Signup · Forgot Password · Reset Password
+│   │   ├── dashboard.spec.js        ← Prompt · File Attach · Link Insert · Language
+│   │   ├── widget-builder.spec.js   ← AI Chat · Enhancer · Strict Mode · Credits · Models
+│   │   └── homepage.spec.js         ← Homepage · Nav · CTAs · Responsive
+│   │
+│   ├── learning-center/
+│   │   └── core.spec.js             ← learn.wdesignkit.com
+│   │
+│   └── snapshots/                   ← Visual regression baselines (gitignored)
+│
 ├── checklists/
-│   ├── pre-release-checklist.md    ← Full sign-off before any release
-│   ├── ui-ux-checklist.md          ← Design quality checklist
-│   ├── performance-checklist.md    ← Core Web Vitals, assets
-│   └── security-checklist.md       ← XSS, CSRF, SQLi, auth
+│   ├── pre-release-checklist.md     ← Full sign-off gate before any release
+│   ├── ui-ux-checklist.md           ← Design quality — 40 checkpoints
+│   ├── security-checklist.md        ← Auth · Input · Headers · Data exposure
+│   └── performance-checklist.md     ← Core Web Vitals · Lighthouse targets
+│
 ├── config/
-│   └── lighthouserc.json           ← Performance/a11y thresholds
-├── docs/                           ← Reference documentation
-├── scripts/                        ← Automation scripts
-├── .env                            ← Your credentials (gitignored)
+│   └── lighthouserc.json            ← Lighthouse score thresholds
+│
+├── scripts/
+│   ├── run-all-tests.sh             ← One command: full test + Lighthouse run
+│   └── lighthouse.sh                ← Lighthouse scan across all 3 properties
+│
+├── docs/                            ← Reference documentation
+├── reports/                         ← Generated reports (gitignored)
+├── test-results/                    ← Playwright artifacts (gitignored)
+│
+├── .env                             ← Credentials — NEVER COMMIT (gitignored)
 ├── .gitignore
 ├── package.json
-├── playwright.config.js
-├── qa.config.example.json          ← Copy to qa.config.json and fill in
+├── playwright.config.js             ← Multi-project · multi-viewport config
+├── qa.config.example.json           ← Config template — copy to qa.config.json
+├── qa.config.json                   ← Your local config — NEVER COMMIT (gitignored)
 └── README.md
 ```
 
 ---
 
-## Coverage Targets
+## Coverage Status
 
-| Metric | Minimum | Target | Blocks Release? |
+| Spec File | Status | Tests | Property |
 |---|---|---|---|
-| E2E tests passing | 100% | 100% | Yes |
-| JS console errors | 0 | 0 | Yes |
-| Security findings (critical/high) | 0 | 0 | Yes |
-| Accessibility score | 85 | 95+ | Yes |
-| Lighthouse performance | 75 | 85+ | Warn only |
-| Visual diffs (unintended) | 0 | 0 | Warn only |
-| Mobile responsive — no horizontal scroll | Yes | Yes | Yes |
+| `tests/wdesignkit/auth.spec.js` | ✅ Complete | 45 | wdesignkit.com |
+| `tests/wdesignkit/dashboard.spec.js` | 🔄 In Progress | — | wdesignkit.com |
+| `tests/wdesignkit/widget-builder.spec.js` | 🔄 In Progress | — | wdesignkit.com |
+| `tests/wdesignkit/homepage.spec.js` | 📋 Planned | — | wdesignkit.com |
+| `tests/sproutos/auth.spec.js` | 📋 Planned | — | sproutos.ai |
+| `tests/sproutos/dashboard.spec.js` | 📋 Planned | — | sproutos.ai |
+| `tests/learning-center/core.spec.js` | 📋 Planned | — | learn.wdesignkit.com |
 
 ---
 
-## Test Areas Status
+## Release Thresholds
 
-| Spec File | Status | Tests |
+| Check | Threshold | On Failure |
 |---|---|---|
-| `tests/wdesignkit/auth.spec.js` | ✅ Ready | 45 tests |
-| `tests/wdesignkit/dashboard.spec.js` | 🔄 In Progress | — |
-| `tests/wdesignkit/widget-builder.spec.js` | 🔄 In Progress | — |
-| `tests/wdesignkit/homepage.spec.js` | 📋 Planned | — |
-| `tests/sproutos/auth.spec.js` | 📋 Planned | — |
-| `tests/sproutos/dashboard.spec.js` | 📋 Planned | — |
-| `tests/learning-center/core.spec.js` | 📋 Planned | — |
+| E2E tests passing | 100% | 🔴 Block release |
+| JS console errors | 0 | 🔴 Block release |
+| Security findings (critical/high) | 0 | 🔴 Block release |
+| Accessibility score | ≥ 85 | 🔴 Block release |
+| Mobile horizontal scroll | None | 🔴 Block release |
+| Lighthouse performance | ≥ 75 | 🟡 Warn — review before release |
+| Visual regression diffs | 0 unintended | 🟡 Warn — review before release |
+| Lighthouse SEO | ≥ 80 | 🟡 Warn — review before release |
 
 ---
 
 ## Checklists
 
-- [Pre-Release Checklist](checklists/pre-release-checklist.md) — full sign-off before any WDesignKit release
-- [UI/UX Checklist](checklists/ui-ux-checklist.md) — design quality (40 points)
-- [Performance Checklist](checklists/performance-checklist.md) — Core Web Vitals, assets
-- [Security Checklist](checklists/security-checklist.md) — XSS, CSRF, SQLi, auth
+| Checklist | Purpose | When to Use |
+|---|---|---|
+| [Pre-Release Checklist](checklists/pre-release-checklist.md) | Full QA sign-off across all 3 properties | Before every production release |
+| [UI/UX Checklist](checklists/ui-ux-checklist.md) | Visual quality · responsiveness · interaction polish | After any UI change |
+| [Security Checklist](checklists/security-checklist.md) | Auth · input validation · headers · data exposure | Before any auth or API change |
+| [Performance Checklist](checklists/performance-checklist.md) | Core Web Vitals · Lighthouse · asset optimization | Before any major release |
 
 ---
 
 ## Properties Under Test
 
-| Property | URL | Focus Areas |
+| Property | URL | Test Folder |
 |---|---|---|
-| WDesignKit Main | https://wdesignkit.com | Auth, Dashboard, Widget Builder |
-| Learning Center | https://learn.wdesignkit.com | Docs, SEO, Security |
+| WDesignKit Main | https://wdesignkit.com | `tests/wdesignkit/` |
+| Learning Center | https://learn.wdesignkit.com | `tests/learning-center/` |
 
 ---
 
-## Philosophy
+---
 
-Three rules this repo follows:
+## Security Notice
 
-1. **Every bug we document manually should have an automated test.** If we caught it in a ClickUp audit, it becomes a Playwright assertion.
-2. **Real browser, real flows.** No mocking — tests run against the live site the same way a user would.
-3. **Visual regression is non-negotiable.** Every key page has a snapshot baseline. Any pixel change gets flagged before release.
+> ⚠️ This repository contains test configuration referencing internal POSIMYTH systems.
+>
+> - **Never commit** `.env` or `qa.config.json` to any branch
+> - **Never push** credentials, tokens, or passwords
+> - **Never make** this repository public
+> - **Rotate credentials immediately** if accidentally exposed
 
 ---
 
-*Maintained by the WDesignKit QA Team · POSIMYTH · Internal Use Only*
+<div align="center">
+
+<br />
+
+*Maintained by the WDesignKit QA Expert &nbsp;·&nbsp; POSIMYTH Innovation &nbsp;·&nbsp; Internal Use Only*
+
+<br />
+
+</div>
