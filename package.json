@@ -1,23 +1,31 @@
 {
-  "name": "orbit",
-  "version": "2.0.0",
-  "description": "Orbit — Complete UAT for WordPress plugins. Dev, QA, PM, Designer, and End User perspectives — one command, every release.",
+  "name": "qa-automation",
+  "version": "1.0.0",
+  "main": "index.js",
   "scripts": {
-    "test": "playwright test tests/playwright/",
-    "test:plugin": "playwright test tests/playwright/",
-    "test:visual": "playwright test --update-snapshots",
-    "test:ci": "USE_PLAYGROUND=true playwright test --reporter=html",
-    "gauntlet": "bash scripts/gauntlet.sh",
-    "compare": "bash scripts/compare-versions.sh",
-    "db-profile": "bash scripts/db-profile.sh",
-    "report": "playwright show-report reports/playwright-html",
-    "install-deps": "bash setup/install.sh",
-    "uat": "npx playwright test --config=tests/playwright/playwright.config.js --project=video --reporter=line && python3 scripts/generate-uat-report.py --title 'UAT Report' --snaps reports/screenshots/flows-compare --videos reports/videos --out reports/uat-report.html && npx open-cli reports/uat-report.html",
-    "uat:ci": "npx playwright test --config=tests/playwright/playwright.config.js --project=video --reporter=line && python3 scripts/generate-uat-report.py --title 'UAT Report' --snaps reports/screenshots/flows-compare --videos reports/videos --out reports/uat-report.html"
+    "test": "playwright test",
+    "test:headed": "playwright test --headed",
+    "test:report": "playwright test --reporter=html",
+    "test:ai": "playwright test --reporter=json"
   },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
   "devDependencies": {
-    "@axe-core/playwright": "^4.9.1",
-    "@playwright/test": "^1.44.0",
-    "@wp-playground/cli": "^0.9.0"
-  }
+    "@axe-core/playwright": "^4.11.2",
+    "@playwright/test": "^1.59.1"
+  },
+  "dependencies": {
+    "adm-zip": "^0.5.17",
+    "fs-extra": "^11.3.4",
+    "path": "^0.12.7",
+    "playwright": "^1.59.1",
+    "unzipper": "^0.12.3",
+    "zod": "^4.3.6"
+  },
+  "directories": {
+    "test": "tests"
+  },
+  "description": ""
 }
