@@ -1,58 +1,88 @@
 {
-  "_comment": "Copy to qa.config.json and fill in your plugin details. qa.config.json is gitignored.",
+  "_comment": "Copy this file to qa.config.json and fill in your details. qa.config.json is gitignored — never commit credentials.",
 
-  "plugin": {
-    "name": "Your Plugin Name",
-    "slug": "your-plugin-slug",
-    "type": "general",
-    "path": "/path/to/your/plugin",
+  "product": {
+    "name": "WDesignKit",
+    "type": "saas-web",
     "version": "1.0.0",
-    "hasPro": false,
-    "proZip": "",
-    "textDomain": "your-plugin-slug",
-    "requiresAtLeast": "5.0",
-    "testedUpTo": "6.9",
-    "requiresPHP": "7.4"
+    "team": "WDesignKit QA Expert"
+  },
+
+  "properties": {
+    "wdesignkit": {
+      "name": "WDesignKit Main",
+      "url": "https://wdesignkit.com",
+      "testAreas": [
+        "auth-login",
+        "auth-signup",
+        "auth-forgot-password",
+        "auth-reset-password",
+        "dashboard",
+        "widget-builder",
+        "homepage"
+      ]
+    },
+    "learningCenter": {
+      "name": "WDesignKit Learning Center",
+      "url": "https://learn.wdesignkit.com",
+      "testAreas": [
+        "core-pages",
+        "navigation",
+        "search",
+        "seo",
+        "security-headers"
+      ]
+    }
   },
 
   "environment": {
-    "testUrl": "http://localhost:8881",
-    "wpEnvPort": 8881,
-    "adminUser": "admin",
-    "adminPass": "password",
-    "multisite": false,
-    "stagingUrl": ""
-  },
-
-  "companions": [
-    "_comment: WP.org slugs of plugins that should be active during testing",
-    "woocommerce"
-  ],
-
-  "upgrade": {
-    "test": false,
-    "fromVersion": ""
+    "qaEmail": "tester0107@yopmail.com",
+    "qaPassword": "Tester",
+    "stagingUrl": "",
+    "runAgainst": "production"
   },
 
   "competitors": [
-    "_comment: WP.org slugs of plugins to compare against in flow tests",
-    "plugin-b-slug"
+    "https://elementor.com",
+    "https://wpbakery.com",
+    "https://startertemplates.com/"
   ],
 
   "qaFocus": {
     "priority": "full",
     "testAreas": [
-      "activation",
-      "admin-panel-load",
-      "frontend-output",
-      "rest-api-auth"
+      "auth",
+      "dashboard",
+      "widget-builder",
+      "learning-center",
+      "responsive",
+      "accessibility",
+      "visual-regression"
     ]
   },
 
   "thresholds": {
-    "lighthouse": { "performance": 75, "accessibility": 85 },
-    "dbQueriesPerPage": 60,
+    "lighthouse": {
+      "performance": 75,
+      "accessibility": 85,
+      "bestPractices": 80,
+      "seo": 80
+    },
     "jsBundleKb": 500,
-    "cssBundleKb": 200
+    "cssBundleKb": 200,
+    "pageLoadMs": 4000
+  },
+
+  "viewports": {
+    "mobile": { "width": 375, "height": 812 },
+    "tablet": { "width": 768, "height": 1024 },
+    "desktop": { "width": 1440, "height": 900 }
+  },
+
+  "reporting": {
+    "outputDir": "reports",
+    "screenshotsDir": "reports/screenshots",
+    "snapshotsDir": "tests/snapshots",
+    "htmlReport": "reports/playwright-html"
   }
 }
