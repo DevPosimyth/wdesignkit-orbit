@@ -39,6 +39,14 @@ Individual suites can be targeted through Playwright projects.
 
 ## Recent Changes
 
+### v1.3.0 (April 2026)
+- Version sync release — confirms 1.2.0 doc bundle on latest tag
+
+### v1.2.0 (April 2026)
+- Added 11 WDesignKit-adapted docs: master audit, whats-new, release checklist, business logic guide, auto-test generation, evergreen security, what-orbit-does, extending-orbit, use cases, functions catalog, onboarding-by-role
+- Full role-by-role quickstart with `PLUGIN_SLUG=wdesignkit`, `PLUGIN_PREFIX=wdk` examples
+- 27 use-case scenarios covering Dev, QA, PM, PA, Designer, Release Ops
+
 ### v1.1.0 (April 2026)
 - Added login-pages bug report (10 bugs: 3 Critical, 3 High, 4 Medium)
 - Polished README to production QA standard
