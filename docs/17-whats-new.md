@@ -39,8 +39,12 @@ Individual suites can be targeted through Playwright projects.
 
 ## Recent Changes
 
+### v2.4.0 (April 2026)
+- Major version alignment — Orbit framework moves to 2.x series to match internal release track
+- Consolidates the 1.2.0 documentation bundle under the new version line
+
 ### v1.3.0 (April 2026)
-- Version sync release — confirms 1.2.0 doc bundle on latest tag
+- Interim version sync (superseded by 2.4.0)
 
 ### v1.2.0 (April 2026)
 - Added 11 WDesignKit-adapted docs: master audit, whats-new, release checklist, business logic guide, auto-test generation, evergreen security, what-orbit-does, extending-orbit, use cases, functions catalog, onboarding-by-role
