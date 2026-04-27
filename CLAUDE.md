@@ -110,7 +110,7 @@ Your responsibility is to:
 Save every bug report to:
 
 ```
-reports/bugs/YYYY-MM-DD-[feature-name].md
+reports/bugs/[feature-name].md
 ```
 
 Use this structure for each bug — one bug per entry, separated by `---`:
