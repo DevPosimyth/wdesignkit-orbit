@@ -4,7 +4,8 @@
 # Runs: Playwright tests across all properties + Lighthouse scans
 # Usage: bash scripts/run-all-tests.sh
 #        bash scripts/run-all-tests.sh --skip-lighthouse
-#        bash scripts/run-all-tests.sh --property wdesignkit
+#        bash scripts/run-all-tests.sh --property=wdesignkit
+#        bash scripts/run-all-tests.sh --property=learning
 # =============================================================================
 
 # Load .env if present
@@ -55,18 +56,13 @@ run_playwright() {
 }
 
 if [ "$PROPERTY" = "all" ] || [ "$PROPERTY" = "wdesignkit" ]; then
-  run_playwright "WDesignKit — Desktop" "wdk-desktop"  "tests/wdesignkit"
-  run_playwright "WDesignKit — Mobile"  "wdk-mobile"   "tests/wdesignkit"
-  run_playwright "WDesignKit — Tablet"  "wdk-tablet"   "tests/wdesignkit"
-fi
-
-if [ "$PROPERTY" = "all" ] || [ "$PROPERTY" = "sproutos" ]; then
-  run_playwright "Sproutos — Desktop"   "sproutos-desktop" "tests/sproutos"
-  run_playwright "Sproutos — Mobile"    "sproutos-mobile"  "tests/sproutos"
+  run_playwright "WDesignKit — Desktop" "wdk-desktop" "tests/wdesignkit"
+  run_playwright "WDesignKit — Mobile"  "wdk-mobile"  "tests/wdesignkit"
+  run_playwright "WDesignKit — Tablet"  "wdk-tablet"  "tests/wdesignkit"
 fi
 
 if [ "$PROPERTY" = "all" ] || [ "$PROPERTY" = "learning" ]; then
-  run_playwright "Learning Center"      "learning-desktop" "tests/learning-center"
+  run_playwright "Learning Center" "learning-desktop" "tests/learning-center"
 fi
 
 # ── Step 2: Lighthouse Scans ──────────────────────────────────────────────────

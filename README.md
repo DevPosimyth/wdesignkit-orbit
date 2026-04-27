@@ -184,7 +184,7 @@ You should see all test files listed grouped by project. If they appear — you'
 
 ## Running Tests
 
-### Full Run — Before Any Release
+### Full Pipeline — Before Any Release
 
 ```bash
 bash scripts/run-all-tests.sh
@@ -196,6 +196,22 @@ bash scripts/run-all-tests.sh
 | `--skip-lighthouse` | Skips Lighthouse — faster for dev iteration |
 | `--property=wdesignkit` | Tests wdesignkit.com only |
 | `--property=learning` | Tests learn.wdesignkit.com only |
+
+---
+
+### Topic-Specific QA Scripts
+
+Run only the script that matches the QA area being tested.
+
+| QA Area | Script | Key Flags |
+|---|---|---|
+| Responsiveness | `bash scripts/qa-responsive.sh` | `--spec=auth` · `--spec=dashboard` · `--spec=widget-builder` · `--spec=homepage` |
+| Accessibility | `bash scripts/qa-accessibility.sh` | `--skip-lighthouse` |
+| Security | `bash scripts/qa-security.sh` | — |
+| SEO & Meta Tags | `bash scripts/qa-seo.sh` | — |
+| Cross-Browser | `bash scripts/qa-cross-browser.sh` | `--spec=auth` · `--spec=dashboard` · etc. |
+| Console Errors | `bash scripts/qa-console.sh` | `--spec=auth` · `--spec=dashboard` · etc. |
+| Performance | `bash scripts/lighthouse.sh` | — |
 
 ---
 
@@ -288,8 +304,14 @@ wdesignkit-orbit/
 │   └── lighthouserc.json            ← Lighthouse score thresholds
 │
 ├── scripts/
-│   ├── run-all-tests.sh             ← One command: full test + Lighthouse run
-│   └── lighthouse.sh                ← Lighthouse scan across both properties
+│   ├── run-all-tests.sh             ← Full pipeline — all tests + Lighthouse
+│   ├── lighthouse.sh                ← Lighthouse scan — performance + SEO + a11y
+│   ├── qa-responsive.sh             ← Responsiveness — all 3 viewports
+│   ├── qa-accessibility.sh          ← Accessibility — axe-core + Lighthouse a11y
+│   ├── qa-security.sh               ← Security — headers, HTTPS, WP version
+│   ├── qa-seo.sh                    ← SEO — meta tags, OG, sitemap, canonical
+│   ├── qa-cross-browser.sh          ← Cross-browser — Chromium, Firefox, WebKit
+│   └── qa-console.sh                ← Console errors — JS errors, 404s, failures
 │
 ├── docs/                            ← Reference documentation
 ├── reports/

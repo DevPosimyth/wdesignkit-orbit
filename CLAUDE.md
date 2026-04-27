@@ -224,6 +224,18 @@ Do not run all tests for every task. Match the feature to its spec file and run 
 | Mobile only (375px) | `npx playwright test tests/wdesignkit/[spec].spec.js --project=wdk-mobile` |
 | Tablet only (768px) | `npx playwright test tests/wdesignkit/[spec].spec.js --project=wdk-tablet` |
 
+### Topic-Specific Scripts (Preferred for single-area QA)
+
+| QA Area | Script | Key Flags |
+|---|---|---|
+| Responsiveness | `bash scripts/qa-responsive.sh` | `--spec=auth` · `--spec=dashboard` · `--spec=widget-builder` · `--spec=homepage` |
+| Accessibility | `bash scripts/qa-accessibility.sh` | `--skip-lighthouse` |
+| Security | `bash scripts/qa-security.sh` | — |
+| SEO & Meta Tags | `bash scripts/qa-seo.sh` | — |
+| Cross-Browser | `bash scripts/qa-cross-browser.sh` | `--spec=auth` · `--spec=dashboard` · etc. |
+| Console Errors | `bash scripts/qa-console.sh` | `--spec=auth` · `--spec=dashboard` · etc. |
+| Performance | `bash scripts/lighthouse.sh` | — |
+
 ### Full Pipeline (Release QA only)
 
 | Command | When to Use |
@@ -232,7 +244,6 @@ Do not run all tests for every task. Match the feature to its spec file and run 
 | `bash scripts/run-all-tests.sh --skip-lighthouse` | Full Playwright suite only, no Lighthouse — use for pre-release smoke test. |
 | `bash scripts/run-all-tests.sh --property=wdesignkit` | All WDesignKit specs only (desktop + mobile + tablet). |
 | `bash scripts/run-all-tests.sh --property=learning` | Learning Center specs only. |
-| `bash scripts/lighthouse.sh` | Performance audit only — wdesignkit.com and learn.wdesignkit.com. |
 | `npx playwright show-report` | Open last run's HTML report — screenshots, video, traces. |
 
 ---
