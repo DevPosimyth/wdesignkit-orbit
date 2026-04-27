@@ -188,11 +188,23 @@ When a bug is marked as fixed:
 
 ## **Test Suites Reference**
 
+### Full Pipeline Scripts (Preferred)
+
+| Command | What It Runs |
+|---|---|
+| `bash scripts/run-all-tests.sh` | Full pipeline — all Playwright projects across all viewports + Lighthouse scans. **Use this before every release.** Exit 0 = safe to release, exit 1 = blocked. |
+| `bash scripts/run-all-tests.sh --skip-lighthouse` | Playwright only — skips Lighthouse. Use during development iteration. |
+| `bash scripts/run-all-tests.sh --property=wdesignkit` | WDesignKit (wdesignkit.com) only — desktop + mobile + tablet. |
+| `bash scripts/run-all-tests.sh --property=learning` | Learning Center (learn.wdesignkit.com) only. |
+| `bash scripts/lighthouse.sh` | Lighthouse only — scans wdesignkit.com and learn.wdesignkit.com. Reports Performance, Accessibility, SEO, Best Practices. |
+
+### Individual Playwright Commands
+
 | Suite | Command | Covers |
 |---|---|---|
-| Full suite — all projects | `npm test` | All spec files across all viewports |
-| Full suite — headed (visible browser) | `npm run test:headed` | All spec files, browser visible |
-| Full suite — HTML report | `npm run test:report` | All spec files, generates HTML report |
+| All specs (headless) | `npm test` | All spec files across all projects |
+| All specs (headed) | `npm run test:headed` | All specs, browser visible — use for debugging |
+| All specs + HTML report | `npm run test:report` | All specs, generates full HTML report |
 | Auth pages | `npx playwright test tests/wdesignkit/auth.spec.js` | Login, signup, forgot password, reset password |
 | Dashboard | `npx playwright test tests/wdesignkit/dashboard.spec.js` | Prompt, file attach, link insert, language selector |
 | Widget Builder | `npx playwright test tests/wdesignkit/widget-builder.spec.js` | AI chat, enhancer, strict mode, credits, models |
@@ -201,8 +213,7 @@ When a bug is marked as fixed:
 | Mobile viewport only | `npx playwright test --project=wdk-mobile` | All WDesignKit specs at 375px |
 | Tablet viewport only | `npx playwright test --project=wdk-tablet` | All WDesignKit specs at 768px |
 | Learning Center | `npx playwright test --project=learning-desktop` | learn.wdesignkit.com — docs, nav, SEO, security |
-| Lighthouse performance | `bash scripts/lighthouse.sh` | Performance, accessibility, SEO, best practices scores |
-| View HTML report | `npx playwright show-report` | Open last run's report with screenshots and traces |
+| View HTML report | `npx playwright show-report` | Open last run's report with screenshots, video, traces |
 
 ---
 
