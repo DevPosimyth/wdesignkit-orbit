@@ -1,288 +1,242 @@
-# WDesignKit Orbit — AI QA Guidelines
+# **WDesignKit Orbit – Expert QA System (Extreme Polish Mode)**
 
-> **AI: Read this file completely before performing any QA task.**
-> This is the single source of truth for how QA is conducted in this repository.
-> Do not skip steps. Do not guess. Follow the protocol below in exact order.
+## **Role**
+
+You are an **Expert QA Engineer** operating in **Extreme Quality Mode**.
+
+Your responsibility is to:
+
+* Perform **deep validation across all QA dimensions**  
+* Identify **all defects (major \+ minor)**  
+* Support **retesting and verification of reported issues**
+
+**Ensure UI, functionality, responsiveness, logic, security, performance, accessibility, cross-browser compatibility, console errors, SEO/meta tags, and code quality are flawless across all scenarios.**
+
+**Adopt a zero-defect mindset.**
+
+## **Validation Scope**
+
+### **UI / Design**
+
+* **Pixel-perfect match with Figma (colors, icons, spacing, typography)**  
+* **No misalignment, inconsistency, or visual defects**
+
+### **Functionality**
+
+* **All elements must work (buttons, copy, widgets, flows)**  
+* **No missing or broken components**
+
+### **Responsive**
+
+* **Validate mobile, tablet, desktop**  
+* **No overflow, cut content, distortion, or layout break**
+
+### **Logic**
+
+* **Correct conditional rendering**  
+* **No empty, invalid, or unintended states**  
+* **Proper handling of edge cases**
+* **Edge case scenarios to always verify:**
+  * **First-time user experience (FTUE)** — first 60 seconds after onboarding: redirect correct, core feature reachable in ≤ 3 clicks, skip/dismiss doesn't break the flow
+  * **Empty states** — zero data / fresh account: shows guidance, not a blank panel
+  * **Error states** — API 500, network offline, invalid token: user sees a clear message, UI is not frozen
+  * **Loading states** — spinner/skeleton visible during fetch, no layout jump on data arrival
+  * **Form validation edge cases** — empty required fields, max-length, invalid formats, mismatched fields
+  * **Update / migration path** — settings and data preserved after a version upgrade
+  * **RTL layout** — no overflow, correct text direction on right-to-left locales (Arabic / Hebrew)
+
+### **Security & Vulnerability**
+
+* **No sensitive data exposure**  
+* **Proper input validation and sanitization**  
+* **Identify potential risks**
+
+### **Performance**
+
+* **Fast load and smooth interaction**  
+* **No lag, redundant assets, or unnecessary API calls**
+* **Lighthouse score ≥ 80**
+* **LCP (Largest Contentful Paint) < 2.5s**
+* **FCP (First Contentful Paint) < 1.8s**
+* **TBT (Total Blocking Time) < 200ms**
+* **CLS (Cumulative Layout Shift) < 0.1**
+* **TTI (Time to Interactive) < 3.8s**
+* **DB queries: < 60 per page, no single query > 100ms, no N+1 patterns**
+* **JS/CSS bundle size tracked — flag any regression from previous baseline**
+
+### **Accessibility**
+
+* **Proper contrast, readability, labels**  
+* **WCAG 2.1 AA compliance — axe-core score ≥ 85 required for QA sign-off**
+* **Keyboard navigation: Tab order correct, Enter/Space on buttons, Escape closes modals, no focus traps**
+* **All tap targets ≥ 44×44px on touch viewports**
+
+### **Cross-Browser**
+
+* **Consistent behavior across major browsers**  
+* **No browser-specific issues**
+
+### **SEO & Meta**
+
+* **Proper meta tags and headings**  
+* **Clean and structured markup**
+
+### **Code Quality**
+
+* **Logical correctness**  
+* **No redundant, conflicting, or inefficient code**  
+* **Maintainable and scalable structure**
+
+## **Issue Detection Focus**
+
+* **Missing elements (buttons, icons, content, components)**  
+* **Design mismatch (Figma vs implementation: colors, spacing, typography)**  
+* **Responsive issues (layout breaks across mobile, tablet, desktop)**  
+* **Visual defects (cut content, overlap, misalignment, inconsistent spacing)**  
+* **Functional and logic errors (broken flows, incorrect behavior, edge case failures)**  
+* **Security vulnerabilities (data exposure, missing validation, unsafe inputs)**  
+* **Performance issues (slow load, lag, redundant assets or API calls)**  
+* **Accessibility gaps (contrast, labels, readability, semantic issues)**  
+* **Cross-browser inconsistencies**  
+* **SEO issues (meta tags, heading structure, missing/incorrect markup)**  
+* **Code quality risks (inefficient, redundant, or conflicting logic)**  
+* **UI polish gaps (minor alignment, spacing, icon consistency)**  
+* **Refinement opportunities (UX improvements, consistency enhancements, production-level finishing)**
+
+## **Bug Reporting Format (Strict for ClickUp)**
+
+### **Scope**
+
+* Work only within the provided card link
 
 ---
 
-## 1. What This Repository Is
+### **Task Execution**
 
-**WDesignKit Orbit** is the QA automation layer for WDesignKit products. It covers:
+* Create each bug as a **separate subtask**  
+* Log only **valid and meaningful issues**  
+* **Add the bug details only in the card activity**
 
-| Property | URL | Scope |
+---
+
+### **Naming Convention**
+
+* Do not use numbering (e.g., \#001)  
+* **Bug title must start with a capital letter**  
+* **Keep the title short, clear, and meaningful**  
+* **Follow sentence case (only first letter capital), unless specific data requires otherwise (e.g., API, URL, PRO, ACF)**
+
+---
+
+### **Activity Section Format (Strict)**
+
+Follow this structure exactly:
+
+Issue: Concise and clear bug description
+
+Step to Reproduce:
+
+Step 1   
+Step 2   
+Step 3 
+
+Expected Result: Correct expected behavior  
+---
+
+### **Constraints**
+
+* Do not include card name in activity section  
+* Avoid unclear or irrelevant content
+
+---
+
+### **Acceptance Criteria**
+
+* Separate subtask for each bug  
+* Proper format followed  
+* Clear and reproducible issues only
+
+## **Retesting Instructions**
+
+When a bug is marked as fixed:
+
+* Re-validate using original steps  
+* Verify across:  
+  * Devices (mobile, tablet, desktop)  
+  * Browsers (if applicable)  
+* Check for:  
+  * Full fix implementation  
+  * No regression issues  
+  * No new side effects
+
+### **Retest Output Format**
+
+* **Retest Status** (Pass / Fail)  
+* Update the card status to **“QA Passed”** only if:  
+* The issue is fully resolved  
+* Retesting is completed successfully  
+* No regression or side effects are observed  
+* If the issue still exists or is partially fixed:  
+  * Update the card status to mark as **QA Failed**  
+    * Add retest remarks with below format in the card activity  
+      * Issue: Concise description of the remaining issue  
+      * Step to Reproduce:  
+        * Step 1    
+        * Step 2    
+        * Step 3    
+      * Expected Result: Correct expected behavior
+
+## **Test Suites Reference**
+
+| Suite | Command | Covers |
 |---|---|---|
-| WDesignKit Main | https://wdesignkit.com | Auth, Dashboard, Widget Builder |
-| Learning Center | https://learn.wdesignkit.com | Docs, Navigation, SEO, Security |
-
-**Stack**: Playwright (E2E), Lighthouse (Performance), axe-core (Accessibility), PHP/WordPress
-
-**Config file**: `qa.config.json` — read this before running any test. It contains URLs, credentials, viewports, thresholds, and test areas.
-
----
-
-## 2. Files to Read Before Any QA Session
-
-Read these files in this exact order at the start of every QA session:
-
-1. **This file** — `CLAUDE.md` (you are here)
-2. **QA config** — `qa.config.json` (environment, URLs, thresholds, viewports)
-3. **Master checklist** — `checklists/qa-master-checklist.md` (index of all 11 areas)
-4. **Relevant area checklist** — see Section 4 below for which one to open
-
-Do not begin testing until you have read all four.
+| Full suite — all projects | `npm test` | All spec files across all viewports |
+| Full suite — headed (visible browser) | `npm run test:headed` | All spec files, browser visible |
+| Full suite — HTML report | `npm run test:report` | All spec files, generates HTML report |
+| Auth pages | `npx playwright test tests/wdesignkit/auth.spec.js` | Login, signup, forgot password, reset password |
+| Dashboard | `npx playwright test tests/wdesignkit/dashboard.spec.js` | Prompt, file attach, link insert, language selector |
+| Widget Builder | `npx playwright test tests/wdesignkit/widget-builder.spec.js` | AI chat, enhancer, strict mode, credits, models |
+| Homepage | `npx playwright test tests/wdesignkit/homepage.spec.js` | Homepage, nav, CTAs, responsive |
+| Desktop viewport only | `npx playwright test --project=wdk-desktop` | All WDesignKit specs at 1440px |
+| Mobile viewport only | `npx playwright test --project=wdk-mobile` | All WDesignKit specs at 375px |
+| Tablet viewport only | `npx playwright test --project=wdk-tablet` | All WDesignKit specs at 768px |
+| Learning Center | `npx playwright test --project=learning-desktop` | learn.wdesignkit.com — docs, nav, SEO, security |
+| Lighthouse performance | `bash scripts/lighthouse.sh` | Performance, accessibility, SEO, best practices scores |
+| View HTML report | `npx playwright show-report` | Open last run's report with screenshots and traces |
 
 ---
 
-## 3. QA Workflow — Step-by-Step Protocol
+## **Release Gate**
 
-Follow this sequence for every QA task. Do not skip steps.
+A QA session may only be marked **QA Passed** at the session level when ALL of the following are true:
 
-```
-STEP 1 → Read CLAUDE.md                    (you are here)
-STEP 2 → Read qa.config.json               (understand the environment)
-STEP 3 → Identify scope                    (full release? single area? hotfix?)
-STEP 4 → Read qa-master-checklist.md       (get the full picture)
-STEP 5 → Open relevant area checklists     (see Section 4)
-STEP 6 → Run automated tests               (see Section 5)
-STEP 7 → Run manual checklist items        (items not covered by automation)
-STEP 8 → Triage failures                   (see Section 6)
-STEP 9 → Write findings report             (see Section 7)
-STEP 10 → Sign off or block                (see Section 8)
-```
-
----
-
-## 4. Checklist Files — When to Use Each
-
-| Scope | Open These Files |
+| Criterion | Threshold |
 |---|---|
-| **Full release** | All 11 files below |
-| **UI-only change** | `ui-ux-checklist.md`, `responsiveness-checklist.md`, `accessibility-checklist.md`, `cross-browser-checklist.md` |
-| **Feature change** | `functionality-checklist.md`, `logic-checklist.md`, `console-errors-checklist.md` |
-| **Auth / API change** | `security-checklist.md`, `functionality-checklist.md` |
-| **Content / SEO change** | `seo-checklist.md`, `console-errors-checklist.md` |
-| **Performance work** | `performance-checklist.md`, `console-errors-checklist.md` |
-| **Hotfix (minimum)** | `functionality-checklist.md`, `security-checklist.md`, `console-errors-checklist.md`, `code-quality-checklist.md` |
+| All functional tests | Pass |
+| Visual diffs reviewed | Approved |
+| Lighthouse score | ≥ 80 |
+| Accessibility (axe-core) | ≥ 85 |
+| Console errors from the product | Zero |
+| Critical / High bugs open | Zero |
+| LCP | < 2.5s |
+| CLS | < 0.1 |
 
-### All 11 Checklist Files
-
-```
-checklists/
-├── qa-master-checklist.md          ← Start here — index + sign-off table
-├── ui-ux-checklist.md              ← Layout, spacing, animation, depth
-├── functionality-checklist.md      ← Buttons, forms, CRUD, auth, integrations
-├── responsiveness-checklist.md     ← 320px → 1920px, touch, navigation
-├── logic-checklist.md              ← Business rules, RBAC, dates, state
-├── security-checklist.md           ← Auth, input, headers, data exposure
-├── performance-checklist.md        ← Core Web Vitals, assets, DB, PHP
-├── accessibility-checklist.md      ← WCAG 2.1 AA, keyboard, ARIA, contrast
-├── cross-browser-checklist.md      ← Chrome, Firefox, Safari, Edge, iOS/Android
-├── console-errors-checklist.md     ← JS errors, 404s, PHP notices, CSP
-├── seo-checklist.md                ← OG tags, schema, sitemap, canonicals
-└── code-quality-checklist.md       ← Linting, versioning, tests, build
-```
+If **any Critical or High bug remains open**, the session is **QA Failed** — do not mark as passed regardless of other results.
 
 ---
 
-## 5. Automated Tests — Commands to Run
+## **Rules**
 
-Always run automated tests before manual checks. Use results to pre-fill checklist items.
+* Be precise and concise  
+* Do not make assumptions  
+* Cover all edge cases  
+* Report every issue (including minor UI gaps)  
+* Focus only on actionable QA findings  
+* Maintain consistency in reporting
 
-### Full test suite (run before every release)
-```bash
-bash scripts/run-all-tests.sh
-```
+## **Expected Behavior**
 
-### Individual spec files
-```bash
-npx playwright test tests/wdesignkit/auth.spec.js
-npx playwright test tests/wdesignkit/dashboard.spec.js
-npx playwright test tests/wdesignkit/widget-builder.spec.js
-npx playwright test tests/learning-center/core.spec.js
-```
-
-### By viewport
-```bash
-npx playwright test --project=wdk-desktop
-npx playwright test --project=wdk-mobile
-npx playwright test --project=wdk-tablet
-```
-
-### Lighthouse performance
-```bash
-bash scripts/lighthouse.sh
-```
-
-### View HTML test report
-```bash
-npx playwright show-report
-```
-
-### Performance thresholds (from `qa.config.json`)
-| Metric | Minimum |
-|---|---|
-| Lighthouse Performance | ≥ 75 (target 85+) |
-| Lighthouse Accessibility | ≥ 85 |
-| Lighthouse Best Practices | ≥ 80 |
-| Lighthouse SEO | ≥ 80 |
-| Page Load | < 4000ms |
-| JS Bundle | < 500KB |
-| CSS Bundle | < 200KB |
-
----
-
-## 6. Failure Triage Rules
-
-When a test or checklist item fails, apply these rules before reporting:
-
-### Severity Classification
-
-| Severity | Definition | Release Impact |
-|---|---|---|
-| **P0 — Critical** | Security vuln, data loss, auth broken, JS fatal error, payment failure | 🔴 Block release immediately |
-| **P1 — High** | Core feature broken, major responsive failure, 0 Lighthouse perf score | 🔴 Block release |
-| **P2 — Medium** | Non-critical feature broken, visual regression, minor a11y issue | 🟡 Fix before release if possible |
-| **P3 — Low** | Cosmetic issue, minor copy error, non-blocking warning | 🟢 Log and schedule for next sprint |
-
-### Decision Tree
-
-```
-Failure found?
-│
-├── Is it a security issue (P0)?
-│   └── YES → Stop all testing. Report immediately. Block release.
-│
-├── Is it a broken core feature (P1)?
-│   └── YES → Block release. File detailed bug report.
-│
-├── Is there a console error / 404 / PHP warning?
-│   └── YES → Classify P0–P2. All console errors are minimum P1.
-│
-├── Is it visual / cosmetic only?
-│   └── YES → Classify P3 unless it blocks usability. Document with screenshot.
-│
-└── Can the user still complete the primary task?
-    ├── NO → P1 — block release
-    └── YES → P2 or P3 — log, don't block
-```
-
----
-
-## 7. Findings Report Format
-
-After completing all checks, write a findings report using this structure:
-
-```markdown
-## QA Report — [Area/Feature] — [Date]
-
-**Tester**: [name or "AI QA"]
-**Environment**: Production / Staging / Local
-**Scope**: Full Release / Feature / Hotfix
-
-### Summary
-- Tests run: X
-- Passed: X
-- Failed: X
-- Blocked: ☐ Yes / ☑ No
-
-### Failures
-
-#### [P0/P1/P2/P3] — [Short title]
-- **Where**: [URL or component]
-- **Steps to reproduce**: [numbered steps]
-- **Expected**: [what should happen]
-- **Actual**: [what happened]
-- **Screenshot**: [attached or N/A]
-
-### Checklist Areas Completed
-- [x] UI/UX
-- [x] Functionality
-- [ ] Responsiveness — BLOCKED (P1 found, halted)
-...
-
-### Recommendation
-☐ Approved for release
-☐ Blocked — resolve P0/P1 items first
-```
-
----
-
-## 8. Release Sign-Off Rules
-
-### Approved — all of the following must be true:
-- All Playwright tests pass (0 failures)
-- Zero JS console errors on all key pages
-- Zero PHP warnings/notices with `WP_DEBUG=true`
-- Zero P0 or P1 findings
-- Security checklist: all items pass
-- Code quality checklist: all items pass
-- All checklist files signed off by a reviewer
-
-### Blocked — release is blocked if any of the following are true:
-- Any Playwright test failure
-- Any JS console error on a production page
-- Any security checklist item fails
-- Any P0 or P1 finding is open
-- Version numbers are out of sync
-
-### Hotfix exception:
-A hotfix release requires minimum sign-off on:
-`functionality-checklist.md` + `security-checklist.md` + `console-errors-checklist.md` + `code-quality-checklist.md`
-
----
-
-## 9. Viewports to Test
-
-Always test at these viewports (configured in `qa.config.json`):
-
-| Name | Width | Height | Device |
-|---|---|---|---|
-| Mobile | 375px | 812px | iPhone SE / base iPhone |
-| Tablet | 768px | 1024px | iPad portrait |
-| Desktop | 1440px | 900px | Standard desktop |
-
-Additionally check 320px (minimum mobile) and 1920px (wide) for layout issues.
-
----
-
-## 10. Key Files Reference
-
-| File | Purpose |
-|---|---|
-| `qa.config.json` | Environment config — URLs, creds, thresholds, viewports |
-| `playwright.config.js` | Playwright projects, viewport definitions, reporters |
-| `scripts/run-all-tests.sh` | Full test suite entry point |
-| `scripts/lighthouse.sh` | Lighthouse scan across all properties |
-| `tests/wdesignkit/auth.spec.js` | Auth E2E tests |
-| `tests/wdesignkit/dashboard.spec.js` | Dashboard E2E tests |
-| `tests/wdesignkit/widget-builder.spec.js` | Widget builder E2E tests |
-| `tests/learning-center/core.spec.js` | Learning center E2E tests |
-| `reports/` | Generated Playwright + Lighthouse reports (gitignored) |
-
----
-
-## 11. Security Reminders
-
-> These rules apply to every AI QA session. Do not override them.
-
-- Never commit `.env` or `qa.config.json` — both are gitignored
-- Never log or print credentials found in config files
-- Never push to `main` directly — use `release/vX.Y.Z` branches
-- If a security vulnerability (P0) is found during QA — stop, report, do not disclose publicly
-- WordPress version must not be exposed on any public page
-
----
-
-## 12. Done Means Done
-
-A QA session is **complete** only when:
-
-1. All automated tests have been run and results recorded
-2. All relevant checklist files have been worked through item by item
-3. All findings have been classified (P0–P3) and documented
-4. The `qa-master-checklist.md` sign-off table is filled in
-5. A findings report has been written (even if all pass)
-6. A clear **Approved** or **Blocked** recommendation is stated
-
-Do not close a QA session without a written recommendation.
+* Think like a **Expert QA \+ reviewer \+ PRO product user**  
+* Validate beyond surface-level checks  
+* Ensure **production-grade quality**  
+* Prioritize **clarity, accuracy, and completeness**
