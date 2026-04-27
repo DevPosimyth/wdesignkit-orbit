@@ -10,9 +10,10 @@
 
 <br />
 
-![Playwright](https://img.shields.io/badge/Playwright-E2E_Tests-2EAD33?style=for-the-badge&logo=playwright&logoColor=white)
+![Version](https://img.shields.io/badge/Orbit-v2.5.0-6366F1?style=for-the-badge)
+![Playwright](https://img.shields.io/badge/Playwright-v1.59.1-2EAD33?style=for-the-badge&logo=playwright&logoColor=white)
 ![Lighthouse](https://img.shields.io/badge/Lighthouse-Performance-F44B21?style=for-the-badge&logo=lighthouse&logoColor=white)
-![Axe Core](https://img.shields.io/badge/axe--core-Accessibility-7C3AED?style=for-the-badge)
+![Axe Core](https://img.shields.io/badge/axe--core-v4.11.2-7C3AED?style=for-the-badge)
 ![Visual Regression](https://img.shields.io/badge/Visual-Regression-0EA5E9?style=for-the-badge)
 ![POSIMYTH](https://img.shields.io/badge/POSIMYTH-Internal_QA-1E293B?style=for-the-badge)
 
