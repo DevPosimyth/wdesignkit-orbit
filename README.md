@@ -203,15 +203,19 @@ bash scripts/run-all-tests.sh
 
 Run only the script that matches the QA area being tested.
 
-| QA Area | Script | Key Flags |
-|---|---|---|
-| Responsiveness | `bash scripts/qa-responsive.sh` | `--spec=auth` · `--spec=dashboard` · `--spec=widget-builder` · `--spec=homepage` |
-| Accessibility | `bash scripts/qa-accessibility.sh` | `--skip-lighthouse` |
-| Security | `bash scripts/qa-security.sh` | — |
-| SEO & Meta Tags | `bash scripts/qa-seo.sh` | — |
-| Cross-Browser | `bash scripts/qa-cross-browser.sh` | `--spec=auth` · `--spec=dashboard` · etc. |
-| Console Errors | `bash scripts/qa-console.sh` | `--spec=auth` · `--spec=dashboard` · etc. |
-| Performance | `bash scripts/lighthouse.sh` | — |
+| # | QA Area | Script | Key Flags |
+|---|---|---|---|
+| 1 | UI | `bash scripts/qa-ui.sh` | `--spec=auth` · `--update-snapshots` |
+| 2 | Functionality | `bash scripts/qa-functionality.sh` | `--spec=auth` · `--spec=dashboard` · `--spec=widget-builder` · `--spec=homepage` |
+| 3 | Responsiveness | `bash scripts/qa-responsive.sh` | `--spec=auth` · `--spec=dashboard` · etc. |
+| 4 | Logic | `bash scripts/qa-logic.sh` | `--spec=auth` · `--spec=dashboard` · etc. |
+| 5 | Security | `bash scripts/qa-security.sh` | — |
+| 6 | Performance | `bash scripts/lighthouse.sh` | — |
+| 7 | Accessibility | `bash scripts/qa-accessibility.sh` | `--skip-lighthouse` |
+| 8 | Cross-Browser | `bash scripts/qa-cross-browser.sh` | `--spec=auth` · `--spec=dashboard` · etc. |
+| 9 | Console Errors | `bash scripts/qa-console.sh` | `--spec=auth` · `--spec=dashboard` · etc. |
+| 10 | SEO & Meta Tags | `bash scripts/qa-seo.sh` | — |
+| 11 | Code Quality | `bash scripts/qa-code-quality.sh` | — |
 
 ---
 
@@ -305,13 +309,17 @@ wdesignkit-orbit/
 │
 ├── scripts/
 │   ├── run-all-tests.sh             ← Full pipeline — all tests + Lighthouse
-│   ├── lighthouse.sh                ← Lighthouse scan — performance + SEO + a11y
+│   ├── lighthouse.sh                ← Performance — Lighthouse scan both properties
+│   ├── qa-ui.sh                     ← UI — visual regression + best practices
+│   ├── qa-functionality.sh          ← Functionality — all spec files end-to-end
 │   ├── qa-responsive.sh             ← Responsiveness — all 3 viewports
-│   ├── qa-accessibility.sh          ← Accessibility — axe-core + Lighthouse a11y
+│   ├── qa-logic.sh                  ← Logic — edge cases, states, validation
 │   ├── qa-security.sh               ← Security — headers, HTTPS, WP version
-│   ├── qa-seo.sh                    ← SEO — meta tags, OG, sitemap, canonical
+│   ├── qa-accessibility.sh          ← Accessibility — axe-core + Lighthouse a11y
 │   ├── qa-cross-browser.sh          ← Cross-browser — Chromium, Firefox, WebKit
-│   └── qa-console.sh                ← Console errors — JS errors, 404s, failures
+│   ├── qa-console.sh                ← Console errors — JS errors, 404s, failures
+│   ├── qa-seo.sh                    ← SEO — meta tags, OG, sitemap, canonical
+│   └── qa-code-quality.sh           ← Code quality — lint, skips, credentials, audit
 │
 ├── docs/                            ← Reference documentation
 ├── reports/

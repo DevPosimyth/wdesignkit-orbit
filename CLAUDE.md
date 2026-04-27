@@ -226,15 +226,19 @@ Do not run all tests for every task. Match the feature to its spec file and run 
 
 ### Topic-Specific Scripts (Preferred for single-area QA)
 
-| QA Area | Script | Key Flags |
-|---|---|---|
-| Responsiveness | `bash scripts/qa-responsive.sh` | `--spec=auth` · `--spec=dashboard` · `--spec=widget-builder` · `--spec=homepage` |
-| Accessibility | `bash scripts/qa-accessibility.sh` | `--skip-lighthouse` |
-| Security | `bash scripts/qa-security.sh` | — |
-| SEO & Meta Tags | `bash scripts/qa-seo.sh` | — |
-| Cross-Browser | `bash scripts/qa-cross-browser.sh` | `--spec=auth` · `--spec=dashboard` · etc. |
-| Console Errors | `bash scripts/qa-console.sh` | `--spec=auth` · `--spec=dashboard` · etc. |
-| Performance | `bash scripts/lighthouse.sh` | — |
+| # | QA Area | Script | Key Flags |
+|---|---|---|---|
+| 1 | UI | `bash scripts/qa-ui.sh` | `--spec=auth` · `--update-snapshots` |
+| 2 | Functionality | `bash scripts/qa-functionality.sh` | `--spec=auth` · `--spec=dashboard` · `--spec=widget-builder` · `--spec=homepage` |
+| 3 | Responsiveness | `bash scripts/qa-responsive.sh` | `--spec=auth` · `--spec=dashboard` · etc. |
+| 4 | Logic | `bash scripts/qa-logic.sh` | `--spec=auth` · `--spec=dashboard` · etc. |
+| 5 | Security | `bash scripts/qa-security.sh` | — |
+| 6 | Performance | `bash scripts/lighthouse.sh` | — |
+| 7 | Accessibility | `bash scripts/qa-accessibility.sh` | `--skip-lighthouse` |
+| 8 | Cross-Browser | `bash scripts/qa-cross-browser.sh` | `--spec=auth` · `--spec=dashboard` · etc. |
+| 9 | Console Errors | `bash scripts/qa-console.sh` | `--spec=auth` · `--spec=dashboard` · etc. |
+| 10 | SEO & Meta Tags | `bash scripts/qa-seo.sh` | — |
+| 11 | Code Quality | `bash scripts/qa-code-quality.sh` | — |
 
 ### Full Pipeline (Release QA only)
 
