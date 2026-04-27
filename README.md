@@ -18,7 +18,7 @@
 
 <br />
 
-**One products. One pipeline. Zero regressions.**
+**Two products. One pipeline. Zero regressions.**
 
 `wdesignkit.com` &nbsp;·&nbsp; `learn.wdesignkit.com`
 
@@ -44,12 +44,12 @@ bash scripts/run-all-tests.sh
 
 **What that one command does:**
 
-- ✅ Runs all Playwright E2E tests across `wdesignkit.com`, and `learn.wdesignkit.com`
+- ✅ Runs all Playwright E2E tests across `wdesignkit.com` and `learn.wdesignkit.com`
 - ✅ Tests across desktop (1440px), tablet (768px), and mobile (375px) viewports
 - ✅ Catches JS console errors — zero tolerance policy enforced automatically
 - ✅ Runs visual regression — pixel-diffs every key page against the last approved baseline
 - ✅ Runs WCAG 2.1 AA accessibility scans via axe-core
-- ✅ Runs Lighthouse performance scans on all three properties
+- ✅ Runs Lighthouse performance scans on both properties
 - ✅ Generates a full HTML report with screenshots, video replays, and traces on failure
 
 **Exit codes**: `0` = all passed, safe to release &nbsp;·&nbsp; `1` = failures found, do not release.
@@ -58,7 +58,7 @@ bash scripts/run-all-tests.sh
 
 ## What It Tests
 
-### 🔐 Auth Pages — wdesignkit.com & sproutos.ai
+### 🔐 Auth Pages — wdesignkit.com
 
 Every authentication flow validated for functionality, security, and UX:
 
@@ -150,8 +150,8 @@ Create a `.env` file at the root — fill in your QA test account credentials:
 ```
 WDK_URL=https://wdesignkit.com
 LEARNING_URL=https://learn.wdesignkit.com
-WDK_USER= 
-WDK_PASS= 
+WDK_USER=
+WDK_PASS=
 ```
 
 > ⚠️ **Never commit `.env` or `qa.config.json`** — both are gitignored. Credentials must stay local only.
@@ -176,35 +176,33 @@ bash scripts/run-all-tests.sh
 
 | Flag | Effect |
 |---|---|
-| *(no flags)* | Runs all tests + Lighthouse on all 3 properties |
+| *(no flags)* | Runs all tests + Lighthouse on both properties |
 | `--skip-lighthouse` | Skips Lighthouse — faster for dev iteration |
 | `--property=wdesignkit` | Tests wdesignkit.com only |
-| `--property=sproutos` | Tests sproutos.ai only |
 | `--property=learning` | Tests learn.wdesignkit.com only |
 
 ---
 
 ### Run Individual Spec Files
 
-```bash
-npx playwright test tests/wdesignkit/auth.spec.js
-npx playwright test tests/wdesignkit/dashboard.spec.js
-npx playwright test tests/wdesignkit/widget-builder.spec.js
-npx playwright test tests/sproutos/auth.spec.js
-npx playwright test tests/learning-center/core.spec.js
-```
+> Run only the spec file that matches the feature being tested — not all specs every time.
+
+| Feature | Command |
+|---|---|
+| Auth (login, signup, forgot/reset password) | `npx playwright test tests/wdesignkit/auth.spec.js` |
+| Dashboard | `npx playwright test tests/wdesignkit/dashboard.spec.js` |
+| Widget Builder | `npx playwright test tests/wdesignkit/widget-builder.spec.js` |
+| Homepage | `npx playwright test tests/wdesignkit/homepage.spec.js` |
+| Learning Center | `npx playwright test --project=learning-desktop` |
 
 ---
 
 ### Run by Viewport
 
 ```bash
-npx playwright test --project=wdk-desktop
-npx playwright test --project=wdk-mobile
-npx playwright test --project=wdk-tablet
-npx playwright test --project=sproutos-desktop
-npx playwright test --project=sproutos-mobile
-npx playwright test --project=learning-desktop
+npx playwright test tests/wdesignkit/[spec].spec.js --project=wdk-desktop
+npx playwright test tests/wdesignkit/[spec].spec.js --project=wdk-mobile
+npx playwright test tests/wdesignkit/[spec].spec.js --project=wdk-tablet
 ```
 
 ---
@@ -236,7 +234,7 @@ Shows pass/fail per test, failure screenshots, video replays, and trace files.
 bash scripts/lighthouse.sh
 ```
 
-Scans all three properties and reports Performance, Accessibility, SEO, and Best Practices scores.
+Scans both properties and reports Performance, Accessibility, SEO, and Best Practices scores.
 
 > Requires Lighthouse: `npm install -g lighthouse`
 
@@ -254,30 +252,39 @@ wdesignkit-orbit/
 │   │   ├── widget-builder.spec.js   ← AI Chat · Enhancer · Strict Mode · Credits · Models
 │   │   └── homepage.spec.js         ← Homepage · Nav · CTAs · Responsive
 │   │
-│   ├── learning-center/
-│   │   └── core.spec.js             ← learn.wdesignkit.com
-│   │
 │   └── snapshots/                   ← Visual regression baselines (gitignored)
 │
 ├── checklists/
-│   ├── pre-release-checklist.md     ← Full sign-off gate before any release
-│   ├── ui-ux-checklist.md           ← Design quality — 40 checkpoints
+│   ├── qa-master-checklist.md       ← Index + sign-off table for all 11 areas
+│   ├── ui-ux-checklist.md           ← Layout, spacing, animation, depth
+│   ├── functionality-checklist.md   ← Buttons, forms, CRUD, auth, integrations
+│   ├── responsiveness-checklist.md  ← 320px → 1920px, touch, navigation
+│   ├── logic-checklist.md           ← Business rules, RBAC, edge cases, state
 │   ├── security-checklist.md        ← Auth · Input · Headers · Data exposure
-│   └── performance-checklist.md     ← Core Web Vitals · Lighthouse targets
+│   ├── performance-checklist.md     ← Core Web Vitals · Lighthouse · assets
+│   ├── accessibility-checklist.md   ← WCAG 2.1 AA · keyboard · ARIA · contrast
+│   ├── cross-browser-checklist.md   ← Chrome · Firefox · Safari · Edge · iOS/Android
+│   ├── console-errors-checklist.md  ← JS errors · 404s · PHP notices · CSP
+│   ├── seo-checklist.md             ← OG tags · schema · sitemap · canonicals
+│   └── code-quality-checklist.md   ← Linting · versioning · tests · build
 │
 ├── config/
 │   └── lighthouserc.json            ← Lighthouse score thresholds
 │
 ├── scripts/
 │   ├── run-all-tests.sh             ← One command: full test + Lighthouse run
-│   └── lighthouse.sh                ← Lighthouse scan across all 3 properties
+│   └── lighthouse.sh                ← Lighthouse scan across both properties
 │
 ├── docs/                            ← Reference documentation
-├── reports/                         ← Generated reports (gitignored)
+├── reports/
+│   ├── bugs/                        ← Bug reports — [feature-name].md per session
+│   ├── lighthouse/                  ← Lighthouse HTML + JSON reports (gitignored)
+│   └── playwright-html/             ← Playwright HTML report (gitignored)
 ├── test-results/                    ← Playwright artifacts (gitignored)
 │
 ├── .env                             ← Credentials — NEVER COMMIT (gitignored)
 ├── .gitignore
+├── CLAUDE.md                        ← AI QA instructions — read first every session
 ├── package.json
 ├── playwright.config.js             ← Multi-project · multi-viewport config
 ├── qa.config.example.json           ← Config template — copy to qa.config.json
@@ -295,8 +302,6 @@ wdesignkit-orbit/
 | `tests/wdesignkit/dashboard.spec.js` | 🔄 In Progress | — | wdesignkit.com |
 | `tests/wdesignkit/widget-builder.spec.js` | 🔄 In Progress | — | wdesignkit.com |
 | `tests/wdesignkit/homepage.spec.js` | 📋 Planned | — | wdesignkit.com |
-| `tests/sproutos/auth.spec.js` | 📋 Planned | — | sproutos.ai |
-| `tests/sproutos/dashboard.spec.js` | 📋 Planned | — | sproutos.ai |
 | `tests/learning-center/core.spec.js` | 📋 Planned | — | learn.wdesignkit.com |
 
 ---
@@ -320,10 +325,18 @@ wdesignkit-orbit/
 
 | Checklist | Purpose | When to Use |
 |---|---|---|
-| [Pre-Release Checklist](checklists/pre-release-checklist.md) | Full QA sign-off across all 3 properties | Before every production release |
-| [UI/UX Checklist](checklists/ui-ux-checklist.md) | Visual quality · responsiveness · interaction polish | After any UI change |
-| [Security Checklist](checklists/security-checklist.md) | Auth · input validation · headers · data exposure | Before any auth or API change |
-| [Performance Checklist](checklists/performance-checklist.md) | Core Web Vitals · Lighthouse · asset optimization | Before any major release |
+| [QA Master](checklists/qa-master-checklist.md) | Index + sign-off table across all 11 areas | Every QA session |
+| [UI / UX](checklists/ui-ux-checklist.md) | Visual quality · interaction polish · spacing | After any UI change |
+| [Functionality](checklists/functionality-checklist.md) | Buttons · forms · CRUD · auth · integrations | After any feature change |
+| [Responsiveness](checklists/responsiveness-checklist.md) | All breakpoints · touch · navigation | After any layout change |
+| [Logic](checklists/logic-checklist.md) | Business rules · RBAC · edge cases · state | After any logic change |
+| [Security](checklists/security-checklist.md) | Auth · input validation · headers · data exposure | Before any auth or API change |
+| [Performance](checklists/performance-checklist.md) | Core Web Vitals · Lighthouse · assets · DB | Before any major release |
+| [Accessibility](checklists/accessibility-checklist.md) | WCAG 2.1 AA · keyboard · ARIA · contrast | After any UI change |
+| [Cross-Browser](checklists/cross-browser-checklist.md) | Chrome · Firefox · Safari · Edge · iOS/Android | Before release |
+| [Console Errors](checklists/console-errors-checklist.md) | JS errors · 404s · PHP notices · CSP | Every QA session |
+| [SEO / Meta Tags](checklists/seo-checklist.md) | OG tags · schema · sitemap · canonicals | After any content or page change |
+| [Code Quality](checklists/code-quality-checklist.md) | Linting · versioning · tests · build | Before every release |
 
 ---
 
@@ -333,8 +346,6 @@ wdesignkit-orbit/
 |---|---|---|
 | WDesignKit Main | https://wdesignkit.com | `tests/wdesignkit/` |
 | Learning Center | https://learn.wdesignkit.com | `tests/learning-center/` |
-
----
 
 ---
 
