@@ -103,58 +103,70 @@ Your responsibility is to:
 * **UI polish gaps (minor alignment, spacing, icon consistency)**  
 * **Refinement opportunities (UX improvements, consistency enhancements, production-level finishing)**
 
-## **Bug Reporting Format (Strict for ClickUp)**
+## **Bug Reporting**
 
-### **Scope**
+### **Step 1 — Always write bugs to an MD file first**
+
+Save every bug report to:
+
+```
+reports/bugs/YYYY-MM-DD-[feature-name].md
+```
+
+Use this structure for each bug — one bug per entry, separated by `---`:
+
+```
+### [Bug Title]
+
+**Severity:** P0 / P1 / P2 / P3
+**Area:** UI / Functionality / Responsive / Logic / Security / Performance / Accessibility / Cross-Browser / Console / SEO / Code Quality
+
+**Issue:** Concise and clear bug description
+
+**Steps to Reproduce:**
+1. Step 1
+2. Step 2
+3. Step 3
+
+**Expected Result:** Correct expected behavior
+
+**Actual Result:** What actually happens
+
+---
+```
+
+**Naming convention for bug titles:**
+* Do not use numbering (e.g., \#001)
+* Start with a capital letter
+* Keep it short, clear, and meaningful
+* Follow sentence case — only first letter capital, unless specific terms require otherwise (e.g., API, URL, PRO, ACF)
+
+---
+
+### **Step 2 — ClickUp (only if a card link is provided)**
+
+If a ClickUp card link is shared, **after writing the MD file**, also log the bugs in ClickUp:
 
 * Work only within the provided card link
+* Create each bug as a **separate subtask**
+* Log only **valid and meaningful issues**
+* **Add the bug details only in the card activity** using this format exactly:
 
----
-
-### **Task Execution**
-
-* Create each bug as a **separate subtask**  
-* Log only **valid and meaningful issues**  
-* **Add the bug details only in the card activity**
-
----
-
-### **Naming Convention**
-
-* Do not use numbering (e.g., \#001)  
-* **Bug title must start with a capital letter**  
-* **Keep the title short, clear, and meaningful**  
-* **Follow sentence case (only first letter capital), unless specific data requires otherwise (e.g., API, URL, PRO, ACF)**
-
----
-
-### **Activity Section Format (Strict)**
-
-Follow this structure exactly:
-
+```
 Issue: Concise and clear bug description
 
 Step to Reproduce:
+Step 1
+Step 2
+Step 3
 
-Step 1   
-Step 2   
-Step 3 
+Expected Result: Correct expected behavior
+```
 
-Expected Result: Correct expected behavior  
----
+* Do not include the card name in the activity section
+* Do not add any unclear or irrelevant content
 
-### **Constraints**
-
-* Do not include card name in activity section  
-* Avoid unclear or irrelevant content
-
----
-
-### **Acceptance Criteria**
-
-* Separate subtask for each bug  
-* Proper format followed  
-* Clear and reproducible issues only
+**If no ClickUp card link is provided — MD file only. Do not create ClickUp tasks.**
 
 ## **Retesting Instructions**
 
@@ -188,32 +200,40 @@ When a bug is marked as fixed:
 
 ## **Test Suites Reference**
 
-### Full Pipeline Scripts (Preferred)
+### **Rule: Run only the spec file that matches the feature being tested.**
 
-| Command | What It Runs |
+Do not run all tests for every task. Match the feature to its spec file and run that file only. Run the full pipeline only for full release QA.
+
+---
+
+### Spec File → Feature Mapping
+
+| Feature / Area Being Tested | Command to Run |
 |---|---|
-| `bash scripts/run-all-tests.sh` | Full pipeline — all Playwright projects across all viewports + Lighthouse scans. **Use this before every release.** Exit 0 = safe to release, exit 1 = blocked. |
-| `bash scripts/run-all-tests.sh --skip-lighthouse` | Playwright only — skips Lighthouse. Use during development iteration. |
-| `bash scripts/run-all-tests.sh --property=wdesignkit` | WDesignKit (wdesignkit.com) only — desktop + mobile + tablet. |
-| `bash scripts/run-all-tests.sh --property=learning` | Learning Center (learn.wdesignkit.com) only. |
-| `bash scripts/lighthouse.sh` | Lighthouse only — scans wdesignkit.com and learn.wdesignkit.com. Reports Performance, Accessibility, SEO, Best Practices. |
+| Login, signup, forgot password, reset password | `npx playwright test tests/wdesignkit/auth.spec.js` |
+| Dashboard — prompt, file attach, link insert, language | `npx playwright test tests/wdesignkit/dashboard.spec.js` |
+| Widget Builder — AI chat, enhancer, strict mode, credits, models | `npx playwright test tests/wdesignkit/widget-builder.spec.js` |
+| Homepage — nav, CTAs, layout | `npx playwright test tests/wdesignkit/homepage.spec.js` |
+| Learning Center — docs, nav, SEO, security | `npx playwright test --project=learning-desktop` |
 
-### Individual Playwright Commands
+### Viewport-Specific Runs (use when testing responsive behavior)
 
-| Suite | Command | Covers |
-|---|---|---|
-| All specs (headless) | `npm test` | All spec files across all projects |
-| All specs (headed) | `npm run test:headed` | All specs, browser visible — use for debugging |
-| All specs + HTML report | `npm run test:report` | All specs, generates full HTML report |
-| Auth pages | `npx playwright test tests/wdesignkit/auth.spec.js` | Login, signup, forgot password, reset password |
-| Dashboard | `npx playwright test tests/wdesignkit/dashboard.spec.js` | Prompt, file attach, link insert, language selector |
-| Widget Builder | `npx playwright test tests/wdesignkit/widget-builder.spec.js` | AI chat, enhancer, strict mode, credits, models |
-| Homepage | `npx playwright test tests/wdesignkit/homepage.spec.js` | Homepage, nav, CTAs, responsive |
-| Desktop viewport only | `npx playwright test --project=wdk-desktop` | All WDesignKit specs at 1440px |
-| Mobile viewport only | `npx playwright test --project=wdk-mobile` | All WDesignKit specs at 375px |
-| Tablet viewport only | `npx playwright test --project=wdk-tablet` | All WDesignKit specs at 768px |
-| Learning Center | `npx playwright test --project=learning-desktop` | learn.wdesignkit.com — docs, nav, SEO, security |
-| View HTML report | `npx playwright show-report` | Open last run's report with screenshots, video, traces |
+| Viewport | Command |
+|---|---|
+| Desktop only (1440px) | `npx playwright test tests/wdesignkit/[spec].spec.js --project=wdk-desktop` |
+| Mobile only (375px) | `npx playwright test tests/wdesignkit/[spec].spec.js --project=wdk-mobile` |
+| Tablet only (768px) | `npx playwright test tests/wdesignkit/[spec].spec.js --project=wdk-tablet` |
+
+### Full Pipeline (Release QA only)
+
+| Command | When to Use |
+|---|---|
+| `bash scripts/run-all-tests.sh` | Full release QA — all spec files + all viewports + Lighthouse. Exit 0 = safe, exit 1 = blocked. |
+| `bash scripts/run-all-tests.sh --skip-lighthouse` | Full Playwright suite only, no Lighthouse — use for pre-release smoke test. |
+| `bash scripts/run-all-tests.sh --property=wdesignkit` | All WDesignKit specs only (desktop + mobile + tablet). |
+| `bash scripts/run-all-tests.sh --property=learning` | Learning Center specs only. |
+| `bash scripts/lighthouse.sh` | Performance audit only — wdesignkit.com and learn.wdesignkit.com. |
+| `npx playwright show-report` | Open last run's HTML report — screenshots, video, traces. |
 
 ---
 
