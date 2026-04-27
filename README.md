@@ -10,7 +10,7 @@
 
 <br />
 
-![Version](https://img.shields.io/badge/Orbit-v2.5.0-6366F1?style=for-the-badge)
+![Orbit Version](https://img.shields.io/badge/Orbit-v2.5.0-6366F1?style=for-the-badge)
 ![Playwright](https://img.shields.io/badge/Playwright-v1.59.1-2EAD33?style=for-the-badge&logo=playwright&logoColor=white)
 ![Lighthouse](https://img.shields.io/badge/Lighthouse-Performance-F44B21?style=for-the-badge&logo=lighthouse&logoColor=white)
 ![Axe Core](https://img.shields.io/badge/axe--core-v4.11.2-7C3AED?style=for-the-badge)
@@ -30,6 +30,21 @@
 <br />
 
 </div>
+
+---
+
+## Versions
+
+| Package | Version |
+|---|---|
+| **Orbit** (this repo) | `v2.5.0` |
+| `@playwright/test` | `v1.59.1` |
+| `playwright` | `v1.59.1` |
+| `@axe-core/playwright` | `v4.11.2` |
+| `dotenv` | `v17.4.2` |
+| `zod` | `v4.3.6` |
+
+> Update this table whenever versions are bumped.
 
 ---
 
