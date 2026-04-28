@@ -208,6 +208,23 @@ test.describe('Plugin Login & Auth', () => {
       await page.locator('.wdkit-register-button').first().click();
       const popup = page.locator('.wkit-in-login-popup-content.wkit-small-popup').first();
       await expect(popup).toBeVisible({ timeout: 20000 });
+      // Highlight the misleading text inside the popup, screenshot just the popup
+      await page.evaluate(() => {
+        const el = document.querySelector('.wkit-lg-popup-text');
+        if (el) {
+          el.style.outline = '3px solid red';
+          el.style.outlineOffset = '3px';
+          el.style.borderRadius = '3px';
+          el.style.backgroundColor = 'rgba(255,0,0,0.08)';
+        }
+      });
+      await popup.screenshot({
+        path: 'reports/bugs/screenshots/login/bug-wrong-credentials-misleading-popup.png'
+      });
+      await page.evaluate(() => {
+        const el = document.querySelector('.wkit-lg-popup-text');
+        if (el) { el.style.outline = ''; el.style.backgroundColor = ''; }
+      });
       const popupText = await popup.innerText();
       // This FAILS intentionally — "Are you new?" is a confirmed UX bug for returning users
       expect(
@@ -389,10 +406,37 @@ test.describe('Plugin Login & Auth', () => {
       await page.waitForSelector('.wkit-forgot-pass-input input', { timeout: 8000 });
       await page.locator('.wkit-forgot-pass-input input').first().fill('test@example.com');
       await page.locator('.wdkit-register-button').first().click();
+      await page.waitForTimeout(5000);
+      // Highlight the area below the submit button where a toast should appear, screenshot the form
+      await page.evaluate(() => {
+        const btn = document.querySelector('.wdkit-fgt-pass .wdkit-register-button');
+        if (btn) {
+          btn.style.outline = '3px solid red';
+          btn.style.outlineOffset = '3px';
+        }
+        // Also add a red dashed placeholder where the missing toast should be
+        const card = document.querySelector('.wdkit-form-card');
+        if (card) {
+          const marker = document.createElement('div');
+          marker.id = 'qa-missing-toast-marker';
+          marker.style.cssText = 'border:2px dashed red;padding:8px;margin-top:8px;color:red;font-size:12px;border-radius:4px;text-align:center;';
+          marker.innerText = '⚠ No toast/notification shown here after submit';
+          card.appendChild(marker);
+        }
+      });
+      await page.locator('.wdkit-fgt-pass').first().screenshot({
+        path: 'reports/bugs/screenshots/login/bug-forgot-password-no-feedback.png'
+      });
+      await page.evaluate(() => {
+        const btn = document.querySelector('.wdkit-fgt-pass .wdkit-register-button');
+        if (btn) btn.style.outline = '';
+        const marker = document.getElementById('qa-missing-toast-marker');
+        if (marker) marker.remove();
+      });
       // Must show a toast / notification — confirmed absent in live testing (BUG)
       await expect(
         page.locator('.wkit-login-signup-with-notify, .wdkit-notify-popup, .wkit-small-popup, .wkit-in-login-popup-content').first()
-      ).toBeVisible({ timeout: 20000 });
+      ).toBeVisible({ timeout: 15000 });
     });
 
   });
@@ -419,6 +463,20 @@ test.describe('Plugin Login & Auth', () => {
       await waitForLoginPanel(page);
       const link = page.locator('.wdkit-social-login-btns a').filter({ hasText: 'Google' }).first();
       const href = await link.getAttribute('href');
+      // Highlight the Google button in red, screenshot just that element
+      await page.evaluate(() => {
+        const el = document.querySelector('.wdkit-social-login-btns a:first-child, .wdkit-social-login-btns a');
+        if (el) {
+          el.style.outline = '3px solid red';
+          el.style.outlineOffset = '3px';
+          el.style.borderRadius = '4px';
+        }
+      });
+      await link.screenshot({ path: 'reports/bugs/screenshots/login/bug-google-no-href.png' });
+      await page.evaluate(() => {
+        const el = document.querySelector('.wdkit-social-login-btns a:first-child, .wdkit-social-login-btns a');
+        if (el) el.style.outline = '';
+      });
       expect(
         href,
         `Google login <a> has no href (href="${href}") — button is a dead link, clicking does nothing`
@@ -430,6 +488,22 @@ test.describe('Plugin Login & Auth', () => {
       await waitForLoginPanel(page);
       const link = page.locator('.wdkit-social-login-btns a').filter({ hasText: 'Facebook' }).first();
       const href = await link.getAttribute('href');
+      // Highlight the Facebook button in red, screenshot just that element
+      await page.evaluate(() => {
+        const els = document.querySelectorAll('.wdkit-social-login-btns a');
+        const fb = Array.from(els).find(e => e.innerText.includes('Facebook'));
+        if (fb) {
+          fb.style.outline = '3px solid red';
+          fb.style.outlineOffset = '3px';
+          fb.style.borderRadius = '4px';
+        }
+      });
+      await link.screenshot({ path: 'reports/bugs/screenshots/login/bug-facebook-no-href.png' });
+      await page.evaluate(() => {
+        const els = document.querySelectorAll('.wdkit-social-login-btns a');
+        const fb = Array.from(els).find(e => e.innerText.includes('Facebook'));
+        if (fb) fb.style.outline = '';
+      });
       expect(
         href,
         `Facebook login <a> has no href (href="${href}") — button is a dead link, clicking does nothing`
@@ -533,6 +607,21 @@ test.describe('Plugin Login & Auth', () => {
     test('password input has an id attribute — required for label association (WCAG 1.3.1)', async ({ page }) => {
       await waitForLoginPanel(page);
       const id = await page.locator('.wdkit-password-cover input').first().getAttribute('id');
+      // Highlight the password input in red — missing id attribute
+      await page.evaluate(() => {
+        const pw = document.querySelector('.wdkit-password-cover input');
+        if (pw) {
+          pw.style.outline = '3px solid red';
+          pw.style.outlineOffset = '3px';
+        }
+      });
+      await page.locator('.wdkit-password-cover').first().screenshot({
+        path: 'reports/bugs/screenshots/login/bug-password-input-missing-id.png'
+      });
+      await page.evaluate(() => {
+        const pw = document.querySelector('.wdkit-password-cover input');
+        if (pw) pw.style.outline = '';
+      });
       expect(
         id,
         `Password input is MISSING id attribute — no <label> can be associated with it (WCAG 1.3.1 failure). Found: "${id}"`
@@ -588,6 +677,25 @@ test.describe('Plugin Login & Auth', () => {
 
     test('login inputs are wrapped in a <form> element', async ({ page }) => {
       await waitForLoginPanel(page);
+      // Highlight both inputs + button in red to show they're not inside a <form>
+      await page.evaluate(() => {
+        ['#WDkitUserEmail', '.wdkit-password-cover input', '.wdkit-register-button'].forEach(sel => {
+          const el = document.querySelector(sel);
+          if (el) {
+            el.style.outline = '3px solid red';
+            el.style.outlineOffset = '2px';
+          }
+        });
+      });
+      await page.locator('.wdkit-form-card').first().screenshot({
+        path: 'reports/bugs/screenshots/login/bug-no-form-wrapper.png'
+      });
+      await page.evaluate(() => {
+        ['#WDkitUserEmail', '.wdkit-password-cover input', '.wdkit-register-button'].forEach(sel => {
+          const el = document.querySelector(sel);
+          if (el) el.style.outline = '';
+        });
+      });
       const count = await page.locator('.wdkit-login form, .wdkit-form-card form').first().count();
       expect(
         count,
@@ -598,6 +706,21 @@ test.describe('Plugin Login & Auth', () => {
     test('email input does not have autocomplete="off"', async ({ page }) => {
       await waitForLoginPanel(page);
       const val = await page.locator('#WDkitUserEmail').first().getAttribute('autocomplete');
+      // Highlight only the email input — autocomplete="off" is the bug
+      await page.evaluate(() => {
+        const el = document.querySelector('#WDkitUserEmail');
+        if (el) {
+          el.style.outline = '3px solid red';
+          el.style.outlineOffset = '3px';
+        }
+      });
+      await page.locator('#WDkitUserEmail').first().screenshot({
+        path: 'reports/bugs/screenshots/login/bug-email-autocomplete-off.png'
+      });
+      await page.evaluate(() => {
+        const el = document.querySelector('#WDkitUserEmail');
+        if (el) el.style.outline = '';
+      });
       expect(
         val,
         `Email input has autocomplete="${val}" — blocks password managers. Should be "email" or "username"`
@@ -607,6 +730,21 @@ test.describe('Plugin Login & Auth', () => {
     test('password input does not have autocomplete="off"', async ({ page }) => {
       await waitForLoginPanel(page);
       const val = await page.locator('.wdkit-password-cover input').first().getAttribute('autocomplete');
+      // Highlight only the password input — autocomplete="off" is the bug
+      await page.evaluate(() => {
+        const el = document.querySelector('.wdkit-password-cover input');
+        if (el) {
+          el.style.outline = '3px solid red';
+          el.style.outlineOffset = '3px';
+        }
+      });
+      await page.locator('.wdkit-password-cover').first().screenshot({
+        path: 'reports/bugs/screenshots/login/bug-password-autocomplete-off.png'
+      });
+      await page.evaluate(() => {
+        const el = document.querySelector('.wdkit-password-cover input');
+        if (el) el.style.outline = '';
+      });
       expect(
         val,
         `Password input has autocomplete="${val}" — blocks password managers. Should be "current-password"`
@@ -656,6 +794,21 @@ test.describe('Plugin Login & Auth', () => {
       await openLoginPanel(page);
       await waitForLoginPanel(page);
       const box = await page.locator('.wdkit-register-button').first().boundingBox();
+      // Highlight only the button — undersized tap target is the bug
+      await page.evaluate(() => {
+        const el = document.querySelector('.wdkit-register-button');
+        if (el) {
+          el.style.outline = '3px solid red';
+          el.style.outlineOffset = '3px';
+        }
+      });
+      await page.locator('.wdkit-register-button').first().screenshot({
+        path: 'reports/bugs/screenshots/login/bug-login-button-42px-tap-target.png'
+      });
+      await page.evaluate(() => {
+        const el = document.querySelector('.wdkit-register-button');
+        if (el) el.style.outline = '';
+      });
       expect(box, '"Log in" button bounding box not measurable').toBeTruthy();
       expect(
         box.height,

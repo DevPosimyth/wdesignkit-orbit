@@ -5,7 +5,7 @@
 **Test Date:** 2026-04-28
 **Tested By:** QA Automation — Playwright (plugin-desktop)
 **Test File:** `tests/plugin/login.spec.js`
-**Result:** 9 bugs confirmed · 52 tests passed · 9 tests failed (each failure = one bug below)
+**Result:** 9 bugs confirmed · 52 tests passed · 9 tests failed
 
 ---
 
@@ -14,7 +14,7 @@
 **Severity:** P1
 **Area:** Functionality
 
-**Issue:** The "Continue with Google" button renders as an `<a>` element with no `href` attribute (value is `null`). Clicking it produces no action — no OAuth redirect, no navigation. The button looks functional but is completely broken.
+**Issue:** The "Continue with Google" button is an `<a>` element with no `href` attribute (value is `null`). Clicking it produces no action — no OAuth redirect, no navigation. The button looks functional but is completely broken.
 
 **Steps to Reproduce:**
 1. Open the WDesignKit plugin page while logged out of WDesignKit
@@ -24,6 +24,8 @@
 **Expected Result:** User is redirected to Google OAuth for authentication
 
 **Actual Result:** Nothing happens — `href` is `null`, no redirect occurs
+
+![Google no href](./screenshots/login/bug-google-no-href.png)
 
 ---
 
@@ -42,6 +44,8 @@
 
 **Actual Result:** Nothing happens — `href` is `null`, no redirect occurs
 
+![Facebook no href](./screenshots/login/bug-facebook-no-href.png)
+
 ---
 
 ### Forgot password — no visible feedback after submitting a valid email
@@ -49,7 +53,7 @@
 **Severity:** P1
 **Area:** Functionality
 
-**Issue:** After entering a valid email address in the Forgot Password form and clicking "Reset Now", no response is shown — no success toast, no error notification, no confirmation message. The form stays in its default state. The user has no way to know if the request was received or failed.
+**Issue:** After entering a valid email in the Forgot Password form and clicking "Reset Now", no response is shown — no success toast, no error notification, no confirmation message. The form stays in its default state with no indication that the request was received or failed.
 
 **Steps to Reproduce:**
 1. On the login panel click "Forgot Password?"
@@ -57,9 +61,11 @@
 3. Click "Reset Now"
 4. Wait up to 20 seconds
 
-**Expected Result:** A toast or notification appears confirming the reset link was sent, or an error message if the email is not found
+**Expected Result:** A toast or notification appears confirming the reset link was sent, or an error message if email not found
 
 **Actual Result:** No popup, no toast, no state change — form remains identical after submission
+
+![Forgot password no feedback](./screenshots/login/bug-forgot-password-no-feedback.png)
 
 ---
 
@@ -68,7 +74,7 @@
 **Severity:** P2
 **Area:** Logic / UX
 
-**Issue:** When a returning user enters wrong credentials, the error popup says "Are you logging in to WDesignKit for the first time?" with buttons "Yes, I'm new" and "No, I forgot my password." This is misleading — the user simply typed the wrong password. Offering "Yes, I'm new" as an option implies their account doesn't exist, which is not the case.
+**Issue:** When a returning user enters wrong credentials, the error popup says "Are you logging in to WDesignKit for the first time?" with buttons "Yes, I'm new" and "No, I forgot my password." This is misleading — the user simply typed the wrong password. Offering "Yes, I'm new" implies their account does not exist.
 
 **Steps to Reproduce:**
 1. On the login panel enter a registered email with an incorrect password
@@ -79,6 +85,8 @@
 
 **Actual Result:** Popup reads — *"Login Failed · Are you logging in to WDesignKit for the first time? · Yes, I'm new · No, I forgot my password"*
 
+![Wrong credentials misleading popup](./screenshots/login/bug-wrong-credentials-misleading-popup.png)
+
 ---
 
 ### Password input missing id attribute — WCAG 1.3.1 failure
@@ -86,7 +94,7 @@
 **Severity:** P2
 **Area:** Accessibility
 
-**Issue:** The password `<input>` has no `id` attribute. Without an `id`, a `<label>` cannot be programmatically associated via `for="..."`. Screen readers announce the field as unlabelled when focused. This violates WCAG 2.1 SC 1.3.1 (Info and Relationships).
+**Issue:** The password `<input>` has no `id` attribute. Without an `id`, a `<label>` cannot be programmatically associated via `for="..."`. Screen readers announce the field as unlabelled when focused. Violates WCAG 2.1 SC 1.3.1.
 
 **Steps to Reproduce:**
 1. Open the login panel
@@ -97,6 +105,8 @@
 
 **Actual Result:** `id` attribute is absent — no label association possible
 
+![Password input missing id](./screenshots/login/bug-password-input-missing-id.png)
+
 ---
 
 ### Login form inputs not wrapped in a form element
@@ -104,16 +114,18 @@
 **Severity:** P2
 **Area:** Functionality / UX
 
-**Issue:** Email and password inputs are placed directly in a `<div class="wdkit-form-card">` with no enclosing `<form>` element. Consequences: browser will not offer to save/autofill credentials, password managers cannot detect the form, and pressing Enter from the email field does not move focus to password as expected.
+**Issue:** Email and password inputs are placed directly in a `<div class="wdkit-form-card">` with no enclosing `<form>` element. Browser will not offer to save/autofill credentials, password managers cannot detect the form, and pressing Enter from the email field does not submit as expected.
 
 **Steps to Reproduce:**
 1. Open the login panel
 2. Inspect `.wdkit-form-card` in DevTools
 3. Check whether a `<form>` element wraps the inputs
 
-**Expected Result:** All login inputs and the submit button are inside a `<form>` element
+**Expected Result:** All login inputs and submit button are inside a `<form>` element
 
 **Actual Result:** No `<form>` element — inputs sit directly in a `<div>`
+
+![No form wrapper](./screenshots/login/bug-no-form-wrapper.png)
 
 ---
 
@@ -122,7 +134,7 @@
 **Severity:** P2
 **Area:** UX
 
-**Issue:** The email input (`#WDkitUserEmail`) has `autocomplete="off"` explicitly set, which prevents all browser-native autofill and password managers (1Password, LastPass, Bitwarden, Dashlane) from filling the field. This breaks a workflow the majority of users rely on.
+**Issue:** The email input (`#WDkitUserEmail`) has `autocomplete="off"` explicitly set, blocking all browser-native autofill and password managers (1Password, LastPass, Bitwarden, Dashlane) from filling the field.
 
 **Steps to Reproduce:**
 1. Open the login panel
@@ -133,6 +145,8 @@
 
 **Actual Result:** `autocomplete="off"` — autofill actively blocked
 
+![Email autocomplete off](./screenshots/login/bug-email-autocomplete-off.png)
+
 ---
 
 ### Password input has autocomplete="off" — blocks password managers
@@ -140,7 +154,7 @@
 **Severity:** P2
 **Area:** UX
 
-**Issue:** The password `<input>` also has `autocomplete="off"`, which blocks password managers from filling the password field and prevents the browser's "save this password?" prompt from appearing after a successful login.
+**Issue:** The password `<input>` also has `autocomplete="off"`, blocking password managers from filling the field and preventing the browser's "save this password?" prompt after login.
 
 **Steps to Reproduce:**
 1. Open the login panel
@@ -151,6 +165,8 @@
 
 **Actual Result:** `autocomplete="off"` — password autofill blocked
 
+![Password autocomplete off](./screenshots/login/bug-password-autocomplete-off.png)
+
 ---
 
 ### "Log in" button tap target is only 42px on mobile — below WCAG minimum
@@ -158,7 +174,7 @@
 **Severity:** P3
 **Area:** Accessibility / Responsive
 
-**Issue:** At 375px viewport width (mobile), the "Log in" button renders at 42px height. WCAG 2.1 SC 2.5.5 and both Apple and Google mobile HIG require a minimum touch target of 44px. The button is 2px short, making it harder to tap reliably on small screens.
+**Issue:** At 375px viewport (mobile), the "Log in" button renders at 42px height. WCAG 2.1 SC 2.5.5 and both Apple and Google mobile HIG require a minimum touch target of 44px. The button is 2px short.
 
 **Steps to Reproduce:**
 1. Open the login panel at 375×812 viewport
@@ -167,6 +183,8 @@
 **Expected Result:** Button height ≥ 44px
 
 **Actual Result:** Button height = 42px
+
+![Login button 42px tap target](./screenshots/login/bug-login-button-42px-tap-target.png)
 
 ---
 
