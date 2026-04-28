@@ -17,11 +17,29 @@
 
 const { test, expect } = require('@playwright/test');
 
-const ADMIN_USER  = (process.env.WP_ADMIN_USER   || 'admin').trim();
-const ADMIN_PASS  = (process.env.WP_ADMIN_PASS   || 'admin@123').trim();
-const WDKIT_EMAIL = (process.env.WDKIT_EMAIL     || '').trim();
-const WDKIT_PASS  = (process.env.WDKIT_PASSWORD  || '').trim();
-const WDKIT_TOKEN = (process.env.WDKIT_API_TOKEN || '').trim();
+// WordPress admin
+const ADMIN_USER    = (process.env.WP_ADMIN_USER     || 'admin').trim();
+const ADMIN_PASS    = (process.env.WP_ADMIN_PASS     || 'admin@123').trim();
+
+// WDesignKit Account 1 — Primary
+const WDKIT_EMAIL   = (process.env.WDKIT_EMAIL       || '').trim();
+const WDKIT_PASS    = (process.env.WDKIT_PASSWORD    || '').trim();
+const WDKIT_TOKEN   = (process.env.WDKIT_API_TOKEN   || '').trim();
+
+// WDesignKit Account 2 — Secondary
+const WDKIT_EMAIL_2       = (process.env.WDKIT_EMAIL_2         || '').trim();
+const WDKIT_PASS_2        = (process.env.WDKIT_PASSWORD_2      || '').trim();
+const WDKIT_TOKEN_2       = (process.env.WDKIT_API_TOKEN_2     || '').trim();
+
+// WDesignKit Admin account
+const WDKIT_ADMIN_EMAIL   = (process.env.WDKIT_ADMIN_EMAIL     || '').trim();
+const WDKIT_ADMIN_PASS    = (process.env.WDKIT_ADMIN_PASSWORD  || '').trim();
+const WDKIT_ADMIN_TOKEN   = (process.env.WDKIT_ADMIN_API_TOKEN || '').trim();
+
+// WDesignKit Agency Bundle account
+const WDKIT_AGENCY_EMAIL  = (process.env.WDKIT_AGENCY_EMAIL    || '').trim();
+const WDKIT_AGENCY_PASS   = (process.env.WDKIT_AGENCY_PASSWORD || '').trim();
+const WDKIT_AGENCY_TOKEN  = (process.env.WDKIT_AGENCY_API_TOKEN || '').trim();
 
 // ── Helper: WordPress admin login ────────────────────────────────────────────
 async function wpLogin(page) {
