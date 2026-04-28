@@ -22,7 +22,7 @@ module.exports = defineConfig({
   testDir: './tests',
 
   // ── Run tests in parallel ───────────────────────────────────────────────────
-  fullyParallel: false,
+  fullyParallel: true,
 
   // ── Fail the build on CI if test.only is accidentally left in ───────────────
   forbidOnly: !!process.env.CI,
@@ -31,7 +31,7 @@ module.exports = defineConfig({
   retries: process.env.CI ? 1 : 0,
 
   // ── Number of parallel workers ──────────────────────────────────────────────
-  workers: 1,
+  workers: 4,
 
   // ── Reporter ────────────────────────────────────────────────────────────────
   reporter: [
