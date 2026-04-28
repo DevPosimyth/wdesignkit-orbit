@@ -1,6 +1,15 @@
 // =============================================================================
 // WDesignKit Orbit — Playwright Configuration
-// Properties: wdesignkit.com · sproutos.ai · learn.wdesignkit.com
+//
+// Test Types:
+//   server  → tests/wdesignkit/      — wdesignkit.com (SaaS web app)
+//   plugin  → tests/plugin/          — WordPress plugin (local / staging WP)
+//   learn   → tests/learning-center/ — learn.wdesignkit.com
+//
+// Projects:
+//   server  → wdk-desktop · wdk-mobile · wdk-tablet
+//   plugin  → plugin-desktop · plugin-mobile · plugin-tablet
+//   learn   → learning-desktop
 // =============================================================================
 
 require('dotenv').config();
@@ -32,25 +41,12 @@ module.exports = defineConfig({
 
   // ── Global test settings ────────────────────────────────────────────────────
   use: {
-    // Base URL — override with WDK_URL in .env
     baseURL: process.env.WDK_URL || 'https://wdesignkit.com',
-
-    // Capture screenshot only on failure
     screenshot: 'only-on-failure',
-
-    // Record video only on failure
     video: 'retain-on-failure',
-
-    // Collect trace on first retry — open with: npx playwright show-trace
     trace: 'on-first-retry',
-
-    // Wait for network to be idle before test actions
     actionTimeout: 15000,
-
-    // Navigation timeout
     navigationTimeout: 30000,
-
-    // Ignore HTTPS errors (useful for staging environments)
     ignoreHTTPSErrors: false,
   },
 
@@ -71,10 +67,13 @@ module.exports = defineConfig({
   // ── Global timeout per test ──────────────────────────────────────────────────
   timeout: 60000,
 
-  // ── Projects — multi-viewport testing ───────────────────────────────────────
+  // ── Projects ─────────────────────────────────────────────────────────────────
   projects: [
 
-    // ── WDesignKit — Desktop ──────────────────────────────────────────────────
+    // ==========================================================================
+    // SERVER — wdesignkit.com (SaaS web app)
+    // ==========================================================================
+
     {
       name: 'wdk-desktop',
       testMatch: 'tests/wdesignkit/**/*.spec.js',
@@ -85,7 +84,6 @@ module.exports = defineConfig({
       },
     },
 
-    // ── WDesignKit — Mobile ───────────────────────────────────────────────────
     {
       name: 'wdk-mobile',
       testMatch: 'tests/wdesignkit/**/*.spec.js',
@@ -96,7 +94,6 @@ module.exports = defineConfig({
       },
     },
 
-    // ── WDesignKit — Tablet ───────────────────────────────────────────────────
     {
       name: 'wdk-tablet',
       testMatch: 'tests/wdesignkit/**/*.spec.js',
@@ -107,7 +104,49 @@ module.exports = defineConfig({
       },
     },
 
-    // ── Learning Center — Desktop ─────────────────────────────────────────────
+    // ==========================================================================
+    // PLUGIN — WordPress plugin (local or staging WordPress install)
+    // Set PLUGIN_URL in .env — e.g. http://localhost:8881 or https://staging.site.com
+    // Set WP_ADMIN_USER and WP_ADMIN_PASS in .env
+    // ==========================================================================
+
+    {
+      name: 'plugin-desktop',
+      testMatch: 'tests/plugin/**/*.spec.js',
+      use: {
+        ...devices['Desktop Chrome'],
+        baseURL: process.env.PLUGIN_URL || 'http://localhost:8881',
+        viewport: { width: 1440, height: 900 },
+        ignoreHTTPSErrors: true,
+      },
+    },
+
+    {
+      name: 'plugin-mobile',
+      testMatch: 'tests/plugin/**/*.spec.js',
+      use: {
+        ...devices['Pixel 5'],
+        baseURL: process.env.PLUGIN_URL || 'http://localhost:8881',
+        viewport: { width: 375, height: 812 },
+        ignoreHTTPSErrors: true,
+      },
+    },
+
+    {
+      name: 'plugin-tablet',
+      testMatch: 'tests/plugin/**/*.spec.js',
+      use: {
+        ...devices['iPad (gen 7)'],
+        baseURL: process.env.PLUGIN_URL || 'http://localhost:8881',
+        viewport: { width: 768, height: 1024 },
+        ignoreHTTPSErrors: true,
+      },
+    },
+
+    // ==========================================================================
+    // LEARNING CENTER — learn.wdesignkit.com
+    // ==========================================================================
+
     {
       name: 'learning-desktop',
       testMatch: 'tests/learning-center/**/*.spec.js',

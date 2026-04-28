@@ -1,39 +1,50 @@
 #!/bin/bash
 # =============================================================================
 # WDesignKit Orbit — Responsiveness QA
-# Runs all WDesignKit spec files across desktop, tablet, and mobile viewports
-# Usage: bash scripts/qa-responsive.sh
-#        bash scripts/qa-responsive.sh --spec=auth
-#        bash scripts/qa-responsive.sh --spec=dashboard
-#        bash scripts/qa-responsive.sh --spec=widget-builder
-#        bash scripts/qa-responsive.sh --spec=homepage
+# Runs spec files across desktop, tablet, and mobile viewports
+#
+# Usage:
+#   bash scripts/qa-responsive.sh                        # server, all specs
+#   bash scripts/qa-responsive.sh --type=plugin          # plugin tests
+#   bash scripts/qa-responsive.sh --type=server --spec=auth
+#   bash scripts/qa-responsive.sh --type=plugin --spec=activation
 # =============================================================================
 
 if [ -f .env ]; then
   export $(grep -v '^#' .env | xargs)
 fi
 
+TYPE="server"
 SPEC="all"
 FAILED=0
 TIMESTAMP=$(date +"%Y-%m-%d_%H-%M-%S")
 
 for arg in "$@"; do
   case $arg in
+    --type=*) TYPE="${arg#*=}" ;;
     --spec=*) SPEC="${arg#*=}" ;;
   esac
 done
 
-# Resolve test path
-if [ "$SPEC" = "all" ]; then
-  TESTPATH="tests/wdesignkit"
+# Resolve test path and project prefix based on type
+if [ "$TYPE" = "plugin" ]; then
+  TESTBASE="tests/plugin"
+  PROJECT_PREFIX="plugin"
 else
-  TESTPATH="tests/wdesignkit/${SPEC}.spec.js"
+  TESTBASE="tests/wdesignkit"
+  PROJECT_PREFIX="wdk"
+fi
+
+if [ "$SPEC" = "all" ]; then
+  TESTPATH="$TESTBASE"
+else
+  TESTPATH="${TESTBASE}/${SPEC}.spec.js"
 fi
 
 echo ""
 echo "========================================="
 echo " WDesignKit Orbit — Responsiveness QA"
-echo " Spec: $SPEC"
+echo " Type: $TYPE | Spec: $SPEC"
 echo " Started: $TIMESTAMP"
 echo " Viewports: 1440px · 768px · 375px"
 echo "========================================="
@@ -55,9 +66,9 @@ run_viewport() {
   echo ""
 }
 
-run_viewport "Desktop  (1440px)" "wdk-desktop"
-run_viewport "Tablet   (768px)"  "wdk-tablet"
-run_viewport "Mobile   (375px)"  "wdk-mobile"
+run_viewport "Desktop  (1440px)" "${PROJECT_PREFIX}-desktop"
+run_viewport "Tablet   (768px)"  "${PROJECT_PREFIX}-tablet"
+run_viewport "Mobile   (375px)"  "${PROJECT_PREFIX}-mobile"
 
 echo "========================================="
 echo " RESPONSIVENESS SUMMARY"

@@ -164,10 +164,20 @@ cp qa.config.example.json qa.config.json
 Create a `.env` file at the root — fill in your QA test account credentials:
 
 ```
+# Server (SaaS app)
 WDK_URL=https://wdesignkit.com
 LEARNING_URL=https://learn.wdesignkit.com
 WDK_USER=
 WDK_PASS=
+
+# Plugin (WordPress local or staging install)
+PLUGIN_URL=http://localhost:8881
+WP_ADMIN_USER=admin
+WP_ADMIN_PASS=
+WP_SUBSCRIBER_USER=subscriber
+WP_SUBSCRIBER_PASS=
+ELEMENTOR_TEST_PAGE_ID=2
+GUTENBERG_TEST_PAGE_ID=3
 ```
 
 > ⚠️ **Never commit `.env` or `qa.config.json`** — both are gitignored. Credentials must stay local only.
@@ -192,10 +202,11 @@ bash scripts/run-all-tests.sh
 
 | Flag | Effect |
 |---|---|
-| *(no flags)* | Runs all tests + Lighthouse on both properties |
-| `--skip-lighthouse` | Skips Lighthouse — faster for dev iteration |
-| `--property=wdesignkit` | Tests wdesignkit.com only |
-| `--property=learning` | Tests learn.wdesignkit.com only |
+| *(no flags)* | Runs server + plugin + learning + Lighthouse |
+| `--type=server` | Server tests only (wdesignkit.com) |
+| `--type=plugin` | Plugin tests only (WordPress local/staging) |
+| `--type=learning` | Learning Center only |
+| `--skip-lighthouse` | Skip Lighthouse — faster for iteration |
 
 ---
 
@@ -203,17 +214,19 @@ bash scripts/run-all-tests.sh
 
 Run only the script that matches the QA area being tested.
 
+All scripts support `--type=server` (default) and `--type=plugin` to target the right test folder and Playwright project.
+
 | # | QA Area | Script | Key Flags |
 |---|---|---|---|
-| 1 | UI | `bash scripts/qa-ui.sh` | `--spec=auth` · `--update-snapshots` |
-| 2 | Functionality | `bash scripts/qa-functionality.sh` | `--spec=auth` · `--spec=dashboard` · `--spec=widget-builder` · `--spec=homepage` |
-| 3 | Responsiveness | `bash scripts/qa-responsive.sh` | `--spec=auth` · `--spec=dashboard` · etc. |
-| 4 | Logic | `bash scripts/qa-logic.sh` | `--spec=auth` · `--spec=dashboard` · etc. |
+| 1 | UI | `bash scripts/qa-ui.sh` | `--type=server\|plugin` · `--update-snapshots` |
+| 2 | Functionality | `bash scripts/qa-functionality.sh` | `--type=server\|plugin` · `--spec=auth\|activation` |
+| 3 | Responsiveness | `bash scripts/qa-responsive.sh` | `--type=server\|plugin` · `--spec=auth` |
+| 4 | Logic | `bash scripts/qa-logic.sh` | `--type=server\|plugin` · `--spec=auth` |
 | 5 | Security | `bash scripts/qa-security.sh` | — |
 | 6 | Performance | `bash scripts/lighthouse.sh` | — |
-| 7 | Accessibility | `bash scripts/qa-accessibility.sh` | `--skip-lighthouse` |
-| 8 | Cross-Browser | `bash scripts/qa-cross-browser.sh` | `--spec=auth` · `--spec=dashboard` · etc. |
-| 9 | Console Errors | `bash scripts/qa-console.sh` | `--spec=auth` · `--spec=dashboard` · etc. |
+| 7 | Accessibility | `bash scripts/qa-accessibility.sh` | `--type=server\|plugin` · `--skip-lighthouse` |
+| 8 | Cross-Browser | `bash scripts/qa-cross-browser.sh` | `--type=server\|plugin` · `--spec=auth` |
+| 9 | Console Errors | `bash scripts/qa-console.sh` | `--type=server\|plugin` · `--spec=auth` |
 | 10 | SEO & Meta Tags | `bash scripts/qa-seo.sh` | — |
 | 11 | Code Quality | `bash scripts/qa-code-quality.sh` | — |
 
@@ -282,11 +295,18 @@ Scans both properties and reports Performance, Accessibility, SEO, and Best Prac
 wdesignkit-orbit/
 │
 ├── tests/
-│   ├── wdesignkit/
+│   │
+│   ├── wdesignkit/                  ← SERVER tests (wdesignkit.com SaaS app)
 │   │   ├── auth.spec.js             ← Login · Signup · Forgot Password · Reset Password
 │   │   ├── dashboard.spec.js        ← Prompt · File Attach · Link Insert · Language
 │   │   ├── widget-builder.spec.js   ← AI Chat · Enhancer · Strict Mode · Credits · Models
 │   │   └── homepage.spec.js         ← Homepage · Nav · CTAs · Responsive
+│   │
+│   ├── plugin/                      ← PLUGIN tests (WordPress plugin — local/staging)
+│   │   ├── activation.spec.js       ← Activate · Deactivate · Lifecycle · Fatal errors
+│   │   ├── admin.spec.js            ← Settings page · Admin menu · RBAC · Console errors
+│   │   ├── widget-elementor.spec.js ← Elementor panel · Editor · Responsive · Frontend
+│   │   └── widget-gutenberg.spec.js ← Block inserter · Insert · Controls · Frontend
 │   │
 │   └── snapshots/                   ← Visual regression baselines (gitignored)
 │
@@ -342,13 +362,29 @@ wdesignkit-orbit/
 
 ## Coverage Status
 
-| Spec File | Status | Tests | Property |
-|---|---|---|---|
-| `tests/wdesignkit/auth.spec.js` | ✅ Complete | 45 | wdesignkit.com |
-| `tests/wdesignkit/dashboard.spec.js` | 🔄 In Progress | — | wdesignkit.com |
-| `tests/wdesignkit/widget-builder.spec.js` | 🔄 In Progress | — | wdesignkit.com |
-| `tests/wdesignkit/homepage.spec.js` | 📋 Planned | — | wdesignkit.com |
-| `tests/learning-center/core.spec.js` | 📋 Planned | — | learn.wdesignkit.com |
+### Server — wdesignkit.com
+
+| Spec File | Status | Tests |
+|---|---|---|
+| `tests/wdesignkit/auth.spec.js` | ✅ Complete | 45 |
+| `tests/wdesignkit/dashboard.spec.js` | 🔄 In Progress | — |
+| `tests/wdesignkit/widget-builder.spec.js` | 🔄 In Progress | — |
+| `tests/wdesignkit/homepage.spec.js` | 📋 Planned | — |
+
+### Plugin — WordPress Plugin
+
+| Spec File | Status | Tests |
+|---|---|---|
+| `tests/plugin/activation.spec.js` | 📋 Planned | — |
+| `tests/plugin/admin.spec.js` | 📋 Planned | — |
+| `tests/plugin/widget-elementor.spec.js` | 📋 Planned | — |
+| `tests/plugin/widget-gutenberg.spec.js` | 📋 Planned | — |
+
+### Learning Center — learn.wdesignkit.com
+
+| Spec File | Status | Tests |
+|---|---|---|
+| `tests/learning-center/core.spec.js` | 📋 Planned | — |
 
 ---
 

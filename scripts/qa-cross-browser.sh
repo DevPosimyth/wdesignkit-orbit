@@ -1,44 +1,52 @@
 #!/bin/bash
 # =============================================================================
 # WDesignKit Orbit — Cross-Browser QA
-# Runs WDesignKit spec files across Chromium, Firefox, and WebKit (Safari)
-# Usage: bash scripts/qa-cross-browser.sh
-#        bash scripts/qa-cross-browser.sh --spec=auth
-#        bash scripts/qa-cross-browser.sh --spec=dashboard
-#        bash scripts/qa-cross-browser.sh --spec=widget-builder
-#        bash scripts/qa-cross-browser.sh --spec=homepage
+# Runs spec files across Chromium, Firefox, and WebKit (Safari)
+#
+# Usage:
+#   bash scripts/qa-cross-browser.sh                        # server, all specs
+#   bash scripts/qa-cross-browser.sh --type=plugin          # plugin tests
+#   bash scripts/qa-cross-browser.sh --type=server --spec=auth
+#   bash scripts/qa-cross-browser.sh --type=plugin --spec=admin
 # =============================================================================
 
 if [ -f .env ]; then
   export $(grep -v '^#' .env | xargs)
 fi
 
+TYPE="server"
 SPEC="all"
 FAILED=0
 TIMESTAMP=$(date +"%Y-%m-%d_%H-%M-%S")
 
 for arg in "$@"; do
   case $arg in
+    --type=*) TYPE="${arg#*=}" ;;
     --spec=*) SPEC="${arg#*=}" ;;
   esac
 done
 
-if [ "$SPEC" = "all" ]; then
-  TESTPATH="tests/wdesignkit"
+if [ "$TYPE" = "plugin" ]; then
+  TESTBASE="tests/plugin"
 else
-  TESTPATH="tests/wdesignkit/${SPEC}.spec.js"
+  TESTBASE="tests/wdesignkit"
+fi
+
+if [ "$SPEC" = "all" ]; then
+  TESTPATH="$TESTBASE"
+else
+  TESTPATH="${TESTBASE}/${SPEC}.spec.js"
 fi
 
 echo ""
 echo "========================================="
 echo " WDesignKit Orbit — Cross-Browser QA"
-echo " Spec: $SPEC"
+echo " Type: $TYPE | Spec: $SPEC"
 echo " Started: $TIMESTAMP"
 echo " Browsers: Chromium · Firefox · WebKit"
 echo "========================================="
 echo ""
 
-# Ensure browsers are installed
 echo "Checking browser installations..."
 npx playwright install chromium firefox webkit --with-deps > /dev/null 2>&1
 echo "Browsers ready."
