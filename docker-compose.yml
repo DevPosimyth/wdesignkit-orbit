@@ -1,0 +1,113 @@
+# =============================================================================
+# WDesignKit Plugin — Local WordPress Test Environment
+# Usage:
+#   docker compose up -d          → start (first run installs WP automatically)
+#   docker compose down           → stop containers
+#   docker compose down -v        → stop + wipe all data (clean slate)
+#   docker compose logs -f        → stream logs
+#
+# WordPress: http://localhost:8881
+# WP Admin:  http://localhost:8881/wp-admin  (admin / admin@123)
+# phpMyAdmin: http://localhost:8082
+# =============================================================================
+
+services:
+
+  # ── MySQL Database ───────────────────────────────────────────────────────────
+  db:
+    image: mysql:8.0
+    container_name: wdkit_db
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: wordpress
+      MYSQL_USER: wpuser
+      MYSQL_PASSWORD: wppassword
+    volumes:
+      - db_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-prootpassword"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks:
+      - wdkit_network
+
+  # ── WordPress ────────────────────────────────────────────────────────────────
+  wordpress:
+    image: wordpress:6.7-php8.2-apache
+    container_name: wdkit_wp
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "8881:80"
+    environment:
+      WORDPRESS_DB_HOST: db:3306
+      WORDPRESS_DB_NAME: wordpress
+      WORDPRESS_DB_USER: wpuser
+      WORDPRESS_DB_PASSWORD: wppassword
+      WORDPRESS_DEBUG: "true"
+      WORDPRESS_CONFIG_EXTRA: |
+        define('WP_DEBUG_LOG', true);
+        define('WP_DEBUG_DISPLAY', false);
+        define('SCRIPT_DEBUG', true);
+    volumes:
+      - wp_data:/var/www/html
+      - ./docker/uploads.ini:/usr/local/etc/php/conf.d/uploads.ini:ro
+      # Mount plugin directly from the zip extraction (updated by setup script)
+      - ./docker/plugins:/var/www/html/wp-content/plugins/wdesignkit:ro
+    networks:
+      - wdkit_network
+
+  # ── WP-CLI: auto-install WordPress + plugin ──────────────────────────────────
+  wpcli:
+    image: wordpress:cli-php8.2
+    container_name: wdkit_cli
+    depends_on:
+      db:
+        condition: service_healthy
+      wordpress:
+        condition: service_started
+    volumes:
+      - wp_data:/var/www/html
+      - ./docker/plugins:/var/www/html/wp-content/plugins/wdesignkit:ro
+      - ./docker/setup.sh:/setup.sh:ro
+    environment:
+      WORDPRESS_DB_HOST: db:3306
+      WORDPRESS_DB_NAME: wordpress
+      WORDPRESS_DB_USER: wpuser
+      WORDPRESS_DB_PASSWORD: wppassword
+      WP_ADMIN_USER: admin
+      WP_ADMIN_PASS: admin@123
+      WP_ADMIN_EMAIL: admin@wdesignkit.local
+      WP_SITE_URL: http://localhost:8881
+      WP_SITE_TITLE: WDesignKit QA
+    entrypoint: /bin/sh /setup.sh
+    networks:
+      - wdkit_network
+
+  # ── phpMyAdmin (optional DB UI) ──────────────────────────────────────────────
+  phpmyadmin:
+    image: phpmyadmin:5
+    container_name: wdkit_pma
+    restart: unless-stopped
+    depends_on:
+      - db
+    ports:
+      - "8082:80"
+    environment:
+      PMA_HOST: db
+      PMA_USER: wpuser
+      PMA_PASSWORD: wppassword
+    networks:
+      - wdkit_network
+
+volumes:
+  db_data:
+  wp_data:
+
+networks:
+  wdkit_network:
+    driver: bridge
