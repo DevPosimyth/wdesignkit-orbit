@@ -1,5 +1,5 @@
 node_modules/
-reports/
+# reports/ is tracked — QA bug reports live here
 .auth/
 tmp/
 test-results/
