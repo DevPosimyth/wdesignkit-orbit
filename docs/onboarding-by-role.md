@@ -81,19 +81,19 @@ open checklists/security-checklist.md
 ```bash
 bash scripts/create-test-site.sh --plugin ~/plugins/wdesignkit --port 8881
 WP_TEST_URL=http://localhost:8881 \
-  npx playwright test tests/wdesignkit/auth.setup.js --project=setup
+  npx playwright test tests/server/auth.setup.js --project=setup
 ```
 
 ### Daily Commands
 ```bash
 # All tests
-WP_TEST_URL=http://localhost:8881 npx playwright test tests/wdesignkit/
+WP_TEST_URL=http://localhost:8881 npx playwright test tests/server/
 
 # Interactive UI mode
-npx playwright test tests/wdesignkit/ --ui
+npx playwright test tests/server/ --ui
 
 # Multi-viewport
-npx playwright test tests/wdesignkit/ \
+npx playwright test tests/server/ \
   --project=chromium --project=mobile-chrome --project=tablet
 ```
 
@@ -107,26 +107,26 @@ npx playwright show-report reports/playwright-html
 # FTUE
 PLUGIN_SLUG=wdesignkit \
 PLUGIN_CORE_FEATURE_URL=/wp-admin/admin.php?page=wdesignkit-widgets \
-npx playwright test tests/wdesignkit/flows/onboarding-ftue.spec.js
+npx playwright test tests/server/flows/onboarding-ftue.spec.js
 
 # Uninstall cleanup
 PLUGIN_SLUG=wdesignkit PLUGIN_PREFIX=wdk \
 PLUGIN_CUSTOM_TABLES=wdk_widgets,wdk_widget_meta \
-npx playwright test tests/wdesignkit/flows/uninstall-cleanup.spec.js
+npx playwright test tests/server/flows/uninstall-cleanup.spec.js
 
 # Update path
 PLUGIN_SLUG=wdesignkit \
 PLUGIN_V1_ZIP=~/wdesignkit-1.0.zip PLUGIN_V2_ZIP=~/wdesignkit-1.1.zip \
-npx playwright test tests/wdesignkit/flows/update-path.spec.js
+npx playwright test tests/server/flows/update-path.spec.js
 
 # RTL
 PLUGIN_ADMIN_SLUG=wdesignkit \
-npx playwright test tests/wdesignkit/flows/rtl-layout.spec.js --project=rtl
+npx playwright test tests/server/flows/rtl-layout.spec.js --project=rtl
 ```
 
 ### Debug a Failing Test
 ```bash
-npx playwright test tests/wdesignkit/widgets.spec.js --debug
+npx playwright test tests/server/widgets.spec.js --debug
 npx playwright show-trace test-results/<failed-test>/trace.zip
 ```
 
@@ -188,7 +188,7 @@ open checklists/ui-ux-checklist.md
 ### Analytics Event Verification
 ```bash
 ANALYTICS_ENDPOINT=stats.wdesignkit.com \
-npx playwright test tests/wdesignkit/flows/analytics-events.spec.js
+npx playwright test tests/server/flows/analytics-events.spec.js
 ```
 
 ### Performance Scoring
@@ -234,28 +234,28 @@ bash scripts/compare-versions.sh \
 ### Visual Regression
 ```bash
 # First run — creates baselines
-npx playwright test tests/wdesignkit/ --update-snapshots
+npx playwright test tests/server/ --update-snapshots
 
 # Every run after — diffs
-npx playwright test tests/wdesignkit/
+npx playwright test tests/server/
 ```
 
 ### Responsive
 ```bash
-npx playwright test tests/wdesignkit/ \
+npx playwright test tests/server/ \
   --project=chromium --project=mobile-chrome --project=tablet
 ```
 
 ### Admin Color Schemes
 ```bash
 PLUGIN_ADMIN_SLUG=wdesignkit \
-npx playwright test tests/wdesignkit/flows/admin-color-schemes.spec.js
+npx playwright test tests/server/flows/admin-color-schemes.spec.js
 ```
 
 ### RTL
 ```bash
 PLUGIN_ADMIN_SLUG=wdesignkit \
-npx playwright test tests/wdesignkit/flows/rtl-layout.spec.js --project=rtl
+npx playwright test tests/server/flows/rtl-layout.spec.js --project=rtl
 ```
 
 ### AI Design Audit
@@ -278,7 +278,7 @@ open checklists/ui-ux-checklist.md
 ### What the Team Runs (You Just Watch)
 ```bash
 # Team runs with video
-npx playwright test tests/wdesignkit/ --headed --video=on
+npx playwright test tests/server/ --headed --video=on
 
 # You review
 open reports/uat-report-*.html

@@ -34,7 +34,7 @@ if [ "$TYPE" = "plugin" ]; then
   TESTBASE="tests/plugin"
   PROJECT="plugin-desktop"
 else
-  TESTBASE="tests/wdesignkit"
+  TESTBASE="tests/server"
   PROJECT="wdk-desktop"
 fi
 

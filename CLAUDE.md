@@ -210,19 +210,19 @@ Do not run all tests for every task. Match the feature to its spec file and run 
 
 | Feature / Area Being Tested | Command to Run |
 |---|---|
-| Login, signup, forgot password, reset password | `npx playwright test tests/wdesignkit/auth.spec.js` |
-| Dashboard — prompt, file attach, link insert, language | `npx playwright test tests/wdesignkit/dashboard.spec.js` |
-| Widget Builder — AI chat, enhancer, strict mode, credits, models | `npx playwright test tests/wdesignkit/widget-builder.spec.js` |
-| Homepage — nav, CTAs, layout | `npx playwright test tests/wdesignkit/homepage.spec.js` |
+| Login, signup, forgot password, reset password | `npx playwright test tests/server/auth.spec.js` |
+| Dashboard — prompt, file attach, link insert, language | `npx playwright test tests/server/dashboard.spec.js` |
+| Widget Builder — AI chat, enhancer, strict mode, credits, models | `npx playwright test tests/server/widget-builder.spec.js` |
+| Homepage — nav, CTAs, layout | `npx playwright test tests/server/homepage.spec.js` |
 | Learning Center — docs, nav, SEO, security | `npx playwright test --project=learning-desktop` |
 
 ### Viewport-Specific Runs (use when testing responsive behavior)
 
 | Viewport | Command |
 |---|---|
-| Desktop only (1440px) | `npx playwright test tests/wdesignkit/[spec].spec.js --project=wdk-desktop` |
-| Mobile only (375px) | `npx playwright test tests/wdesignkit/[spec].spec.js --project=wdk-mobile` |
-| Tablet only (768px) | `npx playwright test tests/wdesignkit/[spec].spec.js --project=wdk-tablet` |
+| Desktop only (1440px) | `npx playwright test tests/server/[spec].spec.js --project=wdk-desktop` |
+| Mobile only (375px) | `npx playwright test tests/server/[spec].spec.js --project=wdk-mobile` |
+| Tablet only (768px) | `npx playwright test tests/server/[spec].spec.js --project=wdk-tablet` |
 
 ### Topic-Specific Scripts (Preferred for single-area QA)
 

@@ -96,10 +96,10 @@ log ""
 # ── 6. Spec file coverage check ───────────────────────────────────────────────
 log "── 6. Spec file coverage ──"
 EXPECTED_SPECS=(
-  "tests/wdesignkit/auth.spec.js"
-  "tests/wdesignkit/dashboard.spec.js"
-  "tests/wdesignkit/widget-builder.spec.js"
-  "tests/wdesignkit/homepage.spec.js"
+  "tests/server/auth.spec.js"
+  "tests/server/dashboard.spec.js"
+  "tests/server/widget-builder.spec.js"
+  "tests/server/homepage.spec.js"
 )
 
 for SPEC in "${EXPECTED_SPECS[@]}"; do

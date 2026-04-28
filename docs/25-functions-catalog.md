@@ -52,7 +52,7 @@
 
 ---
 
-## Playwright Specs — `tests/wdesignkit/`
+## Playwright Specs — `tests/server/`
 
 ### Flow Specs
 | Spec | One-liner |

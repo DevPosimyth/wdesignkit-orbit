@@ -7,7 +7,7 @@
 //   WDK_USER=your-qa-test@email.com
 //   WDK_PASS=your-qa-password
 //   WDK_URL=https://wdesignkit.com
-// Run: npx playwright test tests/wdesignkit/auth.spec.js
+// Run: npx playwright test tests/server/auth.spec.js
 // =============================================================================
 
 const { test, expect } = require('@playwright/test');

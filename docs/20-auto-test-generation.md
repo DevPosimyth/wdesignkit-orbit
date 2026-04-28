@@ -80,7 +80,7 @@ Typical output: 40-80 scenarios for WDesignKit.
 
 ### Starter Playwright spec
 
-`tests/wdesignkit/scaffold-smoke.spec.js` — minimal spec showing Orbit's helper patterns
+`tests/server/scaffold-smoke.spec.js` — minimal spec showing Orbit's helper patterns
 (`attachConsoleErrorGuard`, `assertPageReady`) so you can copy the pattern for real tests.
 
 ### (With `--deep`) AI Scenarios

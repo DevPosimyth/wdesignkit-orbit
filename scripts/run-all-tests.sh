@@ -57,9 +57,9 @@ run_playwright() {
 if [ "$TYPE" = "all" ] || [ "$TYPE" = "server" ]; then
   echo "STEP — Server Tests (wdesignkit.com)"
   echo "-----------------------------------------"
-  run_playwright "Server — Desktop (1440px)" "wdk-desktop" "tests/wdesignkit"
-  run_playwright "Server — Tablet  (768px)"  "wdk-tablet"  "tests/wdesignkit"
-  run_playwright "Server — Mobile  (375px)"  "wdk-mobile"  "tests/wdesignkit"
+  run_playwright "Server — Desktop (1440px)" "wdk-desktop" "tests/server"
+  run_playwright "Server — Tablet  (768px)"  "wdk-tablet"  "tests/server"
+  run_playwright "Server — Mobile  (375px)"  "wdk-mobile"  "tests/server"
 fi
 
 # ── PLUGIN — WordPress plugin ─────────────────────────────────────────────────

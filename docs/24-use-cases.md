@@ -65,7 +65,7 @@ claude "/codebase-audit-pre-push Review staged changes in ~/plugins/wdesignkit"
 
 ### 9. Debugging a failing test
 ```bash
-npx playwright test tests/wdesignkit/widgets.spec.js --debug
+npx playwright test tests/server/widgets.spec.js --debug
 npx playwright show-trace test-results/*/trace.zip
 ```
 
@@ -90,12 +90,12 @@ cat scaffold-out/wdesignkit/qa-scenarios.md
 ### 12. Release candidate testing
 ```bash
 bash scripts/create-test-site.sh --plugin ~/plugins/wdesignkit --port 8881
-WP_TEST_URL=http://localhost:8881 npx playwright test tests/wdesignkit/
+WP_TEST_URL=http://localhost:8881 npx playwright test tests/server/
 ```
 
 ### 13. Regression verification
 ```bash
-npx playwright test tests/wdesignkit/flows/visual-regression-release.spec.js
+npx playwright test tests/server/flows/visual-regression-release.spec.js
 # Pixel diff vs previous git tag
 ```
 
@@ -108,7 +108,7 @@ bash scripts/batch-test.sh --plugins-dir ~/wdesignkit-versions
 ### 15. Conflict matrix
 ```bash
 PLUGIN_SLUG=wdesignkit \
-npx playwright test tests/wdesignkit/flows/plugin-conflict.spec.js
+npx playwright test tests/server/flows/plugin-conflict.spec.js
 # Activates WDesignKit alongside top 20 plugins — asserts no fatals
 ```
 
@@ -133,7 +133,7 @@ open reports/uat-report-*.html
 ```bash
 PLUGIN_SLUG=wdesignkit \
 PLUGIN_CORE_FEATURE_URL=/wp-admin/admin.php?page=wdesignkit-widgets \
-npx playwright test tests/wdesignkit/flows/onboarding-ftue.spec.js
+npx playwright test tests/server/flows/onboarding-ftue.spec.js
 ```
 Measures clicks-to-first-widget. Target: ≤3.
 
@@ -155,7 +155,7 @@ open reports/skill-audits/index.html
 ### 21. Analytics event verification
 ```bash
 ANALYTICS_ENDPOINT=stats.wdesignkit.com \
-npx playwright test tests/wdesignkit/flows/analytics-events.spec.js
+npx playwright test tests/server/flows/analytics-events.spec.js
 ```
 
 ### 22. Consent mode compliance
@@ -169,14 +169,14 @@ bash scripts/check-gdpr-hooks.sh ~/plugins/wdesignkit
 
 ### 23. Visual baseline establishment
 ```bash
-npx playwright test tests/wdesignkit/ --update-snapshots
+npx playwright test tests/server/ --update-snapshots
 # Commit the new baselines
 ```
 
 ### 24. Admin color scheme audit
 ```bash
 PLUGIN_ADMIN_SLUG=wdesignkit \
-npx playwright test tests/wdesignkit/flows/admin-color-schemes.spec.js
+npx playwright test tests/server/flows/admin-color-schemes.spec.js
 # Tests all 9 WP admin color schemes
 ```
 

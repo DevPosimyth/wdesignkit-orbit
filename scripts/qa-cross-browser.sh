@@ -29,7 +29,7 @@ done
 if [ "$TYPE" = "plugin" ]; then
   TESTBASE="tests/plugin"
 else
-  TESTBASE="tests/wdesignkit"
+  TESTBASE="tests/server"
 fi
 
 if [ "$SPEC" = "all" ]; then

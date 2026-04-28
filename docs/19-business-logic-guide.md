@@ -12,7 +12,7 @@ Six-step process for adding business-logic coverage:
 1. **Scaffold** — Auto-generate test scenarios from the WDesignKit source
 2. **Configure** — Customize `qa.config.json` with WDesignKit-specific endpoints
 3. **Define scenarios** — Curate auto-generated + add custom business-logic cases
-4. **Write specs** — Create Playwright tests in `tests/wdesignkit/business/`
+4. **Write specs** — Create Playwright tests in `tests/server/business/`
 5. **Wire configuration** — Add project entry to `playwright.config.js`
 6. **Run full gate** — Execute all tests via `gauntlet.sh`
 
@@ -67,7 +67,7 @@ Avoid vague assertions like "test that it works." Test the business rule — not
 
 ## Writing a Business-Logic Spec
 
-Use the helpers in `tests/wdesignkit/helpers.js`:
+Use the helpers in `tests/server/helpers.js`:
 
 ```js
 const { test, expect } = require('@playwright/test');

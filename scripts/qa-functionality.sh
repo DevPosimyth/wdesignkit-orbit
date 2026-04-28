@@ -32,7 +32,7 @@ if [ "$TYPE" = "plugin" ]; then
   TESTBASE="tests/plugin"
   PROJECT="plugin-desktop"
 else
-  TESTBASE="tests/wdesignkit"
+  TESTBASE="tests/server"
   PROJECT="wdk-desktop"
 fi
 
@@ -73,10 +73,10 @@ if [ "$SPEC" = "all" ]; then
     run_spec "Widget — Elementor (panel · editor · frontend)"    "tests/plugin/widget-elementor.spec.js"
     run_spec "Widget — Gutenberg (inserter · block · frontend)"  "tests/plugin/widget-gutenberg.spec.js"
   else
-    run_spec "Auth          (login · signup · forgot · reset)"            "tests/wdesignkit/auth.spec.js"
-    run_spec "Dashboard     (prompt · file attach · link · language)"     "tests/wdesignkit/dashboard.spec.js"
-    run_spec "Widget Builder (AI chat · enhancer · strict mode · credits)" "tests/wdesignkit/widget-builder.spec.js"
-    run_spec "Homepage      (nav · CTAs · layout)"                        "tests/wdesignkit/homepage.spec.js"
+    run_spec "Auth          (login · signup · forgot · reset)"            "tests/server/auth.spec.js"
+    run_spec "Dashboard     (prompt · file attach · link · language)"     "tests/server/dashboard.spec.js"
+    run_spec "Widget Builder (AI chat · enhancer · strict mode · credits)" "tests/server/widget-builder.spec.js"
+    run_spec "Homepage      (nav · CTAs · layout)"                        "tests/server/homepage.spec.js"
   fi
 else
   run_spec "$SPEC" "${TESTBASE}/${SPEC}.spec.js"

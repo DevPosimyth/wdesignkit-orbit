@@ -238,10 +238,10 @@ All scripts support `--type=server` (default) and `--type=plugin` to target the 
 
 | Feature | Command |
 |---|---|
-| Auth (login, signup, forgot/reset password) | `npx playwright test tests/wdesignkit/auth.spec.js` |
-| Dashboard | `npx playwright test tests/wdesignkit/dashboard.spec.js` |
-| Widget Builder | `npx playwright test tests/wdesignkit/widget-builder.spec.js` |
-| Homepage | `npx playwright test tests/wdesignkit/homepage.spec.js` |
+| Auth (login, signup, forgot/reset password) | `npx playwright test tests/server/auth.spec.js` |
+| Dashboard | `npx playwright test tests/server/dashboard.spec.js` |
+| Widget Builder | `npx playwright test tests/server/widget-builder.spec.js` |
+| Homepage | `npx playwright test tests/server/homepage.spec.js` |
 | Learning Center | `npx playwright test --project=learning-desktop` |
 
 ---
@@ -249,9 +249,9 @@ All scripts support `--type=server` (default) and `--type=plugin` to target the 
 ### Run by Viewport
 
 ```bash
-npx playwright test tests/wdesignkit/[spec].spec.js --project=wdk-desktop
-npx playwright test tests/wdesignkit/[spec].spec.js --project=wdk-mobile
-npx playwright test tests/wdesignkit/[spec].spec.js --project=wdk-tablet
+npx playwright test tests/server/[spec].spec.js --project=wdk-desktop
+npx playwright test tests/server/[spec].spec.js --project=wdk-mobile
+npx playwright test tests/server/[spec].spec.js --project=wdk-tablet
 ```
 
 ---
@@ -366,10 +366,10 @@ wdesignkit-orbit/
 
 | Spec File | Status | Tests |
 |---|---|---|
-| `tests/wdesignkit/auth.spec.js` | ✅ Complete | 45 |
-| `tests/wdesignkit/dashboard.spec.js` | 🔄 In Progress | — |
-| `tests/wdesignkit/widget-builder.spec.js` | 🔄 In Progress | — |
-| `tests/wdesignkit/homepage.spec.js` | 📋 Planned | — |
+| `tests/server/auth.spec.js` | ✅ Complete | 45 |
+| `tests/server/dashboard.spec.js` | 🔄 In Progress | — |
+| `tests/server/widget-builder.spec.js` | 🔄 In Progress | — |
+| `tests/server/homepage.spec.js` | 📋 Planned | — |
 
 ### Plugin — WordPress Plugin
 
@@ -426,7 +426,7 @@ wdesignkit-orbit/
 
 | Property | URL | Test Folder |
 |---|---|---|
-| WDesignKit Main | https://wdesignkit.com | `tests/wdesignkit/` |
+| WDesignKit Main | https://wdesignkit.com | `tests/server/` |
 | Learning Center | https://learn.wdesignkit.com | `tests/learning-center/` |
 
 ---

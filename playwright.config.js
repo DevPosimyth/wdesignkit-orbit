@@ -2,7 +2,7 @@
 // WDesignKit Orbit — Playwright Configuration
 //
 // Test Types:
-//   server  → tests/wdesignkit/      — wdesignkit.com (SaaS web app)
+//   server  → tests/server/      — wdesignkit.com (SaaS web app)
 //   plugin  → tests/plugin/          — WordPress plugin (local / staging WP)
 //   learn   → tests/learning-center/ — learn.wdesignkit.com
 //
@@ -76,7 +76,7 @@ module.exports = defineConfig({
 
     {
       name: 'wdk-desktop',
-      testMatch: 'tests/wdesignkit/**/*.spec.js',
+      testMatch: 'tests/server/**/*.spec.js',
       use: {
         ...devices['Desktop Chrome'],
         baseURL: process.env.WDK_URL || 'https://wdesignkit.com',
@@ -86,7 +86,7 @@ module.exports = defineConfig({
 
     {
       name: 'wdk-mobile',
-      testMatch: 'tests/wdesignkit/**/*.spec.js',
+      testMatch: 'tests/server/**/*.spec.js',
       use: {
         ...devices['Pixel 5'],
         baseURL: process.env.WDK_URL || 'https://wdesignkit.com',
@@ -96,7 +96,7 @@ module.exports = defineConfig({
 
     {
       name: 'wdk-tablet',
-      testMatch: 'tests/wdesignkit/**/*.spec.js',
+      testMatch: 'tests/server/**/*.spec.js',
       use: {
         ...devices['iPad (gen 7)'],
         baseURL: process.env.WDK_URL || 'https://wdesignkit.com',

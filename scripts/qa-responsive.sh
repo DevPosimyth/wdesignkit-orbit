@@ -31,7 +31,7 @@ if [ "$TYPE" = "plugin" ]; then
   TESTBASE="tests/plugin"
   PROJECT_PREFIX="plugin"
 else
-  TESTBASE="tests/wdesignkit"
+  TESTBASE="tests/server"
   PROJECT_PREFIX="wdk"
 fi
 

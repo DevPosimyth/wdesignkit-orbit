@@ -11,7 +11,7 @@
 `scripts/check-<thing>.sh` — bash script taking a plugin path, checks one thing, exits 0/1. Wire into `gauntlet.sh`. **90% of extensions are this.**
 
 ### 2. Write a New Playwright Spec
-`tests/wdesignkit/flows/<thing>.spec.js` — configured via env vars or `qa.config.json`. Register as project in `playwright.config.js`. **Use when a real browser is needed.**
+`tests/server/flows/<thing>.spec.js` — configured via env vars or `qa.config.json`. Register as project in `playwright.config.js`. **Use when a real browser is needed.**
 
 ### 3. Create a Custom Claude Skill
 `~/.claude/skills/orbit-<thing>/SKILL.md` — define checks, bad/good code, severity. **Use for patterns too subtle for grep — data flow, ownership, intent.**
