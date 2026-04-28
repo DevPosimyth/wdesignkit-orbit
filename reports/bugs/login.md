@@ -5,7 +5,8 @@
 **Test Date:** 2026-04-28
 **Tested By:** QA Automation — Playwright (plugin-desktop)
 **Test File:** `tests/plugin/login.spec.js`
-**Result:** 9 bugs confirmed · 52 tests passed · 9 tests failed
+**Result:** 9 bugs confirmed · 78 tests passed · 9 tests failed
+**Test Suite:** 87 tests · 14 sections (updated 2026-04-28)
 
 ---
 

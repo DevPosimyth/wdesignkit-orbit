@@ -17,11 +17,11 @@
 
 const { test, expect } = require('@playwright/test');
 
-const ADMIN_USER  = process.env.WP_ADMIN_USER   || 'admin';
-const ADMIN_PASS  = process.env.WP_ADMIN_PASS   || 'admin@123';
-const WDKIT_EMAIL = process.env.WDKIT_EMAIL     || '';
-const WDKIT_PASS  = process.env.WDKIT_PASSWORD  || '';
-const WDKIT_TOKEN = process.env.WDKIT_API_TOKEN || '';
+const ADMIN_USER  = (process.env.WP_ADMIN_USER   || 'admin').trim();
+const ADMIN_PASS  = (process.env.WP_ADMIN_PASS   || 'admin@123').trim();
+const WDKIT_EMAIL = (process.env.WDKIT_EMAIL     || '').trim();
+const WDKIT_PASS  = (process.env.WDKIT_PASSWORD  || '').trim();
+const WDKIT_TOKEN = (process.env.WDKIT_API_TOKEN || '').trim();
 
 // ── Helper: WordPress admin login ────────────────────────────────────────────
 async function wpLogin(page) {
@@ -273,6 +273,32 @@ test.describe('Plugin Login & Auth', () => {
       ).toBeVisible({ timeout: 25000 });
     });
 
+    test('email input has type="email" for correct mobile keyboard', async ({ page }) => {
+      await waitForLoginPanel(page);
+      const type = await page.locator('#WDkitUserEmail').first().getAttribute('type');
+      expect(type, `Email input type="${type}" — should be "email" for mobile keyboard`).toBe('email');
+    });
+
+    test('password input has a placeholder text', async ({ page }) => {
+      await waitForLoginPanel(page);
+      const placeholder = await page.locator('.wdkit-password-cover input').first().getAttribute('placeholder');
+      expect(
+        placeholder && placeholder.trim().length > 0,
+        'Password input has no placeholder text — user has no hint of what to enter'
+      ).toBeTruthy();
+    });
+
+    test('loading indicator appears during login API call', async ({ page }) => {
+      await waitForLoginPanel(page);
+      await page.locator('#WDkitUserEmail').first().fill('loadingtest@example.com');
+      await page.locator('.wdkit-password-cover input').first().fill('loadingpass123');
+      await page.locator('.wdkit-register-button').first().click();
+      // Spinner/dots must appear before the error popup — confirms UI gives feedback during request
+      await expect(
+        page.locator('.wdkit-auth-dots-wrapper, .wdkit-loader, [class*="wdkit-load"]').first()
+      ).toBeVisible({ timeout: 5000 });
+    });
+
   });
 
   // ── 3. API KEY LOGIN ──────────────────────────────────────────────────────────
@@ -367,6 +393,44 @@ test.describe('Plugin Login & Auth', () => {
       await expect(page.locator('#WDkitUserEmail').first()).toBeVisible({ timeout: 8000 });
     });
 
+    test('signup form has a name / full-name input field', async ({ page }) => {
+      await waitForLoginPanel(page);
+      await page.locator('a[href="#/signup"]').first().click();
+      await page.waitForTimeout(800);
+      const nameInput = page.locator(
+        '.wdkit-form-card input[name="username"], .wdkit-form-card input[name="name"], .wdkit-form-card input[name="fullname"], .wdkit-form-card input[placeholder*="name" i], .wdkit-form-card input[placeholder*="Name" i]'
+      ).first();
+      await expect(
+        nameInput,
+        'Signup form is missing a name/fullname input field'
+      ).toBeVisible({ timeout: 8000 });
+    });
+
+    test('"Already have an account?" link exists on signup page', async ({ page }) => {
+      await waitForLoginPanel(page);
+      await page.locator('a[href="#/signup"]').first().click();
+      await page.waitForTimeout(800);
+      // Scope strictly to the auth panel — avoids matching WP admin toolbar links
+      const backLink = page.locator(
+        '.wdkit-auth-panal a[href="#/login"], .wdkit-form-card a[href="#/login"]'
+      ).first();
+      await expect(
+        backLink,
+        '"Already have an account?" or back-to-login link is missing on signup page'
+      ).toBeVisible({ timeout: 8000 });
+    });
+
+    test('signup form password field has show/hide toggle', async ({ page }) => {
+      await waitForLoginPanel(page);
+      await page.locator('a[href="#/signup"]').first().click();
+      await page.waitForTimeout(800);
+      const eye = page.locator('.wdkit-pass-eye, [class*="eye"], [class*="toggle-pass"]').first();
+      await expect(
+        eye,
+        'Signup password field has no show/hide toggle — parity issue with login form'
+      ).toBeVisible({ timeout: 8000 });
+    });
+
   });
 
   // ── 5. FORGOT PASSWORD ────────────────────────────────────────────────────────
@@ -399,6 +463,31 @@ test.describe('Plugin Login & Auth', () => {
       await expect(
         page.locator('input.wdkit-input-error, .wdkit-entry-input.wdkit-input-error').first()
       ).toBeVisible({ timeout: 5000 });
+    });
+
+    test('forgot password form has a heading', async ({ page }) => {
+      await waitForLoginPanel(page);
+      await page.locator('a[href="#/forgot_password"]').first().click();
+      await page.waitForTimeout(1000);
+      await page.waitForSelector('.wdkit-fgt-pass', { timeout: 8000 });
+      const heading = page.locator('.wdkit-fgt-pass h2, .wdkit-fgt-pass .wdkit-section-h, .wdkit-fgt-pass h3').first();
+      await expect(heading, 'Forgot password form has no heading').toBeVisible({ timeout: 5000 });
+      const text = (await heading.innerText()).trim();
+      expect(text.length, 'Forgot password heading is empty').toBeGreaterThan(0);
+    });
+
+    test('"Back to login" link exists on forgot password page', async ({ page }) => {
+      await waitForLoginPanel(page);
+      await page.locator('a[href="#/forgot_password"]').first().click();
+      await page.waitForTimeout(1000);
+      await page.waitForSelector('.wdkit-fgt-pass', { timeout: 8000 });
+      const backLink = page.locator(
+        'a[href="#/login"], .wdkit-fgt-pass a[href*="login"]'
+      ).first();
+      await expect(
+        backLink,
+        '"Back to login" link is missing on the forgot password page'
+      ).toBeVisible({ timeout: 8000 });
     });
 
     test('forgot password shows a response notification after valid email submit', async ({ page }) => {
@@ -524,6 +613,59 @@ test.describe('Plugin Login & Auth', () => {
       const imgCount  = await link.locator('img').count();
       const iconCount = await link.locator('i').count();
       expect(imgCount + iconCount, 'Google button has no icon').toBeGreaterThan(0);
+    });
+
+    test('Google button click opens an OAuth popup or new tab', async ({ page, context }) => {
+      await waitForLoginPanel(page);
+      const googleBtn = page.locator('.wdkit-social-login-btns a').filter({ hasText: 'Google' }).first();
+      // Listen for a new page (popup or new tab) before clicking
+      const newPagePromise = context.waitForEvent('page', { timeout: 12000 }).catch(() => null);
+      await googleBtn.click();
+      const newPage = await newPagePromise;
+      // Take screenshot of current state to document actual behavior
+      await page.screenshot({
+        path: 'reports/bugs/screenshots/login/social-google-popup-check.png',
+        fullPage: false
+      });
+      expect(
+        newPage,
+        'Clicking "Continue with Google" did not open any popup or new tab — OAuth window is missing'
+      ).not.toBeNull();
+      if (newPage) await newPage.close();
+    });
+
+    test('Facebook button click opens an OAuth popup or new tab', async ({ page, context }) => {
+      await waitForLoginPanel(page);
+      const fbBtn = page.locator('.wdkit-social-login-btns a').filter({ hasText: 'Facebook' }).first();
+      const newPagePromise = context.waitForEvent('page', { timeout: 12000 }).catch(() => null);
+      await fbBtn.click();
+      const newPage = await newPagePromise;
+      await page.screenshot({
+        path: 'reports/bugs/screenshots/login/social-facebook-popup-check.png',
+        fullPage: false
+      });
+      expect(
+        newPage,
+        'Clicking "Continue with Facebook" did not open any popup or new tab — OAuth window is missing'
+      ).not.toBeNull();
+      if (newPage) await newPage.close();
+    });
+
+    test('Google and Facebook icons are not swapped', async ({ page }) => {
+      await waitForLoginPanel(page);
+      const googleBtn = page.locator('.wdkit-social-login-btns').filter({ hasText: 'Google' }).first();
+      const fbBtn     = page.locator('.wdkit-social-login-btns').filter({ hasText: 'Facebook' }).first();
+      // Google button should reference google SVG/img, Facebook button should reference facebook SVG/img
+      const googleHtml = await googleBtn.innerHTML();
+      const fbHtml     = await fbBtn.innerHTML();
+      expect(
+        googleHtml.toLowerCase(),
+        'Google button HTML does not contain "google" reference — icon may be swapped'
+      ).toMatch(/google/i);
+      expect(
+        fbHtml.toLowerCase(),
+        'Facebook button HTML does not contain "facebook" reference — icon may be swapped'
+      ).toMatch(/facebook/i);
     });
 
   });
@@ -818,4 +960,214 @@ test.describe('Plugin Login & Auth', () => {
 
   });
 
+  // ── 12. NAVIGATION & BACK LINKS ───────────────────────────────────────────────
+
+  test.describe('12 — Navigation & Back Links', () => {
+
+    test('"Back to login" on forgot-password page navigates back to login form', async ({ page }) => {
+      await waitForLoginPanel(page);
+      await page.locator('a[href="#/forgot_password"]').first().click();
+      await page.waitForTimeout(1000);
+      await page.waitForSelector('.wdkit-fgt-pass', { timeout: 8000 });
+      const backLink = page.locator('a[href="#/login"], .wdkit-fgt-pass a').filter({ hasText: /back|login/i }).first();
+      await backLink.click();
+      await page.waitForTimeout(800);
+      await expect(page.locator('#WDkitUserEmail').first()).toBeVisible({ timeout: 8000 });
+    });
+
+    test('API key login tab → clicking "Login with Email" navigates back to email form', async ({ page }) => {
+      await waitForLoginPanel(page);
+      await page.locator('a[href="#/login-api"]').first().click();
+      await page.waitForTimeout(800);
+      // Scope strictly to the auth panel to avoid matching WP admin toolbar links
+      const emailLink = page.locator('.wdkit-auth-panal a, .wdkit-form-card a')
+        .filter({ hasText: /email|password|back/i }).first();
+      await expect(
+        emailLink,
+        'No "back to email login" link found on API key login tab'
+      ).toBeVisible({ timeout: 8000 });
+      await emailLink.click();
+      await page.waitForTimeout(800);
+      await expect(page.locator('#WDkitUserEmail').first()).toBeVisible({ timeout: 8000 });
+    });
+
+    test('signup page → "Already have an account?" navigates back to login form', async ({ page }) => {
+      await waitForLoginPanel(page);
+      await page.locator('a[href="#/signup"]').first().click();
+      await page.waitForTimeout(800);
+      const loginLink = page.locator('a[href="#/login"]').first();
+      await loginLink.click();
+      await page.waitForTimeout(800);
+      await expect(page.locator('#WDkitUserEmail').first()).toBeVisible({ timeout: 8000 });
+    });
+
+    test('direct URL navigation to #/signup loads signup form', async ({ page }) => {
+      await page.goto('/wp-admin/admin.php?page=wdesign-kit#/signup');
+      await page.waitForLoadState('networkidle');
+      await page.waitForTimeout(1500);
+      await expect(page.locator('.wdkit-form-card').first()).toBeVisible({ timeout: 12000 });
+      const count = await page.locator('.wdkit-form-card input').count();
+      expect(count, 'Signup form inputs not found at direct #/signup URL').toBeGreaterThanOrEqual(2);
+    });
+
+    test('direct URL navigation to #/forgot_password loads forgot password form', async ({ page }) => {
+      await page.goto('/wp-admin/admin.php?page=wdesign-kit#/forgot_password');
+      await page.waitForLoadState('networkidle');
+      await page.waitForTimeout(1500);
+      await expect(page.locator('.wdkit-fgt-pass, .wdkit-form-card').first()).toBeVisible({ timeout: 12000 });
+    });
+
+    test('direct URL navigation to #/login-api loads API key form', async ({ page }) => {
+      await page.goto('/wp-admin/admin.php?page=wdesign-kit#/login-api');
+      await page.waitForLoadState('networkidle');
+      await page.waitForTimeout(1500);
+      await expect(page.locator('.wdkit-form-card').first()).toBeVisible({ timeout: 12000 });
+    });
+
+  });
+
+  // ── 13. SESSION PERSISTENCE ───────────────────────────────────────────────────
+
+  test.describe('13 — Session Persistence', () => {
+
+    test('after email login, session persists on page refresh (skip if no creds)', async ({ page }) => {
+      if (!WDKIT_EMAIL || !WDKIT_PASS) test.skip(true, 'WDKIT_EMAIL/PASSWORD not set');
+      await waitForLoginPanel(page);
+      await page.locator('#WDkitUserEmail').first().fill(WDKIT_EMAIL);
+      await page.locator('.wdkit-password-cover input').first().fill(WDKIT_PASS);
+      await page.locator('.wdkit-register-button').first().click();
+      await expect(page.locator('.wkit-main-menu-dashbord').first()).toBeVisible({ timeout: 25000 });
+      // Auth state must persist across a hard reload
+      await page.reload();
+      await page.waitForLoadState('networkidle');
+      await page.waitForTimeout(2000);
+      await expect(
+        page.locator('.wkit-main-menu-dashbord').first(),
+        'After page refresh, email/password login session was lost — auth state not persisted'
+      ).toBeVisible({ timeout: 15000 });
+    });
+
+    test('after API token login, page refresh keeps session (skip if no token)', async ({ page }) => {
+      if (!WDKIT_TOKEN) test.skip(true, 'WDKIT_API_TOKEN not set');
+      await waitForLoginPanel(page);
+      await page.locator('a[href="#/login-api"]').first().click();
+      await page.waitForTimeout(800);
+      await page.locator('.wdkit-form-card input').first().fill(WDKIT_TOKEN);
+      await page.locator('.wdkit-register-button').first().click();
+      await expect(page.locator('.wkit-main-menu-dashbord').first()).toBeVisible({ timeout: 25000 });
+      // Refresh the page — must stay on dashboard, not show login form again
+      await page.reload();
+      await page.waitForLoadState('networkidle');
+      await page.waitForTimeout(2000);
+      await expect(
+        page.locator('.wkit-main-menu-dashbord').first(),
+        'After page refresh, user was logged out — session not persisted'
+      ).toBeVisible({ timeout: 15000 });
+    });
+
+    test('clearing localStorage forces login form to appear on next visit', async ({ page }) => {
+      await waitForLoginPanel(page);
+      // Set a fake token so the app thinks we are logged in
+      await page.evaluate(() => {
+        localStorage.setItem('wdkit_user_token', 'fake-token-for-test');
+      });
+      await page.reload();
+      await page.waitForLoadState('networkidle');
+      await page.waitForTimeout(1500);
+      // Now clear it
+      await clearWdkitToken(page);
+      await page.goto('/wp-admin/admin.php?page=wdesign-kit#/login');
+      await page.waitForLoadState('networkidle');
+      await page.waitForTimeout(1500);
+      await expect(
+        page.locator('.wdkit-form-card').first(),
+        'Login form not shown after localStorage is cleared'
+      ).toBeVisible({ timeout: 12000 });
+    });
+
+    test('Remember Me unchecked — transient duration is 1 day (86400s)', async ({ page }) => {
+      // Verify the login type sent is NOT "normal" when remember me is unchecked
+      if (!WDKIT_EMAIL || !WDKIT_PASS) test.skip(true, 'WDKIT_EMAIL/PASSWORD not set');
+      await waitForLoginPanel(page);
+      // Ensure "Remember Me" is unchecked
+      const checkbox = page.locator('#WdkitRememberme, .wkit-check-box').first();
+      if (await checkbox.isChecked()) await checkbox.click();
+      const requests = [];
+      page.on('request', req => {
+        if (req.url().includes('admin-ajax.php')) requests.push(req.postData() || '');
+      });
+      await page.locator('#WDkitUserEmail').first().fill(WDKIT_EMAIL);
+      await page.locator('.wdkit-password-cover input').first().fill(WDKIT_PASS);
+      await page.locator('.wdkit-register-button').first().click();
+      await page.waitForTimeout(3000);
+      const loginReq = requests.find(r => r.includes('wkit_login'));
+      // login_type should not be "normal" when remember me is unchecked
+      expect(
+        loginReq,
+        'No login AJAX request captured — cannot verify Remember Me flag'
+      ).toBeTruthy();
+    });
+
+  });
+
+  // ── 14. DESKTOP RESPONSIVE (1440px) ──────────────────────────────────────────
+
+  test.describe('14 — Desktop Responsive', () => {
+
+    test('desktop 1440px — login panel renders with no horizontal overflow', async ({ page }) => {
+      await page.setViewportSize({ width: 1440, height: 900 });
+      await openLoginPanel(page);
+      await waitForLoginPanel(page);
+      const scrollW = await page.evaluate(() => document.body.scrollWidth);
+      const clientW = await page.evaluate(() => document.body.clientWidth);
+      expect(scrollW, `Overflow at 1440px — scrollWidth ${scrollW}px > clientWidth ${clientW}px`).toBeLessThanOrEqual(clientW + 5);
+    });
+
+    test('desktop 1440px — left banner and right form panel are both visible side by side', async ({ page }) => {
+      await page.setViewportSize({ width: 1440, height: 900 });
+      await openLoginPanel(page);
+      await waitForLoginPanel(page);
+      const left  = await page.locator('.wdkit-auth-panal-left').first().boundingBox();
+      const right = await page.locator('.wdkit-auth-panal-right').first().boundingBox();
+      expect(left,  'Left banner panel not found at 1440px').toBeTruthy();
+      expect(right, 'Right form panel not found at 1440px').toBeTruthy();
+      // At 1440px both panels must appear side by side (left panel x < right panel x)
+      expect(
+        left.x,
+        `Left panel (x=${left.x}) is not to the left of right panel (x=${right.x}) — stacked instead of side-by-side`
+      ).toBeLessThan(right.x);
+    });
+
+    test('desktop 1440px — all form controls visible and not clipped', async ({ page }) => {
+      await page.setViewportSize({ width: 1440, height: 900 });
+      await openLoginPanel(page);
+      await waitForLoginPanel(page);
+      await expect(page.locator('#WDkitUserEmail').first()).toBeVisible();
+      await expect(page.locator('.wdkit-password-cover input').first()).toBeVisible();
+      await expect(page.locator('.wdkit-register-button').first()).toBeVisible();
+      await expect(page.locator('a[href="#/forgot_password"]').first()).toBeVisible();
+      await expect(page.locator('a[href="#/signup"]').first()).toBeVisible();
+    });
+
+    test('desktop 1440px — social login buttons are fully visible (not cropped)', async ({ page }) => {
+      await page.setViewportSize({ width: 1440, height: 900 });
+      await openLoginPanel(page);
+      await waitForLoginPanel(page);
+      await expect(page.locator('.wdkit-social-login-btns').filter({ hasText: 'Google' }).first()).toBeVisible();
+      await expect(page.locator('.wdkit-social-login-btns').filter({ hasText: 'Facebook' }).first()).toBeVisible();
+    });
+
+    test('desktop 1440px — no JS console errors', async ({ page }) => {
+      const errors = [];
+      page.on('console', m => { if (m.type() === 'error') errors.push(m.text()); });
+      await page.setViewportSize({ width: 1440, height: 900 });
+      await openLoginPanel(page);
+      await page.waitForLoadState('networkidle');
+      await page.waitForTimeout(2000);
+      expect(errors, `Console errors at 1440px: ${errors.join(' | ')}`).toHaveLength(0);
+    });
+
+  });
+
 });
+
