@@ -22,6 +22,7 @@ module.exports = defineConfig({
   testDir: './tests',
 
   // ── Run tests in parallel ───────────────────────────────────────────────────
+  // NOTE: plugin suite uses workers:1 to avoid WP parallel login race condition
   fullyParallel: true,
 
   // ── Fail the build on CI if test.only is accidentally left in ───────────────
@@ -31,7 +32,7 @@ module.exports = defineConfig({
   retries: process.env.CI ? 1 : 0,
 
   // ── Number of parallel workers ──────────────────────────────────────────────
-  workers: 4,
+  workers: 1,
 
   // ── Reporter ────────────────────────────────────────────────────────────────
   reporter: [
