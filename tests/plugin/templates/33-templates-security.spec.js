@@ -383,7 +383,7 @@ test.describe('68. Sensitive data exposure', () => {
     // This test validates the API endpoint properly scopes data to the authenticated user
     const responses = [];
     page.on('response', async r => {
-      if (r.url().includes('admin-ajax') && r.method() === 'POST') {
+      if (r.url().includes('admin-ajax') && r.request().method() === 'POST') {
         try {
           const json = await r.json().catch(() => null);
           if (json) responses.push(json);

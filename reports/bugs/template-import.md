@@ -530,3 +530,136 @@ These tests were skipped because their dependent navigation/state-mutating prece
 | **P3 bugs** | 3 |
 
 **Release status: 🛑 BLOCKED** — 3 P0 bugs prevent the entire import flow from completing. Most P1 issues cascade from these P0s (wizard not mounting), so fixing those will resolve the majority.
+
+---
+
+## Phase 2+3 Mobile Run — New Bugs Found
+
+**Run date:** 2026-04-30
+**Command:** `bash scripts/qa-templates.sh --full --mobile --workers=4`
+**Project:** `plugin-mobile` (375px viewport)
+**Duration:** 39.9 min
+
+| Metric | Value |
+|--------|-------|
+| **Total tests** | 633 |
+| **Passed** | 406 (64.1%) |
+| **Failed** | 123 |
+| **Skipped** | 3 |
+| **Did not run** | 101 |
+
+---
+
+### Share With Me page exceeds 10-second render on mobile
+
+**Severity:** P1
+**Area:** Performance / Responsive
+
+**Issue:** The Share With Me page (`#/share_with_me`) takes more than 10 seconds to render content on a 375px mobile viewport. The `wdkitData` cloud API call delays the initial paint significantly on mobile.
+
+**Steps to Reproduce:**
+1. Log in to WordPress admin
+2. Set viewport to 375×812
+3. Navigate to `#/share_with_me`
+4. Measure time until `#wdesignkit-app` renders visible content
+
+**Expected Result:** Page renders within 10 seconds on mobile
+
+**Actual Result:** Render exceeds 10s — test timeout hit
+
+---
+
+### No `<h1>` or `<h2>` heading element on plugin admin pages
+
+**Severity:** P2
+**Area:** Accessibility / SEO
+
+**Issue:** The WDesignKit plugin admin page (`/wp-admin/admin.php?page=wdesign-kit`) renders no `<h1>` or `<h2>` heading, violating WCAG 2.1 heading structure requirements and breaking screen reader page navigation.
+
+**Steps to Reproduce:**
+1. Log in to WordPress admin
+2. Navigate to the WDesignKit plugin page
+3. Inspect DOM for `h1`, `h2` elements
+
+**Expected Result:** At least one `<h1>` or `<h2>` heading identifying the current section
+
+**Actual Result:** No heading elements present — DOM shows only icons and menu items
+
+---
+
+### Duplicate `id` attributes in browse page DOM
+
+**Severity:** P2
+**Area:** Accessibility / Code Quality
+
+**Issue:** The browse page renders duplicate `id` attribute values across multiple DOM elements. This violates HTML spec (IDs must be unique), breaks CSS/JS targeting, and causes accessibility tools to malfunction.
+
+**Steps to Reproduce:**
+1. Log in and navigate to `#/browse`
+2. Open browser DevTools → Console
+3. Run: `Array.from(document.querySelectorAll('[id]')).map(el=>el.id).filter((id,i,a)=>a.indexOf(id)!==i)`
+
+**Expected Result:** Empty array — all IDs unique
+
+**Actual Result:** Duplicate IDs found in the rendered DOM
+
+---
+
+### 4xx network response when navigating to `#/my_uploaded`
+
+**Severity:** P1
+**Area:** Functionality / Network
+
+**Issue:** Navigating to the My Templates page (`#/my_uploaded`) triggers one or more 4xx HTTP responses. These may be failed API requests or missing assets that prevent full page content from loading.
+
+**Steps to Reproduce:**
+1. Log in to WordPress admin
+2. Open browser DevTools → Network tab
+3. Navigate to `#/my_uploaded`
+4. Filter for 4xx responses
+
+**Expected Result:** All network requests return 2xx responses
+
+**Actual Result:** One or more 4xx responses observed on page load
+
+---
+
+### Console errors triggered when switching from browse to my_uploaded
+
+**Severity:** P1
+**Area:** Functionality / Console
+
+**Issue:** Navigating from `#/browse` to `#/my_uploaded` and back to `#/browse` produces JavaScript console errors. This indicates a component unmount/remount issue or a stale state reference in the React app.
+
+**Steps to Reproduce:**
+1. Log in and navigate to `#/browse`
+2. Wait for page to fully load
+3. Navigate to `#/my_uploaded`
+4. Navigate back to `#/browse`
+5. Open browser DevTools → Console
+
+**Expected Result:** No console errors during route switching
+
+**Actual Result:** JavaScript errors appear during the browse → my_uploaded → browse navigation cycle
+
+---
+
+### Import wizard close button not keyboard-focusable on mobile
+
+**Severity:** P2
+**Area:** Accessibility / Responsive
+
+**Issue:** The close button on the import wizard modal cannot receive keyboard focus on a 375px mobile viewport. Users who rely on keyboard navigation cannot dismiss the modal without a mouse/touch.
+
+**Steps to Reproduce:**
+1. Set viewport to 375×812
+2. Log in and navigate to `#/browse`
+3. Open any template import wizard
+4. Press Tab to cycle through focusable elements
+5. Attempt to reach the close button via keyboard
+
+**Expected Result:** Close button is reachable via Tab key and activatable with Enter/Space
+
+**Actual Result:** Close button not included in keyboard focus order — cannot be reached via keyboard on mobile
+
+---
