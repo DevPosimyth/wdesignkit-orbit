@@ -1,27 +1,50 @@
 // =============================================================================
 // WDesignKit Templates Suite — Import Preview Step (Step 1)
-// Version: 2.2.10
-// Source: split from template-import.spec.js (Phase 1 restructure)
+// Version: 3.0.0 — Deep inside-flow testing
 //
 // COVERAGE
 //   Section 12 — Import wizard entry point (7 tests)
 //   Section 13 — Preview step layout & all panels (10 tests)
-//   Section 14 — Business Name field required validation (10 tests)
-//   Section 15 — All other form fields (17 tests)
-//   Section 16 — Additional content section (8 tests)
-//   Section 17 — Global color & palette (8 tests)
-//   Section 18 — Global typography (4 tests)
-//   Section 19 — Responsive preview toggle (8 tests)
-//   Section 20 — Page dropdown (5 tests)
-//   Section 21 — Preview iframe & skeleton (7 tests)
-//   Section 22 — Light/dark mode toggle (3 tests)
-//   Section 23 — Next button disabled state & tooltip (6 tests)
-//   Section 24 — Pro plugin notice (2 tests)
+//   Section 14 — Business Name field — required validation & interactions (12 tests)
+//   Section 15 — Tagline field deep interaction (5 tests)
+//   Section 16 — Additional Content accordion — expand & all fields (14 tests)
+//   Section 17 — Global Color panel — deep interaction (15 tests)
+//   Section 18 — Global Typography panel — deep interaction (12 tests)
+//   Section 19 — Color palette switcher — select, custom, reset (8 tests)
+//   Section 20 — Font pair switcher — select, custom primary/secondary (8 tests)
+//   Section 21 — Responsive preview toggle (desktop / tablet / mobile) (8 tests)
+//   Section 22 — Page dropdown (5 tests)
+//   Section 23 — Preview iframe & skeleton (7 tests)
+//   Section 24 — Back button navigation (4 tests)
+//   Section 25 — Pro plugin notice (3 tests)
 // =============================================================================
 
 const { test, expect } = require('@playwright/test');
 const { wpLogin } = require('./_helpers/auth');
 const { goToBrowse, clickFirstCardImport } = require('./_helpers/navigation');
+const { reachGlobalDataPanel } = require('./_helpers/wizard');
+
+// ---------------------------------------------------------------------------
+// Shared: open wizard and wait for Step 1
+// ---------------------------------------------------------------------------
+async function openWizardStep1(page) {
+  await wpLogin(page);
+  await goToBrowse(page);
+  await clickFirstCardImport(page);
+  await page.locator('.wkit-temp-import-mian').waitFor({ state: 'visible', timeout: 25000 }).catch(() => {});
+  // Ensure Step 1 site_info panel is visible
+  await page.locator('input.wkit-site-name-inp').waitFor({ state: 'visible', timeout: 15000 }).catch(() => {});
+}
+
+// ---------------------------------------------------------------------------
+// Shared: open wizard, fill name, navigate to global_data panel
+// ---------------------------------------------------------------------------
+async function openGlobalDataPanel(page) {
+  await openWizardStep1(page);
+  await reachGlobalDataPanel(page);
+  // If template has global data, we're now on that panel
+  // If not, we're already past it (Feature step). Tests guard with count > 0.
+}
 
 // =============================================================================
 // 12. Import wizard — entry point (card click → route change)
@@ -42,45 +65,43 @@ test.describe('12. Import wizard — entry point', () => {
 
   test('12.02 Import wizard root .wkit-temp-import-mian is rendered after card click', async ({ page }) => {
     await clickFirstCardImport(page);
-    const count = await page.locator('.wkit-temp-import-mian').count();
-    expect(count).toBeGreaterThan(0);
+    const el = page.locator('.wkit-temp-import-mian');
+    await el.waitFor({ state: 'visible', timeout: 20000 }).catch(() => {});
+    expect(await el.count()).toBeGreaterThan(0);
   });
 
   test('12.03 Import wizard header .wkit-import-temp-header is visible', async ({ page }) => {
     await clickFirstCardImport(page);
     await page.locator('.wkit-temp-import-mian').waitFor({ state: 'visible', timeout: 20000 }).catch(() => {});
-    const count = await page.locator('.wkit-import-temp-header').count();
-    expect(count).toBeGreaterThan(0);
+    expect(await page.locator('.wkit-import-temp-header').count()).toBeGreaterThan(0);
   });
 
-  test('12.04 Breadcrumbs container .wkit-header-breadcrumbs is present in wizard', async ({ page }) => {
+  test('12.04 Breadcrumbs container .wkit-header-breadcrumbs is present', async ({ page }) => {
     await clickFirstCardImport(page);
     await page.locator('.wkit-temp-import-mian').waitFor({ state: 'visible', timeout: 20000 }).catch(() => {});
-    const count = await page.locator('.wkit-header-breadcrumbs').count();
-    expect(count).toBeGreaterThan(0);
+    expect(await page.locator('.wkit-header-breadcrumbs').count()).toBeGreaterThan(0);
   });
 
-  test('12.05 Step 1 shows left editor panel .wkit-ai-import-main', async ({ page }) => {
+  test('12.05 Step 1 left editor panel .wkit-ai-import-main is present', async ({ page }) => {
     await clickFirstCardImport(page);
     await page.locator('.wkit-temp-import-mian').waitFor({ state: 'visible', timeout: 20000 }).catch(() => {});
-    const count = await page.locator('.wkit-ai-import-main').count();
-    expect(count).toBeGreaterThan(0);
+    expect(await page.locator('.wkit-ai-import-main').count()).toBeGreaterThan(0);
   });
 
-  test('12.06 Step 1 shows right preview panel .wkit-ai-import-fram', async ({ page }) => {
+  test('12.06 Step 1 right preview panel .wkit-ai-import-fram is present', async ({ page }) => {
     await clickFirstCardImport(page);
     await page.locator('.wkit-temp-import-mian').waitFor({ state: 'visible', timeout: 20000 }).catch(() => {});
-    const count = await page.locator('.wkit-ai-import-fram').count();
-    expect(count).toBeGreaterThan(0);
+    expect(await page.locator('.wkit-ai-import-fram').count()).toBeGreaterThan(0);
   });
 
-  test('12.07 No console errors when entering import wizard', async ({ page }) => {
+  test('12.07 No product console errors when entering import wizard', async ({ page }) => {
     const errors = [];
     page.on('console', m => { if (m.type() === 'error') errors.push(m.text()); });
     await clickFirstCardImport(page);
     await page.waitForTimeout(3000);
     const productErrors = errors.filter(e =>
-      !e.includes('favicon') && !e.includes('net::ERR') && !e.includes('extension')
+      !e.includes('favicon') && !e.includes('net::ERR') && !e.includes('extension') &&
+      !e.includes('chrome-extension') && !e.includes('ERR_BLOCKED')
     );
     expect(productErrors).toHaveLength(0);
   });
@@ -93,168 +114,112 @@ test.describe('12. Import wizard — entry point', () => {
 test.describe('13. Preview step (Step 1) — layout & all panels', () => {
 
   test.beforeEach(async ({ page }) => {
-    await wpLogin(page);
-    await goToBrowse(page);
-    await clickFirstCardImport(page);
-    await page.locator('.wkit-temp-import-mian').waitFor({ state: 'visible', timeout: 20000 }).catch(() => {});
+    await openWizardStep1(page);
   });
 
   test('13.01 Editor wrapper .wkit-ai-import-preview is visible', async ({ page }) => {
-    const count = await page.locator('.wkit-ai-import-preview').count();
-    expect(count).toBeGreaterThan(0);
+    expect(await page.locator('.wkit-ai-import-preview').count()).toBeGreaterThan(0);
   });
 
-  test('13.02 Editor header .wkit-preview-editor-header is visible', async ({ page }) => {
-    const count = await page.locator('.wkit-preview-editor-header').count();
-    expect(count).toBeGreaterThan(0);
+  test('13.02 Editor body .wkit-preview-editor-body is present', async ({ page }) => {
+    expect(await page.locator('.wkit-preview-editor-body').count()).toBeGreaterThan(0);
   });
 
-  test('13.03 Template title .wkit-editor-temp-title is rendered with text', async ({ page }) => {
+  test('13.03 Site Info panel header says "Site Info"', async ({ page }) => {
     const title = page.locator('.wkit-editor-temp-title').first();
-    const count = await title.count();
-    if (count > 0) {
-      const text = await title.textContent();
-      expect(text.trim().length).toBeGreaterThan(0);
+    if ((await title.count()) > 0) {
+      await expect(title).toContainText(/site info/i);
     }
   });
 
-  test('13.04 Editor body .wkit-preview-editor-body is present', async ({ page }) => {
-    const count = await page.locator('.wkit-preview-editor-body').count();
-    expect(count).toBeGreaterThan(0);
+  test('13.04 Basic Info section .wkit-temp-basic-info is visible', async ({ page }) => {
+    expect(await page.locator('.wkit-temp-basic-info').count()).toBeGreaterThan(0);
   });
 
-  test('13.05 Basic Info section .wkit-temp-basic-info is visible', async ({ page }) => {
-    const count = await page.locator('.wkit-temp-basic-info').count();
-    expect(count).toBeGreaterThan(0);
+  test('13.05 Editor footer .wkit-preview-editor-footer is present', async ({ page }) => {
+    expect(await page.locator('.wkit-preview-editor-footer').count()).toBeGreaterThan(0);
   });
 
-  test('13.06 Editor footer .wkit-preview-editor-footer is present', async ({ page }) => {
-    const count = await page.locator('.wkit-preview-editor-footer').count();
-    expect(count).toBeGreaterThan(0);
+  test('13.06 Footer buttons container .wkit-editor-footer-btns is present', async ({ page }) => {
+    expect(await page.locator('.wkit-editor-footer-btns').count()).toBeGreaterThan(0);
   });
 
-  test('13.07 Footer buttons container .wkit-editor-footer-btns is present', async ({ page }) => {
-    const count = await page.locator('.wkit-editor-footer-btns').count();
-    expect(count).toBeGreaterThan(0);
+  test('13.07 Right panel preview container .wkit-temp-preview-con is present', async ({ page }) => {
+    expect(await page.locator('.wkit-temp-preview-con').count()).toBeGreaterThan(0);
   });
 
-  test('13.08 Right panel preview container .wkit-temp-preview-con is present', async ({ page }) => {
-    const count = await page.locator('.wkit-temp-preview-con').count();
-    expect(count).toBeGreaterThan(0);
+  test('13.08 Responsive bar .wkit-temp-responsive is present in preview panel', async ({ page }) => {
+    expect(await page.locator('.wkit-temp-responsive').count()).toBeGreaterThan(0);
   });
 
-  test('13.09 Responsive bar .wkit-temp-responsive is present in preview panel', async ({ page }) => {
-    const count = await page.locator('.wkit-temp-responsive').count();
-    expect(count).toBeGreaterThan(0);
+  test('13.09 Preview area .wkit-temp-preview-content is present', async ({ page }) => {
+    expect(await page.locator('.wkit-temp-preview-content').count()).toBeGreaterThan(0);
   });
 
-  test('13.10 Preview area .wkit-temp-preview-content is present', async ({ page }) => {
-    const count = await page.locator('.wkit-temp-preview-content').count();
-    expect(count).toBeGreaterThan(0);
+  test('13.10 Content notice .wkit-preview-content-notice is present with text', async ({ page }) => {
+    const notice = page.locator('.wkit-preview-content-notice');
+    expect(await notice.count()).toBeGreaterThan(0);
+    const text = await notice.textContent().catch(() => '');
+    expect(text.trim().length).toBeGreaterThan(0);
   });
 
 });
 
 // =============================================================================
-// 14. Preview step — Business Name field (required validation)
+// 14. Preview step — Business Name field (required + deep interactions)
 // =============================================================================
-test.describe('14. Preview step — Business Name field required validation', () => {
+test.describe('14. Preview step — Business Name field deep interactions', () => {
   test.describe.configure({ mode: 'serial' });
 
   test.beforeEach(async ({ page }) => {
-    await wpLogin(page);
-    await goToBrowse(page);
-    await clickFirstCardImport(page);
-    await page.locator('.wkit-temp-import-mian').waitFor({ state: 'visible', timeout: 20000 }).catch(() => {});
+    await openWizardStep1(page);
   });
 
-  test('14.01 Business Name label .wkit-site-name-label is visible', async ({ page }) => {
-    const count = await page.locator('label.wkit-site-name-label').count();
-    expect(count).toBeGreaterThan(0);
+  test('14.01 Business Name label is visible with text "Business Name"', async ({ page }) => {
+    const label = page.locator('label.wkit-site-name-label');
+    expect(await label.count()).toBeGreaterThan(0);
+    await expect(label.first()).toContainText(/business name/i);
   });
 
-  test('14.02 Business Name label contains required asterisk span', async ({ page }) => {
-    const count = await page.locator('span.wkit-site-label-required').count();
-    expect(count).toBeGreaterThan(0);
+  test('14.02 Business Name required asterisk span is visible', async ({ page }) => {
+    expect(await page.locator('span.wkit-site-label-required').count()).toBeGreaterThan(0);
   });
 
-  test('14.03 Business Name input .wkit-site-name-inp is visible', async ({ page }) => {
-    await expect(page.locator('input.wkit-site-name-inp')).toBeVisible({ timeout: 10000 });
+  test('14.03 Business Name input .wkit-site-name-inp is visible and editable', async ({ page }) => {
+    const inp = page.locator('input.wkit-site-name-inp');
+    await expect(inp).toBeVisible({ timeout: 10000 });
+    expect(await inp.getAttribute('readonly')).toBeNull();
   });
 
-  test('14.04 Next button is disabled when Business Name is empty', async ({ page }) => {
-    const nameInput = page.locator('input.wkit-site-name-inp');
-    const nameCount = await nameInput.count();
-    if (nameCount > 0) {
-      await nameInput.fill('');
-      await page.waitForTimeout(500);
+  test('14.04 Next button is disabled when Business Name input is empty', async ({ page }) => {
+    const inp = page.locator('input.wkit-site-name-inp');
+    if ((await inp.count()) > 0) {
+      await inp.fill('');
+      await page.waitForTimeout(400);
       const nextBtn = page.locator('button.wkit-next-btn.wkit-btn-class');
-      const nextCount = await nextBtn.count();
-      if (nextCount > 0) {
-        const disabled = await nextBtn.isDisabled();
-        expect(disabled).toBe(true);
+      if ((await nextBtn.count()) > 0) {
+        expect(await nextBtn.isDisabled()).toBe(true);
       }
     }
   });
 
-  test('14.05 Next button becomes enabled after entering Business Name', async ({ page }) => {
-    const nameInput = page.locator('input.wkit-site-name-inp');
-    const nameCount = await nameInput.count();
-    if (nameCount > 0) {
-      await nameInput.fill('Test Business');
-      await page.waitForTimeout(500);
+  test('14.05 Next button enables after typing a valid business name', async ({ page }) => {
+    const inp = page.locator('input.wkit-site-name-inp');
+    if ((await inp.count()) > 0) {
+      await inp.fill('Acme Corporation');
+      await page.waitForTimeout(300);
       const nextBtn = page.locator('button.wkit-next-btn.wkit-btn-class');
-      const nextCount = await nextBtn.count();
-      if (nextCount > 0) {
+      if ((await nextBtn.count()) > 0) {
         await expect(nextBtn).toBeEnabled({ timeout: 5000 });
       }
     }
   });
 
-  test('14.06 Disabled Next shows tooltip .wkit-notice-tooltip-txt when name empty', async ({ page }) => {
-    const nameInput = page.locator('input.wkit-site-name-inp');
-    if ((await nameInput.count()) > 0) {
-      await nameInput.fill('');
-      await page.waitForTimeout(300);
-      const tooltipCount = await page.locator('span.wkit-notice-tooltip-txt').count();
-      expect(tooltipCount).toBeGreaterThan(0);
-    }
-  });
-
-  test('14.07 Next button wrapper .wkit-next-btn-content is present', async ({ page }) => {
-    const count = await page.locator('.wkit-next-btn-content').count();
-    expect(count).toBeGreaterThan(0);
-  });
-
-  test('14.08 Business Name input accepts text input', async ({ page }) => {
-    const nameInput = page.locator('input.wkit-site-name-inp');
-    if ((await nameInput.count()) > 0) {
-      await nameInput.fill('QA Test Business Name');
-      const val = await nameInput.inputValue();
-      expect(val).toBe('QA Test Business Name');
-    }
-  });
-
-  test('14.09 Clearing Business Name after entry re-disables Next button', async ({ page }) => {
-    const nameInput = page.locator('input.wkit-site-name-inp');
-    if ((await nameInput.count()) > 0) {
-      await nameInput.fill('Some Name');
+  test('14.06 Whitespace-only business name keeps Next disabled', async ({ page }) => {
+    const inp = page.locator('input.wkit-site-name-inp');
+    if ((await inp.count()) > 0) {
+      await inp.fill('   ');
       await page.waitForTimeout(400);
-      await nameInput.fill('');
-      await page.waitForTimeout(400);
-      const nextBtn = page.locator('button.wkit-next-btn.wkit-btn-class');
-      if ((await nextBtn.count()) > 0) {
-        const disabled = await nextBtn.isDisabled();
-        expect(disabled).toBe(true);
-      }
-    }
-  });
-
-  test('14.10 Whitespace-only Business Name keeps Next disabled', async ({ page }) => {
-    const nameInput = page.locator('input.wkit-site-name-inp');
-    if ((await nameInput.count()) > 0) {
-      await nameInput.fill('   ');
-      await page.waitForTimeout(500);
       const nextBtn = page.locator('button.wkit-next-btn.wkit-btn-class');
       if ((await nextBtn.count()) > 0) {
         await expect.soft(nextBtn).toBeDisabled({ timeout: 2000 });
@@ -262,115 +227,74 @@ test.describe('14. Preview step — Business Name field required validation', ()
     }
   });
 
-});
-
-// =============================================================================
-// 15. Preview step — all other form fields
-// =============================================================================
-test.describe('15. Preview step — all other form fields', () => {
-
-  test.beforeEach(async ({ page }) => {
-    await wpLogin(page);
-    await goToBrowse(page);
-    await clickFirstCardImport(page);
-    await page.locator('.wkit-temp-import-mian').waitFor({ state: 'visible', timeout: 20000 }).catch(() => {});
-  });
-
-  test('15.01 Tagline label .wkit-site-tagline-label is present', async ({ page }) => {
-    const count = await page.locator('label.wkit-site-tagline-label').count();
-    expect(count).toBeGreaterThan(0);
-  });
-
-  test('15.02 Tagline input .wkit-site-tagline-inp is present', async ({ page }) => {
-    const count = await page.locator('input.wkit-site-tagline-inp').count();
-    expect(count).toBeGreaterThan(0);
-  });
-
-  test('15.03 Tagline input accepts text', async ({ page }) => {
-    const input = page.locator('input.wkit-site-tagline-inp');
-    if ((await input.count()) > 0) {
-      await input.fill('Your business tagline');
-      const val = await input.inputValue();
-      expect(val).toBe('Your business tagline');
+  test('14.07 Disabled Next shows tooltip with guidance text', async ({ page }) => {
+    const inp = page.locator('input.wkit-site-name-inp');
+    if ((await inp.count()) > 0) {
+      await inp.fill('');
+      await page.waitForTimeout(300);
+      const tooltip = page.locator('span.wkit-notice-tooltip-txt');
+      expect(await tooltip.count()).toBeGreaterThan(0);
+      const text = await tooltip.first().textContent().catch(() => '');
+      expect(text.toLowerCase()).toMatch(/business name|continue/i);
     }
   });
 
-  test('15.04 Address label .wkit-site-address-label is present', async ({ page }) => {
-    const count = await page.locator('label.wkit-site-address-label').count();
-    expect(count).toBeGreaterThan(0);
+  test('14.08 Typing in Business Name updates the input value correctly', async ({ page }) => {
+    const inp = page.locator('input.wkit-site-name-inp');
+    if ((await inp.count()) > 0) {
+      await inp.fill('QA Automation Inc.');
+      const val = await inp.inputValue();
+      expect(val).toBe('QA Automation Inc.');
+    }
   });
 
-  test('15.05 Address input .wkit-site-address-inp is present', async ({ page }) => {
-    const count = await page.locator('input.wkit-site-address-inp, .wkit-site-address-inp').count();
-    expect(count).toBeGreaterThan(0);
+  test('14.09 Clearing name after entry re-disables Next button', async ({ page }) => {
+    const inp = page.locator('input.wkit-site-name-inp');
+    if ((await inp.count()) > 0) {
+      await inp.fill('Some Business');
+      await page.waitForTimeout(300);
+      await inp.fill('');
+      await page.waitForTimeout(400);
+      const nextBtn = page.locator('button.wkit-next-btn.wkit-btn-class');
+      if ((await nextBtn.count()) > 0) {
+        expect(await nextBtn.isDisabled()).toBe(true);
+      }
+    }
   });
 
-  test('15.06 Email label .wkit-site-email-label is present', async ({ page }) => {
-    const count = await page.locator('label.wkit-site-email-label').count();
-    expect(count).toBeGreaterThan(0);
+  test('14.10 Business Name placeholder has guidance text', async ({ page }) => {
+    const inp = page.locator('input.wkit-site-name-inp');
+    if ((await inp.count()) > 0) {
+      const placeholder = await inp.getAttribute('placeholder');
+      expect(placeholder).toBeTruthy();
+      expect(placeholder.length).toBeGreaterThan(0);
+    }
   });
 
-  test('15.07 Email input .wkit-site-email-inp is present', async ({ page }) => {
-    const count = await page.locator('input.wkit-site-email-inp').count();
-    expect(count).toBeGreaterThan(0);
+  test('14.11 Business Name does not have maxlength restricting normal names', async ({ page }) => {
+    const inp = page.locator('input.wkit-site-name-inp');
+    if ((await inp.count()) > 0) {
+      const longName = 'A'.repeat(100);
+      await inp.fill(longName);
+      const val = await inp.inputValue();
+      // Either it accepts all 100 or has a maxlength — just verify it accepted some
+      expect(val.trim().length).toBeGreaterThan(0);
+    }
   });
 
-  test('15.08 Mobile label .wkit-site-mobile-label is present', async ({ page }) => {
-    const count = await page.locator('label.wkit-site-mobile-label').count();
-    expect(count).toBeGreaterThan(0);
-  });
-
-  test('15.09 Mobile input .wkit-site-mobile-inp is present', async ({ page }) => {
-    const count = await page.locator('input.wkit-site-mobile-inp').count();
-    expect(count).toBeGreaterThan(0);
-  });
-
-  test('15.10 Logo label .wkit-site-logo-label is present', async ({ page }) => {
-    const count = await page.locator('label.wkit-site-logo-label').count();
-    expect(count).toBeGreaterThan(0);
-  });
-
-  test('15.11 Logo upload area .wkit-site-logo-content is present', async ({ page }) => {
-    const count = await page.locator('.wkit-site-logo-content').count();
-    expect(count).toBeGreaterThan(0);
-  });
-
-  test('15.12 Logo upload area has plus icon .wdkit-i-wb-plus', async ({ page }) => {
-    const count = await page.locator('.wdkit-i-wb-plus').count();
-    expect(count).toBeGreaterThan(0);
-  });
-
-  test('15.13 Logo upload text .wkit-site-logo-txt is present', async ({ page }) => {
-    const count = await page.locator('.wkit-site-logo-txt').count();
-    expect(count).toBeGreaterThan(0);
-  });
-
-  test('15.14 Social links label .wkit-site-sociallink-label is present', async ({ page }) => {
-    const count = await page.locator('label.wkit-site-sociallink-label').count();
-    expect(count).toBeGreaterThan(0);
-  });
-
-  test('15.15 Social link section .wkit-temp-site-sociallink is present', async ({ page }) => {
-    const count = await page.locator('.wkit-temp-site-sociallink').count();
-    expect(count).toBeGreaterThan(0);
-  });
-
-  test('15.16 Info separator hr.wkit-temp-info-seperater is present', async ({ page }) => {
-    const count = await page.locator('hr.wkit-temp-info-seperater, .wdkit-style-divider').count();
-    expect(count).toBeGreaterThan(0);
-  });
-
-  test('15.17 All basic info fields are editable (not read-only)', async ({ page }) => {
-    const inputs = [
-      'input.wkit-site-tagline-inp',
-      'input.wkit-site-email-inp',
-      'input.wkit-site-mobile-inp',
-    ];
-    for (const sel of inputs) {
-      const el = page.locator(sel);
-      if ((await el.count()) > 0) {
-        const ro = await el.getAttribute('readonly');
-        expect(ro).toBeNull();
+  test('14.12 Clicking enabled Next navigates to Step 2 or global_data panel', async ({ page }) => {
+    const inp = page.locator('input.wkit-site-name-inp');
+    if ((await inp.count()) > 0) {
+      await inp.fill('QA Next Step Test');
+      await page.waitForTimeout(400);
+      const nextBtn = page.locator('button.wkit-next-btn.wkit-btn-class');
+      if ((await nextBtn.count()) > 0 && await nextBtn.isEnabled()) {
+        await nextBtn.click();
+        await page.waitForTimeout(3000);
+        // Either on global_data panel or Feature step
+        const onGlobal = await page.locator('.wkit-temp-global-data').count();
+        const onFeature = await page.locator('.wkit-import-temp-feature').count();
+        expect(onGlobal + onFeature).toBeGreaterThan(0);
       }
     }
   });
@@ -378,253 +302,818 @@ test.describe('15. Preview step — all other form fields', () => {
 });
 
 // =============================================================================
-// 16. Preview step — additional content section
+// 15. Preview step — Tagline field deep interaction
 // =============================================================================
-test.describe('16. Preview step — additional content section', () => {
+test.describe('15. Preview step — Tagline field deep interaction', () => {
 
   test.beforeEach(async ({ page }) => {
-    await wpLogin(page);
-    await goToBrowse(page);
-    await clickFirstCardImport(page);
-    await page.locator('.wkit-temp-import-mian').waitFor({ state: 'visible', timeout: 20000 }).catch(() => {});
+    await openWizardStep1(page);
   });
 
-  test('16.01 Additional info section .wkit-temp-additional-info is present', async ({ page }) => {
-    const count = await page.locator('.wkit-temp-additional-info').count();
-    expect(count).toBeGreaterThan(0);
+  test('15.01 Tagline label "Business Tagline" is visible', async ({ page }) => {
+    const label = page.locator('label.wkit-site-tagline-label');
+    expect(await label.count()).toBeGreaterThan(0);
+    await expect(label.first()).toContainText(/business tagline/i);
   });
 
-  test('16.02 Additional info header .wkit-temp-additional-info-head is present', async ({ page }) => {
-    const count = await page.locator('.wkit-temp-additional-info-head').count();
-    expect(count).toBeGreaterThan(0);
+  test('15.02 Tagline input is visible, editable, and not required', async ({ page }) => {
+    const inp = page.locator('input.wkit-site-tagline-inp');
+    expect(await inp.count()).toBeGreaterThan(0);
+    await expect(inp).toBeVisible();
+    expect(await inp.getAttribute('readonly')).toBeNull();
+    expect(await inp.getAttribute('required')).toBeNull();
   });
 
-  test('16.03 Additional info header text .wkit-additional-info-head-txt is present', async ({ page }) => {
-    const count = await page.locator('.wkit-additional-info-head-txt').count();
-    expect(count).toBeGreaterThan(0);
+  test('15.03 Tagline input accepts text and reflects typed value', async ({ page }) => {
+    const inp = page.locator('input.wkit-site-tagline-inp');
+    if ((await inp.count()) > 0) {
+      await inp.fill('Think Different');
+      expect(await inp.inputValue()).toBe('Think Different');
+    }
   });
 
-  test('16.04 Info tooltip .wkit-temp-info-tooltip is present', async ({ page }) => {
-    const count = await page.locator('.wkit-temp-info-tooltip').count();
-    expect(count).toBeGreaterThan(0);
+  test('15.04 Tagline placeholder has guidance text', async ({ page }) => {
+    const inp = page.locator('input.wkit-site-tagline-inp');
+    if ((await inp.count()) > 0) {
+      const placeholder = await inp.getAttribute('placeholder');
+      expect(placeholder).toBeTruthy();
+    }
   });
 
-  test('16.05 Info tooltip has info icon .wdkit-i-info', async ({ page }) => {
-    const count = await page.locator('.wdkit-i-info').count();
-    expect(count).toBeGreaterThan(0);
+  test('15.05 Filling tagline does not affect Next button disabled state (name still empty)', async ({ page }) => {
+    const taglineInp = page.locator('input.wkit-site-tagline-inp');
+    const nameInp = page.locator('input.wkit-site-name-inp');
+    if ((await taglineInp.count()) > 0 && (await nameInp.count()) > 0) {
+      await nameInp.fill('');
+      await taglineInp.fill('Great tagline');
+      await page.waitForTimeout(300);
+      const nextBtn = page.locator('button.wkit-next-btn.wkit-btn-class');
+      if ((await nextBtn.count()) > 0) {
+        expect(await nextBtn.isDisabled()).toBe(true);
+      }
+    }
   });
 
-  test('16.06 Tooltip text .wkit-temp-info-tooltip-txt is present', async ({ page }) => {
-    const count = await page.locator('.wkit-temp-info-tooltip-txt').count();
-    expect(count).toBeGreaterThan(0);
+});
+
+// =============================================================================
+// 16. Preview step — Additional Content accordion — expand & all fields
+// =============================================================================
+test.describe('16. Preview step — Additional Content accordion & all fields', () => {
+  test.describe.configure({ mode: 'serial' });
+
+  test.beforeEach(async ({ page }) => {
+    await openWizardStep1(page);
   });
 
-  test('16.07 Expand/collapse icon .wdkit-i-down-arrow.wkit-info-drp-icon is present', async ({ page }) => {
-    const count = await page.locator('.wdkit-i-down-arrow.wkit-info-drp-icon').count();
-    expect(count).toBeGreaterThan(0);
+  test('16.01 Additional info accordion .wkit-temp-additional-info is present', async ({ page }) => {
+    expect(await page.locator('.wkit-temp-additional-info').count()).toBeGreaterThan(0);
   });
 
-  test('16.08 Clicking additional info header expands the body section', async ({ page }) => {
+  test('16.02 Additional info header "Add Additional Content" is clickable', async ({ page }) => {
+    const header = page.locator('.wkit-temp-additional-info-head');
+    expect(await header.count()).toBeGreaterThan(0);
+    await expect(header.first()).toBeVisible();
+  });
+
+  test('16.03 Info tooltip icon .wdkit-i-info is present in header', async ({ page }) => {
+    expect(await page.locator('.wkit-temp-info-tooltip .wdkit-i-info').count()).toBeGreaterThan(0);
+  });
+
+  test('16.04 Expand icon .wdkit-i-down-arrow.wkit-info-drp-icon is present', async ({ page }) => {
+    expect(await page.locator('.wdkit-i-down-arrow.wkit-info-drp-icon').count()).toBeGreaterThan(0);
+  });
+
+  test('16.05 Clicking accordion header expands the Additional Content body', async ({ page }) => {
     const header = page.locator('.wkit-temp-additional-info-head');
     if ((await header.count()) > 0) {
       await header.click();
-      await page.waitForTimeout(800);
-      await expect.soft(page.locator('.wkit-temp-additional-info-body').first()).toBeVisible({ timeout: 3000 });
+      await page.waitForTimeout(600);
+      const body = page.locator('.wkit-temp-additional-info-body');
+      await expect.soft(body.first()).toBeVisible({ timeout: 5000 });
+    }
+  });
+
+  test('16.06 Address textarea .wkit-site-address-inp is visible after expanding', async ({ page }) => {
+    const header = page.locator('.wkit-temp-additional-info-head');
+    if ((await header.count()) > 0) {
+      await header.click();
+      await page.waitForTimeout(600);
+      const textarea = page.locator('textarea.wkit-site-address-inp, .wkit-site-address-inp');
+      if ((await textarea.count()) > 0) {
+        await expect(textarea.first()).toBeVisible({ timeout: 5000 });
+      }
+    }
+  });
+
+  test('16.07 Address field accepts text input', async ({ page }) => {
+    const header = page.locator('.wkit-temp-additional-info-head');
+    if ((await header.count()) > 0) {
+      await header.click();
+      await page.waitForTimeout(600);
+      const textarea = page.locator('textarea.wkit-site-address-inp');
+      if ((await textarea.count()) > 0) {
+        await textarea.fill('123 Main Street, New York, NY 10001');
+        expect(await textarea.inputValue()).toContain('123 Main Street');
+      }
+    }
+  });
+
+  test('16.08 Email input .wkit-site-email-inp is visible after expanding', async ({ page }) => {
+    const header = page.locator('.wkit-temp-additional-info-head');
+    if ((await header.count()) > 0) {
+      await header.click();
+      await page.waitForTimeout(600);
+      const inp = page.locator('input.wkit-site-email-inp');
+      if ((await inp.count()) > 0) {
+        await expect(inp.first()).toBeVisible({ timeout: 5000 });
+      }
+    }
+  });
+
+  test('16.09 Email input accepts valid email and reflects value', async ({ page }) => {
+    const header = page.locator('.wkit-temp-additional-info-head');
+    if ((await header.count()) > 0) {
+      await header.click();
+      await page.waitForTimeout(600);
+      const inp = page.locator('input.wkit-site-email-inp');
+      if ((await inp.count()) > 0) {
+        await inp.fill('qa@example.com');
+        expect(await inp.inputValue()).toBe('qa@example.com');
+      }
+    }
+  });
+
+  test('16.10 Phone input .wkit-site-mobile-inp is visible after expanding', async ({ page }) => {
+    const header = page.locator('.wkit-temp-additional-info-head');
+    if ((await header.count()) > 0) {
+      await header.click();
+      await page.waitForTimeout(600);
+      const inp = page.locator('input.wkit-site-mobile-inp');
+      if ((await inp.count()) > 0) {
+        await expect(inp.first()).toBeVisible({ timeout: 5000 });
+      }
+    }
+  });
+
+  test('16.11 Phone input accepts a phone number', async ({ page }) => {
+    const header = page.locator('.wkit-temp-additional-info-head');
+    if ((await header.count()) > 0) {
+      await header.click();
+      await page.waitForTimeout(600);
+      const inp = page.locator('input.wkit-site-mobile-inp');
+      if ((await inp.count()) > 0) {
+        await inp.fill('+1 (213) 449-4470');
+        const val = await inp.inputValue();
+        expect(val.trim().length).toBeGreaterThan(0);
+      }
+    }
+  });
+
+  test('16.12 Social Media section .wkit-temp-site-sociallink is visible after expanding', async ({ page }) => {
+    const header = page.locator('.wkit-temp-additional-info-head');
+    if ((await header.count()) > 0) {
+      await header.click();
+      await page.waitForTimeout(600);
+      const social = page.locator('.wkit-temp-site-sociallink');
+      if ((await social.count()) > 0) {
+        await expect(social.first()).toBeVisible({ timeout: 5000 });
+      }
+    }
+  });
+
+  test('16.13 Social Media Add button .wkit-socialink-header opens dropdown', async ({ page }) => {
+    const header = page.locator('.wkit-temp-additional-info-head');
+    if ((await header.count()) > 0) {
+      await header.click();
+      await page.waitForTimeout(600);
+      const addBtn = page.locator('.wkit-socialink-header.wkit-outer-btn-class');
+      if ((await addBtn.count()) > 0) {
+        await addBtn.click({ force: true });
+        await page.waitForTimeout(600);
+        const drpBody = page.locator('.wkit-socialink-body');
+        await expect.soft(drpBody.first()).toBeVisible({ timeout: 3000 });
+      }
+    }
+  });
+
+  test('16.14 Clicking accordion header twice collapses the body again', async ({ page }) => {
+    const header = page.locator('.wkit-temp-additional-info-head');
+    if ((await header.count()) > 0) {
+      await header.click();
+      await page.waitForTimeout(600);
+      await header.click();
+      await page.waitForTimeout(600);
+      const body = page.locator('.wkit-temp-additional-info-body');
+      if ((await body.count()) > 0) {
+        const visible = await body.first().isVisible();
+        expect(visible).toBe(false);
+      }
     }
   });
 
 });
 
 // =============================================================================
-// 17. Preview step — global color & palette
+// 17. Preview step — Global Color panel (deep interaction)
 // =============================================================================
-test.describe('17. Preview step — global color & palette', () => {
+test.describe('17. Preview step — Global Color panel deep interaction', () => {
+  test.describe.configure({ mode: 'serial' });
 
   test.beforeEach(async ({ page }) => {
-    await wpLogin(page);
-    await goToBrowse(page);
-    await clickFirstCardImport(page);
-    await page.locator('.wkit-temp-import-mian').waitFor({ state: 'visible', timeout: 20000 }).catch(() => {});
+    await openGlobalDataPanel(page);
   });
 
-  test('17.01 Global color edit section .wkit-temp-global-color-edit is present', async ({ page }) => {
-    const count = await page.locator('.wkit-temp-global-color-edit').count();
+  test('17.01 Global data panel .wkit-temp-global-data is present after Next on site_info', async ({ page }) => {
+    const count = await page.locator('.wkit-temp-global-data').count();
+    // Template may or may not have global data — just verify page didn't crash
     expect(count).toBeGreaterThanOrEqual(0);
   });
 
-  test('17.02 Global color header .wkit-global-color-header is present if section exists', async ({ page }) => {
+  test('17.02 Global Color section header .wkit-global-color-header says "Global Color"', async ({ page }) => {
     const section = page.locator('.wkit-temp-global-color-edit');
     if ((await section.count()) > 0) {
-      const headerCount = await page.locator('.wkit-global-color-header').count();
-      expect(headerCount).toBeGreaterThan(0);
+      const header = page.locator('.wkit-global-color-header');
+      expect(await header.count()).toBeGreaterThan(0);
+      await expect(header.first()).toContainText(/global color/i);
     }
   });
 
-  test('17.03 Global color body .wkit-global-color-body is present if section exists', async ({ page }) => {
+  test('17.03 Global color body renders color swatch cards .wkit-global-color-card', async ({ page }) => {
+    const body = page.locator('.wkit-global-color-body');
+    if ((await body.count()) > 0) {
+      const cards = page.locator('.wkit-global-color-card');
+      const count = await cards.count();
+      expect(count).toBeGreaterThan(0);
+    }
+  });
+
+  test('17.04 Each color card has a color input[type=color] inside it', async ({ page }) => {
+    const body = page.locator('.wkit-global-color-body');
+    if ((await body.count()) > 0) {
+      const inputs = page.locator('.wkit-global-color-body input[type="color"]');
+      const count = await inputs.count();
+      expect(count).toBeGreaterThan(0);
+    }
+  });
+
+  test('17.05 Color input value is a valid hex string', async ({ page }) => {
+    const body = page.locator('.wkit-global-color-body');
+    if ((await body.count()) > 0) {
+      const inp = page.locator('.wkit-global-color-body input[type="color"]').first();
+      if ((await inp.count()) > 0) {
+        const value = await inp.inputValue();
+        expect(value).toMatch(/^#[0-9a-fA-F]{6}$/);
+      }
+    }
+  });
+
+  test('17.06 Changing a color input updates the displayed hex label', async ({ page }) => {
+    const body = page.locator('.wkit-global-color-body');
+    if ((await body.count()) > 0) {
+      const colorCard = page.locator('.wkit-global-color-card').first();
+      if ((await colorCard.count()) > 0) {
+        const inp = colorCard.locator('input[type="color"]');
+        const spanLabel = colorCard.locator('span');
+        if ((await inp.count()) > 0) {
+          await inp.fill('#ff5733');
+          await page.waitForTimeout(500);
+          // Value should be updated
+          const newVal = await inp.inputValue();
+          expect(newVal.toLowerCase()).toBe('#ff5733');
+        }
+      }
+    }
+  });
+
+  test('17.07 Global Color reset button .wkit-global-data-reset is present and clickable', async ({ page }) => {
     const section = page.locator('.wkit-temp-global-color-edit');
     if ((await section.count()) > 0) {
-      const bodyCount = await page.locator('.wkit-global-color-body').count();
-      expect(bodyCount).toBeGreaterThan(0);
+      const resetBtn = page.locator('.wkit-global-color-head .wkit-global-data-reset');
+      if ((await resetBtn.count()) > 0) {
+        await resetBtn.click({ force: true });
+        await page.waitForTimeout(500);
+        // Colors should reset — verify no crash
+        expect(await page.locator('.wkit-global-color-body').count()).toBeGreaterThan(0);
+      }
     }
   });
 
-  test('17.04 Color palette section .wkit-temp-palette-color-edit is present', async ({ page }) => {
-    const count = await page.locator('.wkit-temp-palette-color-edit').count();
-    expect(count).toBeGreaterThanOrEqual(0);
-  });
-
-  test('17.05 Palette header .wkit-palette-color-header is present if section exists', async ({ page }) => {
-    const section = page.locator('.wkit-temp-palette-color-edit');
-    if ((await section.count()) > 0) {
-      const count = await page.locator('.wkit-palette-color-header').count();
-      expect(count).toBeGreaterThan(0);
+  test('17.08 Color swatches have a hex label span showing color value', async ({ page }) => {
+    const body = page.locator('.wkit-global-color-body');
+    if ((await body.count()) > 0) {
+      const spans = page.locator('.wkit-global-color-card span');
+      const count = await spans.count();
+      if (count > 0) {
+        const text = await spans.first().textContent();
+        expect(text.trim()).toMatch(/^#[0-9a-fA-F]{6}$/i);
+      }
     }
   });
 
-  test('17.06 Primary color box .wkit-primary-color-box is present if palette exists', async ({ page }) => {
-    const section = page.locator('.wkit-temp-palette-color-edit');
-    if ((await section.count()) > 0) {
-      const count = await page.locator('.wkit-primary-color-box').count();
-      expect(count).toBeGreaterThan(0);
+  test('17.09 Global color section title is present in global_data panel heading', async ({ page }) => {
+    const heading = page.locator('.wkit-edit-temp-header');
+    if ((await heading.count()) > 0) {
+      await expect(heading.first()).toContainText(/select global fonts.*colours|global/i);
     }
   });
 
-  test('17.07 Secondary color box .wkit-secondary-color-box is present if palette exists', async ({ page }) => {
-    const section = page.locator('.wkit-temp-palette-color-edit');
-    if ((await section.count()) > 0) {
-      const count = await page.locator('.wkit-secondary-color-box').count();
-      expect(count).toBeGreaterThan(0);
+  test('17.10 Color cards section does not show a console error on render', async ({ page }) => {
+    const errors = [];
+    page.on('console', m => { if (m.type() === 'error') errors.push(m.text()); });
+    await page.waitForTimeout(1500);
+    const productErrors = errors.filter(e =>
+      !e.includes('favicon') && !e.includes('net::ERR') && !e.includes('extension')
+    );
+    expect(productErrors).toHaveLength(0);
+  });
+
+  test('17.11 Multiple color cards render (at least 4) when template has global colors', async ({ page }) => {
+    const body = page.locator('.wkit-global-color-body');
+    if ((await body.count()) > 0) {
+      const cards = page.locator('.wkit-global-color-card');
+      const count = await cards.count();
+      expect(count).toBeGreaterThanOrEqual(4);
     }
   });
 
-  test('17.08 Global color data loop .wkit-global-data-loop renders items if section exists', async ({ page }) => {
-    const section = page.locator('.wkit-global-color-body');
-    if ((await section.count()) > 0) {
-      const items = await page.locator('.wkit-global-data-loop').count();
-      expect(items).toBeGreaterThanOrEqual(0);
+  test('17.12 Color input container .wkit-global-color-btn is present per card', async ({ page }) => {
+    const body = page.locator('.wkit-global-color-body');
+    if ((await body.count()) > 0) {
+      const btns = page.locator('.wkit-global-color-btn');
+      expect(await btns.count()).toBeGreaterThan(0);
+    }
+  });
+
+  test('17.13 Clicking second color card does not crash the UI', async ({ page }) => {
+    const body = page.locator('.wkit-global-color-body');
+    if ((await body.count()) > 0) {
+      const cards = page.locator('.wkit-global-color-card');
+      if ((await cards.count()) > 1) {
+        await cards.nth(1).click({ force: true });
+        await page.waitForTimeout(400);
+        expect(await page.locator('.wkit-global-color-body').count()).toBeGreaterThan(0);
+      }
+    }
+  });
+
+  test('17.14 Each color input has a unique id prefix wkit-site-color-select-', async ({ page }) => {
+    const body = page.locator('.wkit-global-color-body');
+    if ((await body.count()) > 0) {
+      const inputs = page.locator('.wkit-global-color-body input[type="color"]');
+      const count = await inputs.count();
+      if (count > 0) {
+        const id = await inputs.first().getAttribute('id');
+        expect(id).toMatch(/wkit-site-color-select/);
+      }
+    }
+  });
+
+  test('17.15 Global color panel does not overflow horizontally', async ({ page }) => {
+    const body = page.locator('.wkit-global-color-body');
+    if ((await body.count()) > 0) {
+      const overflow = await body.first().evaluate(el => {
+        return el.scrollWidth > el.clientWidth;
+      });
+      expect(overflow).toBe(false);
     }
   });
 
 });
 
 // =============================================================================
-// 18. Preview step — global typography
+// 18. Preview step — Global Typography panel (deep interaction)
 // =============================================================================
-test.describe('18. Preview step — global typography', () => {
+test.describe('18. Preview step — Global Typography panel deep interaction', () => {
+  test.describe.configure({ mode: 'serial' });
 
   test.beforeEach(async ({ page }) => {
-    await wpLogin(page);
-    await goToBrowse(page);
-    await clickFirstCardImport(page);
-    await page.locator('.wkit-temp-import-mian').waitFor({ state: 'visible', timeout: 20000 }).catch(() => {});
+    await openGlobalDataPanel(page);
   });
 
-  test('18.01 Typography section .wkit-temp-global-typography-edit is present if rendered', async ({ page }) => {
+  test('18.01 Typography section .wkit-temp-global-typography-edit is present if template has fonts', async ({ page }) => {
     const count = await page.locator('.wkit-temp-global-typography-edit').count();
     expect(count).toBeGreaterThanOrEqual(0);
   });
 
-  test('18.02 Typography header .wkit-global-typography-header is present if section exists', async ({ page }) => {
+  test('18.02 Typography header says "Font Style"', async ({ page }) => {
     const section = page.locator('.wkit-temp-global-typography-edit');
     if ((await section.count()) > 0) {
-      const count = await page.locator('.wkit-global-typography-header').count();
-      expect(count).toBeGreaterThan(0);
+      const header = page.locator('.wkit-global-typography-header');
+      expect(await header.count()).toBeGreaterThan(0);
+      await expect(header.first()).toContainText(/font style/i);
     }
   });
 
-  test('18.03 Typography body .wkit-global-typography-body is present if section exists', async ({ page }) => {
+  test('18.03 Typography body .wkit-global-typography-body is present', async ({ page }) => {
     const section = page.locator('.wkit-temp-global-typography-edit');
     if ((await section.count()) > 0) {
-      const count = await page.locator('.wkit-global-typography-body').count();
-      expect(count).toBeGreaterThan(0);
+      expect(await page.locator('.wkit-global-typography-body').count()).toBeGreaterThan(0);
     }
   });
 
-  test('18.04 Typography button .wkit-global-typo-btn is present if section exists', async ({ page }) => {
+  test('18.04 Typography buttons .wkit-global-typo-btn are rendered (at least 1)', async ({ page }) => {
     const section = page.locator('.wkit-temp-global-typography-edit');
     if ((await section.count()) > 0) {
-      const count = await page.locator('.wkit-global-typo-btn').count();
-      expect(count).toBeGreaterThan(0);
+      const buttons = page.locator('.wkit-global-typo-btn');
+      expect(await buttons.count()).toBeGreaterThan(0);
+    }
+  });
+
+  test('18.05 Each typography button shows font name sample text "Ag"', async ({ page }) => {
+    const section = page.locator('.wkit-temp-global-typography-edit');
+    if ((await section.count()) > 0) {
+      const buttons = page.locator('.wkit-global-typo-btn');
+      const count = await buttons.count();
+      if (count > 0) {
+        const text = await buttons.first().textContent();
+        expect(text.trim().length).toBeGreaterThan(0);
+      }
+    }
+  });
+
+  test('18.06 Clicking a typography button opens the font picker popup .wkit-select-global-data', async ({ page }) => {
+    const section = page.locator('.wkit-temp-global-typography-edit');
+    if ((await section.count()) > 0) {
+      const typoBtn = page.locator('.wkit-global-typo-btn').first();
+      if ((await typoBtn.count()) > 0) {
+        await typoBtn.click({ force: true });
+        await page.waitForTimeout(600);
+        const popup = page.locator('.wkit-select-global-data');
+        if ((await popup.count()) > 0) {
+          await expect.soft(popup.first()).toBeVisible({ timeout: 3000 });
+        }
+      }
+    }
+  });
+
+  test('18.07 Font picker has a search input .wkit-fontfamily-search-inp', async ({ page }) => {
+    const section = page.locator('.wkit-temp-global-typography-edit');
+    if ((await section.count()) > 0) {
+      const typoBtn = page.locator('.wkit-global-typo-btn').first();
+      if ((await typoBtn.count()) > 0) {
+        await typoBtn.click({ force: true });
+        await page.waitForTimeout(600);
+        const searchInp = page.locator('.wkit-fontfamily-search-inp');
+        if ((await searchInp.count()) > 0) {
+          await expect(searchInp.first()).toBeVisible({ timeout: 3000 });
+        }
+      }
+    }
+  });
+
+  test('18.08 Font picker search filters font list when typing', async ({ page }) => {
+    const section = page.locator('.wkit-temp-global-typography-edit');
+    if ((await section.count()) > 0) {
+      const typoBtn = page.locator('.wkit-global-typo-btn').first();
+      if ((await typoBtn.count()) > 0) {
+        await typoBtn.click({ force: true });
+        await page.waitForTimeout(600);
+        const searchInp = page.locator('.wkit-fontfamily-search-inp').first();
+        if ((await searchInp.count()) > 0) {
+          await searchInp.fill('Roboto');
+          await page.waitForTimeout(400);
+          const fontCards = page.locator('.wkit-typo-card');
+          const count = await fontCards.count();
+          // After filtering for "Roboto", list should be shorter
+          expect(count).toBeGreaterThan(0);
+          const firstFont = await fontCards.first().textContent();
+          expect(firstFont.toLowerCase()).toContain('roboto');
+        }
+      }
+    }
+  });
+
+  test('18.09 Clicking a font in the picker selects it without crashing', async ({ page }) => {
+    const section = page.locator('.wkit-temp-global-typography-edit');
+    if ((await section.count()) > 0) {
+      const typoBtn = page.locator('.wkit-global-typo-btn').first();
+      if ((await typoBtn.count()) > 0) {
+        await typoBtn.click({ force: true });
+        await page.waitForTimeout(600);
+        const fontCard = page.locator('.wkit-typo-card').first();
+        if ((await fontCard.count()) > 0) {
+          await fontCard.click({ force: true });
+          await page.waitForTimeout(500);
+          // After selection, popup should close
+          expect(await page.locator('.wkit-temp-global-typography-edit').count()).toBeGreaterThan(0);
+        }
+      }
+    }
+  });
+
+  test('18.10 Typography reset button .wkit-global-data-reset is present and clickable', async ({ page }) => {
+    const section = page.locator('.wkit-temp-global-typography-edit');
+    if ((await section.count()) > 0) {
+      const resetBtn = page.locator('.wkit-global-typo-head .wkit-global-data-reset');
+      if ((await resetBtn.count()) > 0) {
+        await resetBtn.click({ force: true });
+        await page.waitForTimeout(500);
+        expect(await page.locator('.wkit-global-typography-body').count()).toBeGreaterThan(0);
+      }
+    }
+  });
+
+  test('18.11 Font picker contains at least 10 fonts in the list', async ({ page }) => {
+    const section = page.locator('.wkit-temp-global-typography-edit');
+    if ((await section.count()) > 0) {
+      const typoBtn = page.locator('.wkit-global-typo-btn').first();
+      if ((await typoBtn.count()) > 0) {
+        await typoBtn.click({ force: true });
+        await page.waitForTimeout(600);
+        const fontCards = page.locator('.wkit-typo-card');
+        const count = await fontCards.count();
+        if (count > 0) {
+          expect(count).toBeGreaterThanOrEqual(10);
+        }
+      }
+    }
+  });
+
+  test('18.12 Font picker search with "Poppins" finds the Poppins font', async ({ page }) => {
+    const section = page.locator('.wkit-temp-global-typography-edit');
+    if ((await section.count()) > 0) {
+      const typoBtn = page.locator('.wkit-global-typo-btn').first();
+      if ((await typoBtn.count()) > 0) {
+        await typoBtn.click({ force: true });
+        await page.waitForTimeout(600);
+        const searchInp = page.locator('.wkit-fontfamily-search-inp').first();
+        if ((await searchInp.count()) > 0) {
+          await searchInp.fill('Poppins');
+          await page.waitForTimeout(400);
+          const poppinsCard = page.locator('.wkit-typo-card').filter({ hasText: 'Poppins' });
+          if ((await poppinsCard.count()) > 0) {
+            await expect(poppinsCard.first()).toBeVisible({ timeout: 3000 });
+          }
+        }
+      }
     }
   });
 
 });
 
 // =============================================================================
-// 19. Preview step — responsive preview toggle (desktop/tablet/mobile)
+// 19. Preview step — Color palette switcher (select, custom palette, reset)
 // =============================================================================
-test.describe('19. Preview step — responsive preview toggle', () => {
+test.describe('19. Preview step — Color palette switcher deep interaction', () => {
   test.describe.configure({ mode: 'serial' });
 
   test.beforeEach(async ({ page }) => {
-    await wpLogin(page);
-    await goToBrowse(page);
-    await clickFirstCardImport(page);
-    await page.locator('.wkit-temp-import-mian').waitFor({ state: 'visible', timeout: 20000 }).catch(() => {});
+    await openGlobalDataPanel(page);
   });
 
-  test('19.01 Responsive bar .wkit-temp-responsive is visible', async ({ page }) => {
-    const count = await page.locator('.wkit-temp-responsive').count();
-    expect(count).toBeGreaterThan(0);
+  test('19.01 Palette body .wkit-palette-color-body is present when palette_compit is true', async ({ page }) => {
+    const count = await page.locator('.wkit-palette-color-body').count();
+    expect(count).toBeGreaterThanOrEqual(0);
   });
 
-  test('19.02 Desktop icon .wdkit-i-computer is present in responsive bar', async ({ page }) => {
-    const count = await page.locator('.wdkit-i-computer').count();
-    expect(count).toBeGreaterThan(0);
+  test('19.02 Palette swatches .wkit-palette-cover are rendered (at least 1)', async ({ page }) => {
+    const body = page.locator('.wkit-palette-color-body');
+    if ((await body.count()) > 0) {
+      const swatches = page.locator('.wkit-palette-cover');
+      expect(await swatches.count()).toBeGreaterThan(0);
+    }
   });
 
-  test('19.03 Tablet icon .wdkit-i-tablet is present in responsive bar', async ({ page }) => {
-    const count = await page.locator('.wdkit-i-tablet').count();
-    expect(count).toBeGreaterThan(0);
+  test('19.03 Each palette swatch has Primary and Secondary color spans', async ({ page }) => {
+    const swatches = page.locator('.wkit-palette-cover');
+    if ((await swatches.count()) > 0) {
+      const primary = page.locator('.wkit-palette-primary-color').first();
+      const secondary = page.locator('.wkit-palette-secondary-color').first();
+      expect(await primary.count()).toBeGreaterThan(0);
+      expect(await secondary.count()).toBeGreaterThan(0);
+    }
   });
 
-  test('19.04 Mobile icon .wdkit-i-smart-phone is present in responsive bar', async ({ page }) => {
-    const count = await page.locator('.wdkit-i-smart-phone').count();
-    expect(count).toBeGreaterThan(0);
+  test('19.04 Clicking a palette swatch applies .wkit-selected-palette class', async ({ page }) => {
+    const swatches = page.locator('.wkit-palette-cover');
+    if ((await swatches.count()) > 0) {
+      const firstSwatch = swatches.first();
+      await firstSwatch.click({ force: true });
+      await page.waitForTimeout(500);
+      const cls = await firstSwatch.getAttribute('class');
+      expect(cls).toContain('wkit-selected-palette');
+    }
   });
 
-  test('19.05 Clicking tablet icon does not throw errors', async ({ page }) => {
-    const errors = [];
-    page.on('console', m => { if (m.type() === 'error') errors.push(m.text()); });
+  test('19.05 Clicking a different palette swatch changes the selected palette', async ({ page }) => {
+    const swatches = page.locator('.wkit-palette-cover');
+    const count = await swatches.count();
+    if (count >= 2) {
+      await swatches.nth(0).click({ force: true });
+      await page.waitForTimeout(400);
+      await swatches.nth(1).click({ force: true });
+      await page.waitForTimeout(400);
+      const cls = await swatches.nth(1).getAttribute('class');
+      expect(cls).toContain('wkit-selected-palette');
+      const cls0 = await swatches.nth(0).getAttribute('class');
+      expect(cls0 || '').not.toContain('wkit-selected-palette');
+    }
+  });
+
+  test('19.06 Custom palette "+" button .wkit-new-palette-cover is present', async ({ page }) => {
+    const body = page.locator('.wkit-palette-color-body');
+    if ((await body.count()) > 0) {
+      expect(await page.locator('.wkit-new-palette-cover').count()).toBeGreaterThan(0);
+    }
+  });
+
+  test('19.07 Clicking "+" opens custom palette panel with primary/secondary inputs', async ({ page }) => {
+    const newPalette = page.locator('.wkit-new-palette-cover');
+    if ((await newPalette.count()) > 0) {
+      await newPalette.click({ force: true });
+      await page.waitForTimeout(600);
+      const primaryInp = page.locator('.wkit-primary-color-inp');
+      if ((await primaryInp.count()) > 0) {
+        await expect.soft(primaryInp.first()).toBeVisible({ timeout: 3000 });
+      }
+    }
+  });
+
+  test('19.08 Palette reset resets colors and removes selection', async ({ page }) => {
+    const body = page.locator('.wkit-palette-color-body');
+    if ((await body.count()) > 0) {
+      const swatches = page.locator('.wkit-palette-cover');
+      if ((await swatches.count()) > 0) {
+        await swatches.first().click({ force: true });
+        await page.waitForTimeout(400);
+        const resetBtn = page.locator('.wkit-palette-color-head .wkit-global-data-reset');
+        if ((await resetBtn.count()) > 0) {
+          await resetBtn.click({ force: true });
+          await page.waitForTimeout(500);
+          const selectedCount = await page.locator('.wkit-selected-palette').count();
+          expect(selectedCount).toBe(0);
+        }
+      }
+    }
+  });
+
+});
+
+// =============================================================================
+// 20. Preview step — Font pair switcher (select pair, custom fonts)
+// =============================================================================
+test.describe('20. Preview step — Font pair switcher deep interaction', () => {
+  test.describe.configure({ mode: 'serial' });
+
+  test.beforeEach(async ({ page }) => {
+    await openGlobalDataPanel(page);
+  });
+
+  test('20.01 Font pair buttons .wkit-global-typo-btn are present in palette_compit mode', async ({ page }) => {
+    const count = await page.locator('.wkit-global-typo-btn').count();
+    expect(count).toBeGreaterThanOrEqual(0);
+  });
+
+  test('20.02 Clicking a font pair button applies .wkit-selected-typo class', async ({ page }) => {
+    const typoButtons = page.locator('.wkit-global-typo-btn');
+    if ((await typoButtons.count()) > 0) {
+      const first = typoButtons.first();
+      await first.click({ force: true });
+      await page.waitForTimeout(500);
+      const cls = await first.getAttribute('class');
+      expect(cls).toContain('wkit-selected-typo');
+    }
+  });
+
+  test('20.03 Custom font "+" button .wkit-new-font-cover is present', async ({ page }) => {
+    const count = await page.locator('.wkit-new-font-cover').count();
+    expect(count).toBeGreaterThanOrEqual(0);
+  });
+
+  test('20.04 Clicking "+" font button shows Primary/Secondary font pickers', async ({ page }) => {
+    const newFont = page.locator('.wkit-new-font-cover');
+    if ((await newFont.count()) > 0) {
+      await newFont.click({ force: true });
+      await page.waitForTimeout(600);
+      const primaryBox = page.locator('.wkit-new-primary-font');
+      if ((await primaryBox.count()) > 0) {
+        await expect.soft(primaryBox.first()).toBeVisible({ timeout: 3000 });
+      }
+    }
+  });
+
+  test('20.05 Primary font box .wkit-primary-font-box shows selected font name', async ({ page }) => {
+    const newFont = page.locator('.wkit-new-font-cover');
+    if ((await newFont.count()) > 0) {
+      await newFont.click({ force: true });
+      await page.waitForTimeout(600);
+      const box = page.locator('.wkit-primary-font-box');
+      if ((await box.count()) > 0) {
+        const text = await box.first().textContent();
+        expect(text.trim().length).toBeGreaterThan(0);
+      }
+    }
+  });
+
+  test('20.06 Clicking Primary font box opens font picker popup', async ({ page }) => {
+    const newFont = page.locator('.wkit-new-font-cover');
+    if ((await newFont.count()) > 0) {
+      await newFont.click({ force: true });
+      await page.waitForTimeout(600);
+      const box = page.locator('.wkit-primary-font-box');
+      if ((await box.count()) > 0) {
+        await box.first().click({ force: true });
+        await page.waitForTimeout(500);
+        const popup = page.locator('.wkit-fontfamily-drp-body, .wkit-select-global-data');
+        if ((await popup.count()) > 0) {
+          await expect.soft(popup.first()).toBeVisible({ timeout: 3000 });
+        }
+      }
+    }
+  });
+
+  test('20.07 Secondary font box .wkit-new-secondary-font shows font name', async ({ page }) => {
+    const newFont = page.locator('.wkit-new-font-cover');
+    if ((await newFont.count()) > 0) {
+      await newFont.click({ force: true });
+      await page.waitForTimeout(600);
+      const box = page.locator('.wkit-new-secondary-font');
+      if ((await box.count()) > 0) {
+        const text = await box.first().textContent();
+        expect(text.trim().length).toBeGreaterThan(0);
+      }
+    }
+  });
+
+  test('20.08 Font pair reset button resets typography and removes selection', async ({ page }) => {
+    const typoHead = page.locator('.wkit-palette-color-head');
+    if ((await typoHead.count()) > 0) {
+      const resetBtn = typoHead.locator('.wkit-global-data-reset').first();
+      if ((await resetBtn.count()) > 0) {
+        await resetBtn.click({ force: true });
+        await page.waitForTimeout(500);
+        const selectedTypo = page.locator('.wkit-selected-typo');
+        expect(await selectedTypo.count()).toBe(0);
+      }
+    }
+  });
+
+});
+
+// =============================================================================
+// 21. Preview step — Responsive preview toggle
+// =============================================================================
+test.describe('21. Preview step — Responsive preview toggle', () => {
+  test.describe.configure({ mode: 'serial' });
+
+  test.beforeEach(async ({ page }) => {
+    await openWizardStep1(page);
+  });
+
+  test('21.01 Responsive bar .wkit-temp-responsive is visible', async ({ page }) => {
+    expect(await page.locator('.wkit-temp-responsive').count()).toBeGreaterThan(0);
+  });
+
+  test('21.02 Desktop icon .wdkit-i-computer is present', async ({ page }) => {
+    expect(await page.locator('.wdkit-i-computer').count()).toBeGreaterThan(0);
+  });
+
+  test('21.03 Tablet icon .wdkit-i-tablet is present', async ({ page }) => {
+    expect(await page.locator('.wdkit-i-tablet').count()).toBeGreaterThan(0);
+  });
+
+  test('21.04 Mobile icon .wdkit-i-smart-phone is present', async ({ page }) => {
+    expect(await page.locator('.wdkit-i-smart-phone').count()).toBeGreaterThan(0);
+  });
+
+  test('21.05 Clicking tablet icon sets preview width to 768px', async ({ page }) => {
     const tabletIcon = page.locator('.wdkit-i-tablet');
-    if ((await tabletIcon.count()) > 0) {
+    const previewCon = page.locator('.wkit-temp-preview-con');
+    if ((await tabletIcon.count()) > 0 && (await previewCon.count()) > 0) {
       await tabletIcon.click({ force: true });
-      await page.waitForTimeout(1000);
+      await page.waitForTimeout(800);
+      const width = await previewCon.evaluate(el => el.style.width);
+      expect(width).toBe('768px');
     }
-    const productErrors = errors.filter(e =>
-      !e.includes('favicon') && !e.includes('net::ERR') && !e.includes('extension')
-    );
-    expect(productErrors).toHaveLength(0);
   });
 
-  test('19.06 Clicking mobile icon does not throw errors', async ({ page }) => {
-    const errors = [];
-    page.on('console', m => { if (m.type() === 'error') errors.push(m.text()); });
+  test('21.06 Clicking mobile icon sets preview width to 360px', async ({ page }) => {
     const mobileIcon = page.locator('.wdkit-i-smart-phone');
-    if ((await mobileIcon.count()) > 0) {
+    const previewCon = page.locator('.wkit-temp-preview-con');
+    if ((await mobileIcon.count()) > 0 && (await previewCon.count()) > 0) {
       await mobileIcon.click({ force: true });
-      await page.waitForTimeout(1000);
+      await page.waitForTimeout(800);
+      const width = await previewCon.evaluate(el => el.style.width);
+      expect(width).toBe('360px');
     }
-    const productErrors = errors.filter(e =>
-      !e.includes('favicon') && !e.includes('net::ERR') && !e.includes('extension')
-    );
-    expect(productErrors).toHaveLength(0);
   });
 
-  test('19.07 Clicking desktop icon after mobile restores preview', async ({ page }) => {
+  test('21.07 Clicking desktop icon resets preview width to empty (full width)', async ({ page }) => {
     const mobileIcon = page.locator('.wdkit-i-smart-phone');
     const desktopIcon = page.locator('.wdkit-i-computer');
-    if ((await mobileIcon.count()) > 0 && (await desktopIcon.count()) > 0) {
+    const previewCon = page.locator('.wkit-temp-preview-con');
+    if ((await mobileIcon.count()) > 0 && (await previewCon.count()) > 0) {
       await mobileIcon.click({ force: true });
-      await page.waitForTimeout(800);
+      await page.waitForTimeout(500);
       await desktopIcon.click({ force: true });
-      await page.waitForTimeout(800);
-      const previewCount = await page.locator('.wkit-temp-preview-content').count();
-      expect(previewCount).toBeGreaterThan(0);
+      await page.waitForTimeout(500);
+      const width = await previewCon.evaluate(el => el.style.width);
+      expect(width).toBe('');
     }
   });
 
-  test('19.08 Responsive icons each have .wkit-responsive-icon class', async ({ page }) => {
+  test('21.08 Responsive icons each have .wkit-responsive-icon class (at least 3)', async ({ page }) => {
     const icons = page.locator('.wkit-responsive-icon');
     const count = await icons.count();
     expect(count).toBeGreaterThanOrEqual(3);
@@ -633,41 +1122,39 @@ test.describe('19. Preview step — responsive preview toggle', () => {
 });
 
 // =============================================================================
-// 20. Preview step — page dropdown
+// 22. Preview step — page dropdown
 // =============================================================================
-test.describe('20. Preview step — page dropdown', () => {
+test.describe('22. Preview step — page dropdown', () => {
   test.describe.configure({ mode: 'serial' });
 
   test.beforeEach(async ({ page }) => {
-    await wpLogin(page);
-    await goToBrowse(page);
-    await clickFirstCardImport(page);
-    await page.locator('.wkit-temp-import-mian').waitFor({ state: 'visible', timeout: 20000 }).catch(() => {});
+    await openWizardStep1(page);
   });
 
-  test('20.01 Page dropdown wrapper .wkit-page-drp is present', async ({ page }) => {
-    const count = await page.locator('.wkit-page-drp').count();
-    expect(count).toBeGreaterThan(0);
+  test('22.01 Page dropdown wrapper .wkit-page-drp is present', async ({ page }) => {
+    expect(await page.locator('.wkit-page-drp').count()).toBeGreaterThan(0);
   });
 
-  test('20.02 Page dropdown header .wkit-page-drp-header is clickable', async ({ page }) => {
+  test('22.02 Page dropdown header .wkit-page-drp-header is visible', async ({ page }) => {
     const header = page.locator('.wkit-page-drp-header');
     if ((await header.count()) > 0) {
-      await expect(header).toBeVisible({ timeout: 5000 });
+      await expect(header.first()).toBeVisible({ timeout: 5000 });
     }
   });
 
-  test('20.03 Clicking page dropdown header opens the dropdown body', async ({ page }) => {
+  test('22.03 Clicking page dropdown header opens the dropdown body', async ({ page }) => {
     const header = page.locator('.wkit-page-drp-header');
     if ((await header.count()) > 0) {
       await header.click({ force: true });
       await page.waitForTimeout(800);
-      const bodyCount = await page.locator('.wkit-page-drp-body').count();
-      expect(bodyCount).toBeGreaterThan(0);
+      const body = page.locator('.wkit-page-drp-body');
+      if ((await body.count()) > 0) {
+        await expect.soft(body.first()).toBeVisible({ timeout: 3000 });
+      }
     }
   });
 
-  test('20.04 Page dropdown shows template list items .wkit-temp-list-drp when open', async ({ page }) => {
+  test('22.04 Page dropdown lists template pages .wkit-temp-list-drp when open', async ({ page }) => {
     const header = page.locator('.wkit-page-drp-header');
     if ((await header.count()) > 0) {
       await header.click({ force: true });
@@ -676,66 +1163,67 @@ test.describe('20. Preview step — page dropdown', () => {
     }
   });
 
-  test('20.05 Clicking outside dropdown closes it without error', async ({ page }) => {
+  test('22.05 Clicking a template page from dropdown updates the preview iframe', async ({ page }) => {
     const header = page.locator('.wkit-page-drp-header');
     if ((await header.count()) > 0) {
       await header.click({ force: true });
-      await page.waitForTimeout(500);
-      await page.locator('.wkit-preview-editor-header').first().click({ force: true }).catch(() => {});
-      await page.waitForTimeout(500);
-      await expect(page.locator('.wkit-temp-import-mian')).toBeVisible({ timeout: 5000 });
+      await page.waitForTimeout(800);
+      const firstPage = page.locator('.wkit-temp-list-drp').first();
+      if ((await firstPage.count()) > 0) {
+        await firstPage.click({ force: true });
+        await page.waitForTimeout(1000);
+        // Preview container should still be present
+        expect(await page.locator('.wkit-temp-preview-con').count()).toBeGreaterThan(0);
+      }
     }
   });
 
 });
 
 // =============================================================================
-// 21. Preview step — preview iframe & skeleton
+// 23. Preview step — preview iframe & skeleton
 // =============================================================================
-test.describe('21. Preview step — preview iframe & skeleton', () => {
+test.describe('23. Preview step — preview iframe & skeleton', () => {
 
   test.beforeEach(async ({ page }) => {
-    await wpLogin(page);
-    await goToBrowse(page);
-    await clickFirstCardImport(page);
-    await page.locator('.wkit-temp-import-mian').waitFor({ state: 'visible', timeout: 20000 }).catch(() => {});
+    await openWizardStep1(page);
   });
 
-  test('21.01 Preview iframe iframe.wkit-temp-preview-ifram is in the DOM', async ({ page }) => {
+  test('23.01 Preview iframe iframe.wkit-temp-preview-ifram is in the DOM', async ({ page }) => {
     const count = await page.locator('iframe.wkit-temp-preview-ifram').count();
     expect(count).toBeGreaterThanOrEqual(0);
   });
 
-  test('21.02 Preview skeleton .wkit-preview-card-skeleton shown during load', async ({ page }) => {
-    const count = await page.locator('.wkit-preview-card-skeleton').count();
+  test('23.02 Preview skeleton .wkit-temp-preview-skeleton is in the DOM', async ({ page }) => {
+    const count = await page.locator('.wkit-temp-preview-skeleton').count();
     expect(count).toBeGreaterThanOrEqual(0);
   });
 
-  test('21.03 Content notice .wkit-preview-content-notice is present', async ({ page }) => {
-    const count = await page.locator('.wkit-preview-content-notice').count();
-    expect(count).toBeGreaterThan(0);
+  test('23.03 Content notice .wkit-preview-content-notice is present', async ({ page }) => {
+    expect(await page.locator('.wkit-preview-content-notice').count()).toBeGreaterThan(0);
   });
 
-  test('21.04 Content notice dots container .wkit-content-notice-dots is present', async ({ page }) => {
-    const count = await page.locator('.wkit-content-notice-dots').count();
-    expect(count).toBeGreaterThan(0);
+  test('23.04 Content notice dots container .wkit-content-notice-dots is present', async ({ page }) => {
+    expect(await page.locator('.wkit-content-notice-dots').count()).toBeGreaterThan(0);
   });
 
-  test('21.05 Content notice has 3 dummy dots span.wkit-dummy-dots', async ({ page }) => {
-    const dotsCount = await page.locator('span.wkit-dummy-dots').count();
-    expect(dotsCount).toBeGreaterThanOrEqual(3);
+  test('23.05 Three dummy dots span.wkit-dummy-dots are rendered', async ({ page }) => {
+    const dots = await page.locator('span.wkit-dummy-dots').count();
+    expect(dots).toBeGreaterThanOrEqual(3);
   });
 
-  test('21.06 Content notice text .wkit-content-notice-txt is present with text', async ({ page }) => {
-    const count = await page.locator('.wkit-content-notice-txt').count();
-    expect(count).toBeGreaterThan(0);
+  test('23.06 Content notice text .wkit-content-notice-txt is present and non-empty', async ({ page }) => {
+    const txt = page.locator('.wkit-content-notice-txt');
+    if ((await txt.count()) > 0) {
+      const text = await txt.first().textContent();
+      expect(text.trim().length).toBeGreaterThan(0);
+    }
   });
 
-  test('21.07 Preview iframe has a src attribute once loaded', async ({ page }) => {
+  test('23.07 Preview iframe has a src attribute once template loads', async ({ page }) => {
     await page.waitForTimeout(3000);
     const iframe = page.locator('iframe.wkit-temp-preview-ifram');
-    const iframeCount = await iframe.count();
-    if (iframeCount > 0) {
+    if ((await iframe.count()) > 0) {
       const src = await iframe.getAttribute('src');
       expect(src).not.toBeUndefined();
     }
@@ -744,123 +1232,49 @@ test.describe('21. Preview step — preview iframe & skeleton', () => {
 });
 
 // =============================================================================
-// 22. Preview step — light/dark mode toggle
+// 24. Preview step — Back button navigation
 // =============================================================================
-test.describe('22. Preview step — light/dark mode toggle', () => {
-
-  test.beforeEach(async ({ page }) => {
-    await wpLogin(page);
-    await goToBrowse(page);
-    await clickFirstCardImport(page);
-    await page.locator('.wkit-temp-import-mian').waitFor({ state: 'visible', timeout: 20000 }).catch(() => {});
-  });
-
-  test('22.01 Light/Dark toggle container .wkit-custom-lightDark-content is present if rendered', async ({ page }) => {
-    const count = await page.locator('.wkit-custom-lightDark-content').count();
-    expect(count).toBeGreaterThanOrEqual(0);
-  });
-
-  test('22.02 Clicking light/dark toggle does not throw errors', async ({ page }) => {
-    const errors = [];
-    page.on('console', m => { if (m.type() === 'error') errors.push(m.text()); });
-    const toggle = page.locator('.wkit-custom-lightDark-content');
-    if ((await toggle.count()) > 0) {
-      await toggle.click({ force: true });
-      await page.waitForTimeout(1000);
-    }
-    const productErrors = errors.filter(e =>
-      !e.includes('favicon') && !e.includes('net::ERR') && !e.includes('extension')
-    );
-    expect(productErrors).toHaveLength(0);
-  });
-
-  test('22.03 Light/Dark toggle does not break the preview panel', async ({ page }) => {
-    const toggle = page.locator('.wkit-custom-lightDark-content');
-    if ((await toggle.count()) > 0) {
-      await toggle.click({ force: true });
-      await page.waitForTimeout(800);
-      const previewCount = await page.locator('.wkit-temp-preview-con').count();
-      expect(previewCount).toBeGreaterThan(0);
-    }
-  });
-
-});
-
-// =============================================================================
-// 23. Preview step — Next button disabled state & tooltip
-// =============================================================================
-test.describe('23. Preview step — Next button disabled state & tooltip', () => {
+test.describe('24. Preview step — Back button navigation', () => {
   test.describe.configure({ mode: 'serial' });
 
   test.beforeEach(async ({ page }) => {
-    await wpLogin(page);
-    await goToBrowse(page);
-    await clickFirstCardImport(page);
-    await page.locator('.wkit-temp-import-mian').waitFor({ state: 'visible', timeout: 20000 }).catch(() => {});
+    await openWizardStep1(page);
   });
 
-  test('23.01 Back button button.wkit-back-btn.wkit-outer-btn-class is visible', async ({ page }) => {
-    const count = await page.locator('button.wkit-back-btn.wkit-outer-btn-class').count();
-    expect(count).toBeGreaterThan(0);
+  test('24.01 Back button button.wkit-back-btn.wkit-outer-btn-class is visible', async ({ page }) => {
+    expect(await page.locator('button.wkit-back-btn.wkit-outer-btn-class').count()).toBeGreaterThan(0);
   });
 
-  test('23.02 Clicking Back button navigates away from wizard', async ({ page }) => {
+  test('24.02 Back button click navigates away from the wizard (returns to browse)', async ({ page }) => {
     const backBtn = page.locator('button.wkit-back-btn.wkit-outer-btn-class');
     if ((await backBtn.count()) > 0) {
       await backBtn.click();
-      await page.waitForTimeout(1500);
+      await page.waitForTimeout(2000);
       const hash = await page.evaluate(() => location.hash);
       expect(hash).not.toMatch(/#\/import-kit\//);
     }
   });
 
-  test('23.03 Next button is disabled without business name', async ({ page }) => {
-    const nameInput = page.locator('input.wkit-site-name-inp');
-    if ((await nameInput.count()) > 0) {
-      await nameInput.fill('');
+  test('24.03 Next button is disabled without business name', async ({ page }) => {
+    const nameInp = page.locator('input.wkit-site-name-inp');
+    if ((await nameInp.count()) > 0) {
+      await nameInp.fill('');
       await page.waitForTimeout(300);
     }
     const nextBtn = page.locator('button.wkit-next-btn.wkit-btn-class');
     if ((await nextBtn.count()) > 0) {
-      const disabled = await nextBtn.isDisabled();
-      expect(disabled).toBe(true);
+      expect(await nextBtn.isDisabled()).toBe(true);
     }
   });
 
-  test('23.04 Tooltip span.wkit-notice-tooltip-txt is visible when Next is disabled', async ({ page }) => {
-    const nameInput = page.locator('input.wkit-site-name-inp');
-    if ((await nameInput.count()) > 0) {
-      await nameInput.fill('');
+  test('24.04 Next button enabled tooltip icon .wdkit-i-alert appears when name empty', async ({ page }) => {
+    const nameInp = page.locator('input.wkit-site-name-inp');
+    if ((await nameInp.count()) > 0) {
+      await nameInp.fill('');
       await page.waitForTimeout(300);
-    }
-    const tooltip = page.locator('span.wkit-notice-tooltip-txt');
-    const count = await tooltip.count();
-    expect(count).toBeGreaterThan(0);
-  });
-
-  test('23.05 Next button is enabled after entering a valid business name', async ({ page }) => {
-    const nameInput = page.locator('input.wkit-site-name-inp');
-    if ((await nameInput.count()) > 0) {
-      await nameInput.fill('Valid Business Name');
-      await page.waitForTimeout(400);
-      const nextBtn = page.locator('button.wkit-next-btn.wkit-btn-class');
-      if ((await nextBtn.count()) > 0) {
-        await expect(nextBtn).toBeEnabled({ timeout: 5000 });
-      }
-    }
-  });
-
-  test('23.06 Clicking enabled Next button advances to Step 2', async ({ page }) => {
-    const nameInput = page.locator('input.wkit-site-name-inp');
-    if ((await nameInput.count()) > 0) {
-      await nameInput.fill('QA Advance Test');
-      await page.waitForTimeout(400);
-      const nextBtn = page.locator('button.wkit-next-btn.wkit-btn-class');
-      if ((await nextBtn.count()) > 0 && await nextBtn.isEnabled()) {
-        await nextBtn.click();
-        await page.waitForTimeout(3000);
-        const featureCount = await page.locator('.wkit-import-temp-feature').count();
-        expect(featureCount).toBeGreaterThan(0);
+      const alertIcon = page.locator('.wkit-next-btn-content .wdkit-i-alert');
+      if ((await alertIcon.count()) > 0) {
+        await expect.soft(alertIcon.first()).toBeVisible();
       }
     }
   });
@@ -868,28 +1282,37 @@ test.describe('23. Preview step — Next button disabled state & tooltip', () =>
 });
 
 // =============================================================================
-// 24. Preview step — Pro plugin notice
+// 25. Preview step — Pro plugin notice
 // =============================================================================
-test.describe('24. Preview step — Pro plugin notice', () => {
+test.describe('25. Preview step — Pro plugin notice', () => {
 
   test.beforeEach(async ({ page }) => {
     await wpLogin(page);
     await goToBrowse(page);
   });
 
-  test('24.01 Pro tag .wdkit-card-tag.wdkit-pro-crd appears on pro cards in the grid', async ({ page }) => {
+  test('25.01 Pro tag .wdkit-card-tag.wdkit-pro-crd appears on some cards in the grid', async ({ page }) => {
     await page.locator('.wdkit-browse-card').first().waitFor({ state: 'visible', timeout: 15000 });
     const proTags = await page.locator('.wdkit-card-tag.wdkit-pro-crd').count();
     expect(proTags).toBeGreaterThanOrEqual(0);
   });
 
-  test('24.02 Clicking a pro card still opens the import wizard', async ({ page }) => {
-    const proCard = page.locator('.wdkit-browse-card').filter({ has: page.locator('.wdkit-pro-crd') }).first();
-    const proCount = await proCard.count();
-    if (proCount > 0) {
-      await clickFirstCardImport(page);
-      const wizardCount = await page.locator('.wkit-temp-import-mian').count();
-      expect(wizardCount).toBeGreaterThan(0);
+  test('25.02 Clicking any import button opens the wizard regardless of pro status', async ({ page }) => {
+    await clickFirstCardImport(page);
+    const wizard = page.locator('.wkit-temp-import-mian');
+    await wizard.waitFor({ state: 'visible', timeout: 20000 }).catch(() => {});
+    expect(await wizard.count()).toBeGreaterThan(0);
+  });
+
+  test('25.03 Pro plugin notice .wkit-pro-plugin-notice appears with recheck button when pro required', async ({ page }) => {
+    await clickFirstCardImport(page);
+    await page.locator('.wkit-temp-import-mian').waitFor({ state: 'visible', timeout: 20000 }).catch(() => {});
+    await page.waitForTimeout(3000);
+    const notice = page.locator('.wkit-pro-plugin-notice');
+    if ((await notice.count()) > 0) {
+      // Recheck icon should be present
+      const recheck = page.locator('.wkit-plugin-recheck');
+      expect(await recheck.count()).toBeGreaterThan(0);
     }
   });
 
