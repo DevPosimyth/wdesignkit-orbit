@@ -75,27 +75,6 @@
 
 ---
 
-### Clear All Filters does not reset builder checkboxes and Free/Pro radio
-
-**Severity:** P1
-**Area:** Functionality
-
-**Issue:** After checking Elementor, Gutenberg, or selecting a Free/Pro or category filter, clicking "Clear All Filters" does not reset the inputs to their default unchecked/All state. Tests verify `not.toBeChecked()` after Clear All but the state is not reset.
-
-**Steps to Reproduce:**
-1. Navigate to Browse Templates
-2. Check `#select_builder_elementor` checkbox
-3. Check `#select_builder_gutenberg` checkbox
-4. Select `#wkit-pro-btn-label` (Pro radio)
-5. Check any category (e.g. `#category_1031`)
-6. Click "Clear All Filters" (`.wdkit-filter-clear-all`)
-
-**Expected Result:** All filters reset — builder checkboxes unchecked, Free/Pro returns to "All", categories unchecked
-
-**Actual Result:** Checkboxes and radio remain in their changed state after Clear All is clicked
-
----
-
 ### Method step header shows wrong title text
 
 **Severity:** P1
@@ -291,23 +270,6 @@
 
 ---
 
-### Dark mode toggle not found on plugin page
-
-**Severity:** P2
-**Area:** Functionality / UI
-
-**Issue:** No element matching a dark mode toggle/button selector is found on the WDesignKit admin page.
-
-**Steps to Reproduce:**
-1. Navigate to WDesignKit plugin page
-2. Search for dark mode toggle (button, switch, or `[data-mode]` style element)
-
-**Expected Result:** Dark mode toggle is visible and operable
-
-**Actual Result:** Element not found in DOM
-
----
-
 ### Tab key does not move focus from Business Name to Tagline field
 
 **Severity:** P2
@@ -361,24 +323,5 @@
 **Actual Result:** `TypeError: X.isAttached is not a function` thrown at runtime
 
 **Fix:** Replace `await locator.isAttached()` with `(await locator.count()) > 0` or `locator.evaluate(el => el.isConnected)`.
-
----
-
-### Both builders cannot be checked simultaneously — radio behavior
-
-**Severity:** P1
-**Area:** Functionality
-
-**Issue:** Section 5 tests verify that both Elementor and Gutenberg checkboxes can be checked simultaneously. However, the builder inputs behave like radio buttons (only one can be active at a time), not independent checkboxes.
-
-**Steps to Reproduce:**
-1. Navigate to Browse Templates
-2. Check `#select_builder_elementor`
-3. Check `#select_builder_gutenberg`
-4. Verify both are checked simultaneously
-
-**Expected Result:** Both builder checkboxes can be checked at the same time to filter by both builders
-
-**Actual Result:** Checking one unchecks the other — mutual exclusion behavior (radio-like)
 
 ---
