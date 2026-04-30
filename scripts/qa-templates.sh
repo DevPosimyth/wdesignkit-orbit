@@ -73,8 +73,8 @@ for arg in "$@"; do
     --phase2)     MODE="phase2"   ;;
     --phase3)     MODE="phase3"   ;;
     --full)       MODE="full"     ;;
-    --mobile)     PROJECT="wdk-mobile"  ;;
-    --tablet)     PROJECT="wdk-tablet"  ;;
+    --mobile)     PROJECT="plugin-mobile"  ;;
+    --tablet)     PROJECT="plugin-tablet"  ;;
     --desktop)    PROJECT="plugin-desktop" ;;
     --workers=*)  WORKERS="${arg#*=}" ;;
   esac
