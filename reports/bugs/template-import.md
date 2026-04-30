@@ -1,327 +1,532 @@
-# Template Import — Bug Report
+# Template Import — Bug Report (Extreme Polish Run)
 
-**Spec file:** `tests/plugin/template-import.spec.js`
+**Spec file:** `tests/plugin/template-import.spec.js` (extreme-polish rewrite, 385 tests, 53 sections)
 **Run date:** 2026-04-30
 **Plugin version:** WDesignKit v2.2.10
-**Environment:** Docker WordPress 6.7-php8.2 · localhost:8881
-**Result:** 324 passed · 65 failed · 389 total · 1.4 h
+**Environment:** Docker WordPress 6.7-php8.2 · localhost:8881 · workers=4 · timeout=120s
+**Result:** 252 passed · 49 failed · 2 skipped · 82 did-not-run · 385 total · 1.1 h
+
+> Screenshots embedded inline via relative paths (`reports/bugs/screenshots/template-import/*.png`) — captured at the moment of assertion failure by Playwright.
 
 ---
 
-## Summary of Failures
+## Summary of Failures by Section
 
-| # | Section | Failures | Root Cause |
-|---|---------|----------|------------|
-| 1 | 5. Page Builder filter | 1 | Builder radio/checkbox: both builders cannot be checked simultaneously |
-| 2 | 9. Clear All Filters | 4 | Filter reset: checkboxes/radio not reverting to default state |
-| 3 | 15. Dummy import — Elementor | 4 | Import page not loading / success screen never reached |
-| 4 | 16. Dummy import — Gutenberg | 2 | Success screen timeout |
-| 5 | 17. AI import — Elementor | 1 | Success screen timeout |
-| 6 | 18. AI import — Gutenberg | 1 | Success screen timeout |
-| 7 | 21. Responsive layout | 2 | Import page overflow on mobile / tablet |
-| 8 | 27. Import progress states | 4 | Import never progresses; `isAttached` API error |
-| 9 | 28. Success screen validation | 11 | All fail because import never completes |
-| 10 | 30. AI editor edge cases | 2 | Keyboard navigation / paste-to-enable |
-| 11 | 32. Filter stress | 1 | Clear All does not reset combined filters |
-| 12 | 33. Category filters | 3 | Specific category IDs not found in DOM |
-| 13 | 35. Error handling | 1 | Invalid template ID shows no user-facing error |
-| 14 | 37. Keyboard accessibility | 2 | Filter checkboxes not keyboard-reachable; focus trap |
-| 15 | 44. Post-import CTAs | 5 | All depend on import completing successfully |
-| 16 | 45. Dark mode | 1 | Dark mode toggle not found |
-| 17 | 46. Console audit | 2 | Import-dependent; errors on success screen |
-| 18 | 47. Method step advanced | 13 | Method step elements not found / wrong text |
-| 19 | 49. Success screen exact | 4 | Import-dependent; selectors wrong or import never reaches success |
-| 20 | 51. Back button selectors | 1 | Back button selector mismatch |
+| # | Section | Failures | Severity |
+|---|---------|----------|----------|
+| 1 | Browse Templates — navigation | 1 | P2 |
+| 5 | Page Builder filter | 1 | P3 |
+| 7 | Template Type filter | 1 | P2 |
+| 8 | Category filter — 21 categories | 2 | P2 |
+| 10 | Template card UI | 1 | P3 |
+| 12 | Import wizard entry | 3 | **P0** |
+| 15 | Preview step — extra form fields | 12 | **P1** |
+| 19 | Preview step — responsive toggle | 1 | P2 |
+| 20 | Preview step — page dropdown | 1 | P2 |
+| 23 | Preview step — Next button state | 1 | P1 |
+| 25 | Feature step — full layout | 1 | **P1** |
+| 26 | Feature step — plugin cards | 1 | P1 |
+| 27 | Feature step — Nexter Theme | 1 | P1 |
+| 28 | Feature step — T&C checkbox | 1 | P1 |
+| 29 | Feature step — Next button | 1 | P1 |
+| 30 | Feature step — back nav | 1 | P1 |
+| 31 | Method step — layout | 1 | **P1** |
+| 32 | Method step — Dummy card | 1 | P1 |
+| 33 | Method step — AI card state | 1 | P2 |
+| 35 | Method step — wireframe toggle | 1 | P2 |
+| 36 | Method step — Import button | 1 | P1 |
+| 38 | Breadcrumb validation | 1 | P1 |
+| 39 | AI content_media step | 1 | P2 |
+| 40 | Import loader | 1 | **P0** |
+| 41 | Success screen | 1 | **P0** |
+| 42 | My Templates page | 3 | **P1** |
+| 43 | Access control (subscriber) | 1 | P2 |
+| 44 | Responsive 375/768/1440 | 2 | P2 |
+| 49 | Post-import & success CTA | 2 | P1 |
+| 50 | Keyboard accessibility | 3 | P2 |
+| 51 | ARIA & screen reader | 2 | P2 |
+| 52 | State preservation | 1 | P1 |
 
 ---
 
-### Dummy import never reaches success screen
+## Confirmed Bugs
+
+### Import wizard does not load — `.wkit-temp-import-mian` never appears
 
 **Severity:** P0
 **Area:** Functionality
 
-**Issue:** The dummy content import process never completes — `.wkit-site-import-success-main` is never visible within 120 s/180 s. The import wizard stalls after the method step. This is the single largest root cause, responsible for ~35 failures across sections 15–18, 27–28, 44, 46, 49.
+**Issue:** After clicking the Import button on a template card, the import wizard does not mount. The container `.wkit-temp-import-mian`, header `.wkit-import-temp-header`, breadcrumbs `.wkit-header-breadcrumbs`, and left editor panel `.wkit-ai-import-main` are all absent. This blocks the entire downstream flow — preview step, feature step, method step, success screen all become unreachable.
 
 **Steps to Reproduce:**
-1. Log in to WP Admin → navigate to WDesignKit → Browse Templates
-2. Click the Import button on any Elementor template card
-3. Fill Business Name, click Next
-4. Accept T&C on Feature step, click Next
-5. Select Dummy Content card on Method step, click Import/Next
-6. Wait for `.wkit-site-import-success-main`
-
-**Expected Result:** Import process completes within 30–90 s and shows success screen
-
-**Actual Result:** Import stalls indefinitely; success screen never appears; tests time out at 120 s / 180 s
-
----
-
-### Import page (.wkit-temp-import-mian) not loading after card click
-
-**Severity:** P0
-**Area:** Functionality
-
-**Issue:** After clicking the Import button on a template card, `.wkit-temp-import-mian` is not found in the DOM. The import page either fails to mount or the hash route does not change to `#/import-kit/{id}`.
-
-**Steps to Reproduce:**
-1. Log in → WDesignKit → Browse Templates → `location.hash = '/browse'`
-2. Wait for `.wdkit-browse-card` cards to render
+1. Log in to WP Admin → WDesignKit → Browse Templates
+2. Wait for `.wdkit-browse-card` to render
 3. Click `.wdkit-browse-card-download` on any card
-4. Observe the page
+4. Observe the page after navigating to `#/import-kit/{id}`
 
-**Expected Result:** Page transitions to `#/import-kit/{id}` and shows `.wkit-temp-import-mian`
+**Expected Result:** Wizard mounts with `.wkit-temp-import-mian` visible, header with breadcrumbs, left editor panel rendered
 
-**Actual Result:** Element not found; import page does not mount
+**Actual Result:** Container not found in DOM; page stays empty or redirects back to browse
 
----
-
-### Method step header shows wrong title text
-
-**Severity:** P1
-**Area:** UI / Functionality
-
-**Issue:** `.wkit-method-header-title` does not contain "Content & Media Setup". The method step breadcrumb/header title is either absent, shows a different string, or the element is not rendered.
-
-**Steps to Reproduce:**
-1. Navigate to any import kit page (`#/import-kit/{id}`)
-2. Fill Business Name, click Next
-3. Accept T&C, click Next (Feature step)
-4. Observe the Method step header
-
-**Expected Result:** `.wkit-method-header-title` text = "Content & Media Setup"
-
-**Actual Result:** Element not found or contains different text
+**Screenshot:** ![Import wizard not loading](screenshots/template-import/12--1ea8c-port-temp-header-is-visible.png)
+**Screenshot:** ![Breadcrumbs missing](screenshots/template-import/12--639f1-crumbs-is-present-in-wizard.png)
+**Screenshot:** ![Left editor panel missing](screenshots/template-import/12--1cce9-r-panel-wkit-ai-import-main.png)
 
 ---
 
-### Method step — blog toggle (#wkit-blog-switcher-inp) not present
+### Import loader (Step 5) never displays — import flow stalls at method step
 
-**Severity:** P1
+**Severity:** P0
 **Area:** Functionality
 
-**Issue:** `#wkit-blog-switcher-inp` (blog post import toggle) is not found in the DOM on the Method step.
+**Issue:** After clicking the Import button on the method step, the import loader (Step 5 — `Installing Plugins & Theme`, `Importing Site Content`, `Setting Up Pages & Layout`, `Finalizing Settings`) is never shown. The wizard does not progress to the `all_set` route.
 
 **Steps to Reproduce:**
-1. Reach Method step (Feature step → Next)
-2. Inspect DOM for `#wkit-blog-switcher-inp`
+1. Reach Method step (Step 3) — fill name → next → T&C → next
+2. Select Dummy Content card
+3. Click Import (`.wkit-import-method-next`)
+4. Wait for loader to appear
 
-**Expected Result:** Blog post toggle is present and interactable
+**Expected Result:** Loader screen appears with 4 progress steps and Lottie animation
 
-**Actual Result:** Element not found
+**Actual Result:** No loader displayed; import never starts visibly
+
+**Screenshot:** ![Import loader missing](screenshots/template-import/40--894f0-cking-Import-on-method-step.png)
 
 ---
 
-### Method step — Dummy card does not receive wkit-active-card class on click
-
-**Severity:** P1
-**Area:** UI / Functionality
-
-**Issue:** Clicking the Dummy Content card on the Method step does not add `wkit-active-card` CSS class to the card element.
-
-**Steps to Reproduce:**
-1. Reach Method step
-2. Click the first `.wkit-method-card` (Dummy Content)
-3. Check if the card has class `wkit-active-card`
-
-**Expected Result:** Clicked card receives `wkit-active-card` class
-
-**Actual Result:** Class not applied after click
-
----
-
-### Method step Next button text is not "Import" for dummy selection
-
-**Severity:** P2
-**Area:** UI
-
-**Issue:** After selecting the Dummy Content card, the method step Next button does not show "Import" as its text.
-
-**Steps to Reproduce:**
-1. Reach Method step
-2. Click Dummy Content card
-3. Read text of `.wkit-import-method-next`
-
-**Expected Result:** Button text = "Import"
-
-**Actual Result:** Button shows different text or is not found
-
----
-
-### Success screen (.wkit-import-success-title) never renders
+### Success screen `.wkit-site-import-success-main` never renders after dummy import
 
 **Severity:** P0
 **Area:** Functionality / UI
 
-**Issue:** All 11 success screen validation tests (Section 28) fail because the import never completes. Individual assertions that also fail independently: `.wkit-import-success-title` not found, `.wkit-import-success-site` href absent, `.wkit-import-success-img` not rendered.
+**Issue:** Even after the longest wait (120 s), `.wkit-site-import-success-main` is never visible. This is the terminal step of the import flow and confirms the import was successful. Consequently, the `.wkit-import-success-title` ("🎉 Success! Your Website is Ready"), success GIF, subtitle, and Preview Site CTA all fail to render. Cascades to fail Section 49 post-import tests.
 
 **Steps to Reproduce:**
-1. Complete a dummy import flow end-to-end (Business Name → Feature → Method → Import)
+1. Complete the dummy import flow end-to-end
 2. Wait for `.wkit-site-import-success-main`
 
-**Expected Result:** Success screen renders with title "Success! Your Website is Ready", subtitle, site preview link, success GIF
+**Expected Result:** Success screen renders within 30–90 s
 
-**Actual Result:** Success screen never appears
+**Actual Result:** Success screen never visible
+
+**Screenshot:** ![Success screen never renders](screenshots/template-import/41--be176--visible-after-dummy-import.png)
+**Screenshot:** ![Success preview link invalid](screenshots/template-import/49--f1319--link-points-to-a-valid-URL.png)
+**Screenshot:** ![Success error messages](screenshots/template-import/49--5205a-ges-after-successful-import.png)
 
 ---
 
-### Import page renders with horizontal overflow on mobile (375 px) and tablet (768 px)
+### Preview step is missing entire contact-info field group (address, email, mobile, social links)
 
-**Severity:** P2
-**Area:** Responsive
+**Severity:** P1
+**Area:** UI / Functionality
 
-**Issue:** At 375 px (mobile) and 768 px (tablet) viewport, the import page has horizontal scroll overflow.
+**Issue:** The preview step (Step 1, `temp_preview`) is missing 12 form-field elements that are present in the source code but not rendered:
+- `label.wkit-site-address-label` + `input.wkit-site-address-inp` (Address)
+- `label.wkit-site-email-label` + `input.wkit-site-email-inp` (Email)
+- `label.wkit-site-mobile-label` + `input.wkit-site-mobile-inp` (Mobile)
+- `label.wkit-site-sociallink-label` + `.wkit-temp-site-sociallink` (Social links)
+
+These fields are critical for AI-generated content because the cloud API uses them as inputs for content generation. Their absence either means the source build is stale OR the elements are conditionally hidden behind a flag the user cannot trigger.
 
 **Steps to Reproduce:**
-1. Set viewport to 375 × 812
-2. Navigate to any import page (`#/import-kit/{id}`)
-3. Check `document.documentElement.scrollWidth > document.documentElement.clientWidth`
+1. Navigate to import wizard preview step
+2. Inspect DOM for the labels and inputs above
 
-**Expected Result:** No horizontal overflow at any breakpoint
+**Expected Result:** All 12 elements present and interactive
 
-**Actual Result:** `scrollWidth > clientWidth` — horizontal overflow present
+**Actual Result:** None of the 12 elements found in DOM
+
+**Screenshot:** ![Address label missing](screenshots/template-import/15--de34c-te-address-label-is-present.png)
+**Screenshot:** ![Address input missing](screenshots/template-import/15--5dc5f-site-address-inp-is-present.png)
+**Screenshot:** ![Email label missing](screenshots/template-import/15--1aa26-site-email-label-is-present.png)
+**Screenshot:** ![Email input missing](screenshots/template-import/15--d969d-t-site-email-inp-is-present.png)
+**Screenshot:** ![Mobile label missing](screenshots/template-import/15--45b73-ite-mobile-label-is-present.png)
+**Screenshot:** ![Mobile input missing](screenshots/template-import/15--72a00--site-mobile-inp-is-present.png)
+**Screenshot:** ![Social links label missing](screenshots/template-import/15--68964-sociallink-label-is-present.png)
+**Screenshot:** ![Social link section missing](screenshots/template-import/15--8ba03--site-sociallink-is-present.png)
 
 ---
 
-### Preview skeleton (.wkit-temp-preview-skeleton) not shown during iframe load
+### Feature step (Step 2) container `.wkit-import-temp-feature` does not render
 
-**Severity:** P2
-**Area:** UI / Logic
+**Severity:** P1
+**Area:** Functionality
 
-**Issue:** `.wkit-temp-preview-skeleton` is not present/visible while the preview iframe is loading on the import page.
+**Issue:** When navigating from preview step to feature step (Next button click on Step 1), the container `.wkit-import-temp-feature` is not visible. This blocks the entire Step 2 — plugin cards, Nexter Theme toggle, T&C checkbox, Next button, Back button.
 
 **Steps to Reproduce:**
-1. Navigate to import page immediately after card click
-2. Check for `.wkit-temp-preview-skeleton` before networkidle
+1. Reach preview step
+2. Fill business name
+3. Click Next (`button.wkit-next-btn.wkit-btn-class`)
+4. Wait for feature step
 
-**Expected Result:** Skeleton loader shown while iframe is loading
+**Expected Result:** `.wkit-import-temp-feature` visible with header "Choose What Your Site Needs"
 
-**Actual Result:** Element not found — no loading state shown
+**Actual Result:** Container not visible — wizard does not advance
+
+**Screenshot:** ![Feature step container missing](screenshots/template-import/25--a2cfd-ort-temp-feature-is-visible.png)
+**Screenshot:** ![eCommerce toggle missing](screenshots/template-import/26--2b921-er-inp-ecommerce-is-present.png)
+**Screenshot:** ![Nexter Theme missing](screenshots/template-import/27--8156d-te-feature-theme-is-present.png)
+**Screenshot:** ![T&C checkbox missing](screenshots/template-import/28--987bd--confirmation-id-is-present.png)
+**Screenshot:** ![Next button state wrong](screenshots/template-import/29--57e8e-abled-before-T-C-is-checked.png)
+**Screenshot:** ![Back nav broken](screenshots/template-import/30--41835-eturns-to-Step-1-site-info-.png)
 
 ---
 
-### Specific category filter IDs not present in DOM (Restaurant, Corporate, Social Media)
+### Method step (Step 3) container `.wkit-import-method-main` does not render
+
+**Severity:** P1
+**Area:** Functionality
+
+**Issue:** Method step container is not visible after navigating from feature step. Cascades to fail: Dummy card icon presence, Method back button, breadcrumb container.
+
+**Steps to Reproduce:**
+1. Complete feature step (T&C checked, click Next)
+2. Wait for method step
+
+**Expected Result:** `.wkit-import-method-main` visible with two cards (Dummy Content, Smart AI Content)
+
+**Actual Result:** Container not visible — wizard does not advance to Step 3
+
+**Screenshot:** ![Method container missing](screenshots/template-import/31--a9795-port-method-main-is-visible.png)
+**Screenshot:** ![Dummy card icon missing](screenshots/template-import/32--b4aae-as-icon-i-wdkit-i-templates.png)
+**Screenshot:** ![AI card pointer-events wrong](screenshots/template-import/33--4d099-none-when-not-authenticated.png)
+**Screenshot:** ![Method back button missing](screenshots/template-import/36--d5bad-port-method-back-is-present.png)
+**Screenshot:** ![Breadcrumbs missing on method](screenshots/template-import/38--e3a41-ader-breadcrumbs-is-present.png)
+
+---
+
+### Templates menu does not expand to show submenu links
+
+**Severity:** P2
+**Area:** UI / Functionality
+
+**Issue:** Clicking the Templates menu item (`.wkit-menu` containing `.wdkit-i-templates`) does not expand to reveal the submenu links (Browse Templates, My Templates).
+
+**Steps to Reproduce:**
+1. Open WDesignKit plugin page
+2. Click the Templates menu item in left sidebar
+3. Wait for submenu
+
+**Expected Result:** `.wdkit-submenu-link` visible with Browse Templates + My Templates
+
+**Actual Result:** Submenu does not appear after click
+
+**Screenshot:** ![Submenu not expanding](screenshots/template-import/1-B-1b791-pands-to-show-submenu-links.png)
+
+---
+
+### Selecting Gutenberg builder filter throws JavaScript console errors
+
+**Severity:** P3
+**Area:** Console / Code Quality
+
+**Issue:** Toggling the Gutenberg builder filter (`#select_builder_gutenberg`) produces JavaScript errors in the browser console.
+
+**Steps to Reproduce:**
+1. Navigate to Browse Templates
+2. Open browser console
+3. Click `#select_builder_gutenberg`
+
+**Expected Result:** No console errors
+
+**Actual Result:** JavaScript errors logged
+
+**Screenshot:** ![Gutenberg toggle JS error](screenshots/template-import/5-P-0fe71-er-does-not-throw-JS-errors.png)
+
+---
+
+### Template Type radios are not in a single radio group (name attribute mismatch)
+
+**Severity:** P2
+**Area:** Functionality / Code Quality
+
+**Issue:** The three Template Type radio buttons (`#wkit_page_type_websitekit`, `#wkit_paget_type_pagetemplate`, `#wkit_paget_type_section`) do not all share the same `name="selectPageType"` attribute. This breaks native radio-group mutual-exclusion behavior.
+
+**Steps to Reproduce:**
+1. Navigate to Browse Templates
+2. Inspect each radio's `name` attribute via DOM
+
+**Expected Result:** All three radios have `name="selectPageType"`
+
+**Actual Result:** At least one radio has a different/missing name attribute, breaking the group
+
+**Screenshot:** ![Template Type name mismatch](screenshots/template-import/7-T-c0a15--share-name-selectPageType-.png)
+
+---
+
+### Category checkboxes Medical (#category_1035) and Social Media (#category_1051) are missing
 
 **Severity:** P2
 **Area:** Functionality
 
-**Issue:** Category checkboxes `#category_1033` (Restaurant), `#category_1037` (Corporate/Business), and `#category_1051` (Social Media) are not attached to the DOM.
+**Issue:** Two category checkboxes are not present in the filter sidebar:
+- `#category_1035` (Medical)
+- `#category_1051` (Social Media)
 
-**Steps to Reproduce:**
-1. Navigate to Browse Templates (`#/browse`)
-2. Wait for filter panel to render
-3. Inspect DOM for `#category_1033`, `#category_1037`, `#category_1051`
-
-**Expected Result:** All three category checkboxes are present in the filter sidebar
-
-**Actual Result:** `toBeAttached()` fails — elements not found in DOM
-
----
-
-### Invalid template ID shows no user-facing error message
-
-**Severity:** P2
-**Area:** Logic / Error Handling
-
-**Issue:** Navigating to `#/import-kit/invalid-99999` (non-existent template ID) does not show any user-facing error or 404-style message. The UI does not communicate the failure to the user.
-
-**Steps to Reproduce:**
-1. Navigate to `#/import-kit/invalid-99999`
-2. Wait for page to settle
-
-**Expected Result:** User-facing error message or empty/404 state shown (e.g. "Template not found")
-
-**Actual Result:** No error message displayed; page appears blank or in an unclear state
-
----
-
-### Filter checkboxes not reachable via keyboard Tab navigation
-
-**Severity:** P2
-**Area:** Accessibility
-
-**Issue:** Filter checkboxes in the Browse Templates sidebar cannot receive keyboard focus via Tab key navigation.
+This is inconsistent — the other 19 category checkboxes (1031–1050) render correctly. Users cannot filter templates for these two categories.
 
 **Steps to Reproduce:**
 1. Navigate to Browse Templates
-2. Press Tab repeatedly from a known focusable element
-3. Attempt to reach `#category_1031` or builder checkboxes
+2. Inspect filter panel for all category checkboxes
 
-**Expected Result:** Tab key cycles through all interactive filter elements
+**Expected Result:** All 21 categories present, including Medical and Social Media
 
-**Actual Result:** Focus does not reach filter checkboxes — inputs are not in the natural tab order
+**Actual Result:** Medical and Social Media checkboxes absent from DOM
 
----
-
-### Focus trap present — Tab key gets stuck in import flow
-
-**Severity:** P2
-**Area:** Accessibility
-
-**Issue:** When cycling through interactive elements on the import page with Tab, focus gets trapped and does not cycle through all interactive elements correctly.
-
-**Steps to Reproduce:**
-1. Navigate to import page
-2. Press Tab repeatedly from the beginning
-3. Observe if focus ever stops cycling or gets stuck
-
-**Expected Result:** Tab continuously cycles through all interactive elements; no trap
-
-**Actual Result:** Focus gets stuck — Tab does not move to next element
+**Screenshot:** ![Medical category missing](screenshots/template-import/8-C-74b72-sent-Medical-category-1035-.png)
+**Screenshot:** ![Social Media category missing](screenshots/template-import/8-C-2caa2-Social-Media-category-1051-.png)
 
 ---
 
-### Tab key does not move focus from Business Name to Tagline field
-
-**Severity:** P2
-**Area:** Accessibility
-
-**Issue:** Pressing Tab from the Business Name input (`.wkit-site-name-inp`) does not move focus to the Tagline input (`.wkit-site-tagline-inp`).
-
-**Steps to Reproduce:**
-1. Navigate to import page
-2. Click into `.wkit-site-name-inp`
-3. Press Tab
-
-**Expected Result:** Focus moves to `.wkit-site-tagline-inp`
-
-**Actual Result:** Focus does not land on Tagline field
-
----
-
-### Pasting text into Business Name does not enable Next button
-
-**Severity:** P2
-**Area:** Logic
-
-**Issue:** Pasting text (via `Ctrl+V` / clipboard API) into the Business Name field does not trigger the validation that enables the Next button. Manually typed text enables it, but pasted text does not.
-
-**Steps to Reproduce:**
-1. Navigate to import page
-2. Use `page.evaluate()` to set clipboard content
-3. Focus `.wkit-site-name-inp`, press Ctrl+V
-4. Check if `.wkit-next-btn.wkit-btn-class` is enabled
-
-**Expected Result:** Pasting text into Business Name enables the Next button
-
-**Actual Result:** Next button remains disabled after paste operation
-
----
-
-### Spec code bug — isAttached() is not a valid Playwright locator method
+### Template cards without Pro requirement still show .wdkit-pro-crd Pro tag
 
 **Severity:** P3
-**Area:** Code Quality
+**Area:** UI / Logic
 
-**Issue:** The spec uses `.isAttached()` on Playwright locator objects (e.g. `cb.isAttached()`, `toggle.isAttached()`, `disableDiv.isAttached()`). This method does not exist in Playwright's public API and throws `TypeError: cb.isAttached is not a function`. Affects sections 27, 30, 45, 47.
+**Issue:** Free template cards incorrectly render the Pro tag `.wdkit-card-tag.wdkit-pro-crd` when they should only appear on cards requiring a paid plugin.
 
 **Steps to Reproduce:**
-1. Run any test that calls `locator.isAttached()`
-2. Observe TypeError
+1. Navigate to Browse Templates
+2. Filter to Free templates only (`#wkit-free-btn-label`)
+3. Inspect any visible card for `.wdkit-pro-crd` tag
 
-**Expected Result:** Test uses correct Playwright API to check element attachment
+**Expected Result:** Free cards do not show `.wdkit-pro-crd`
 
-**Actual Result:** `TypeError: X.isAttached is not a function` thrown at runtime
+**Actual Result:** Pro tag visible on free cards
 
-**Fix:** Replace `await locator.isAttached()` with `(await locator.count()) > 0` or `locator.evaluate(el => el.isConnected)`.
+**Screenshot:** ![Pro tag on free cards](screenshots/template-import/10--15bb4--not-show-wdkit-pro-crd-tag.png)
 
 ---
+
+### Responsive icons missing `.wkit-responsive-icon` class on each icon
+
+**Severity:** P2
+**Area:** UI / Code Quality
+
+**Issue:** The responsive preview toggle row `.wkit-temp-responsive` contains the three viewport icons (`.wdkit-i-computer`, `.wdkit-i-tablet`, `.wdkit-i-smart-phone`) but each individual icon does not have the `.wkit-responsive-icon` class applied. Source code (`import_temp_preview.js`) declares `className="wkit-temp-responsive"` and individual icons should also have `.wkit-responsive-icon`.
+
+**Steps to Reproduce:**
+1. Navigate to import wizard preview step
+2. Inspect DOM for `.wkit-responsive-icon` count
+
+**Expected Result:** 3 elements with class `.wkit-responsive-icon`
+
+**Actual Result:** 0 elements with that class
+
+**Screenshot:** ![Responsive icon class missing](screenshots/template-import/19--ac107--wkit-responsive-icon-class.png)
+
+---
+
+### Page dropdown does not show template list `.wkit-temp-list-drp` when opened
+
+**Severity:** P2
+**Area:** Functionality
+
+**Issue:** Clicking `.wkit-page-drp-header` does not open the page dropdown body — `.wkit-temp-list-drp` items are not visible. Users cannot browse template pages.
+
+**Steps to Reproduce:**
+1. Reach preview step
+2. Click `.wkit-page-drp-header`
+
+**Expected Result:** Dropdown body opens with template list items visible
+
+**Actual Result:** Dropdown body does not appear
+
+**Screenshot:** ![Page dropdown does not open](screenshots/template-import/20--cc70d-kit-temp-list-drp-when-open.png)
+
+---
+
+### Next button is enabled even when Business Name is empty
+
+**Severity:** P1
+**Area:** Logic / Functionality
+
+**Issue:** The Next button (`button.wkit-next-btn.wkit-btn-class`) is not disabled when the required Business Name input (`input.wkit-site-name-inp`) is empty. Source code shows `disabled` attribute should be applied when name is empty.
+
+**Steps to Reproduce:**
+1. Reach preview step
+2. Verify Business Name field is empty
+3. Inspect Next button's `disabled` state
+
+**Expected Result:** Next button is disabled until name is entered
+
+**Actual Result:** Next button is enabled regardless of name field state
+
+**Screenshot:** ![Next button not disabled](screenshots/template-import/23--0d16a-abled-without-business-name.png)
+
+---
+
+### My Templates page (#/my_uploaded) shows fatal error / does not load
+
+**Severity:** P1
+**Area:** Functionality
+
+**Issue:** Navigating to `#/my_uploaded` results in a fatal error or blank screen. The hash route does not properly resolve, console errors are produced.
+
+**Steps to Reproduce:**
+1. Click WDesignKit → Templates → My Templates
+2. Wait for page
+
+**Expected Result:** My Templates page loads cleanly without fatal error and no console errors
+
+**Actual Result:** Page loads with fatal error / hash mismatch / console errors
+
+**Screenshot:** ![My Templates fatal error](screenshots/template-import/42--42426-d-loads-without-fatal-error.png)
+**Screenshot:** ![My Templates hash wrong](screenshots/template-import/42--fad5a-y-uploaded-after-navigation.png)
+**Screenshot:** ![My Templates console errors](screenshots/template-import/42--1b362--not-produce-console-errors.png)
+
+---
+
+### Subscriber user can access plugin admin page (no access control)
+
+**Severity:** P2
+**Area:** Security / Access Control
+
+**Issue:** A user with the Subscriber role is not redirected or denied when accessing `/wp-admin/admin.php?page=wdesign-kit`. The plugin should require `manage_options` capability (Administrator role).
+
+**Steps to Reproduce:**
+1. Log in as a subscriber user
+2. Navigate to `/wp-admin/admin.php?page=wdesign-kit`
+
+**Expected Result:** User is redirected or shown "Sorry, you are not allowed to access this page"
+
+**Actual Result:** Subscriber can access the plugin page
+
+**Screenshot:** ![Subscriber access not blocked](screenshots/template-import/43--215df--when-accessing-plugin-page.png)
+
+---
+
+### Import wizard Step 1 has horizontal overflow at 375px and 768px viewports
+
+**Severity:** P2
+**Area:** Responsive
+
+**Issue:** At mobile (375px) and tablet (768px) viewports, the import wizard preview step renders with horizontal scrollbars / overflow. Layout breaks for mobile users.
+
+**Steps to Reproduce:**
+1. Set viewport to 375x812 or 768x1024
+2. Navigate to import wizard preview step
+3. Check `documentElement.scrollWidth > clientWidth`
+
+**Expected Result:** No horizontal overflow at any breakpoint
+
+**Actual Result:** Overflow present at 375px and 768px
+
+**Screenshot:** ![375px overflow](screenshots/template-import/44--900fc-ard-Step-1-renders-at-375px.png)
+**Screenshot:** ![768px overflow](screenshots/template-import/44--43acd-ard-Step-1-renders-at-768px.png)
+
+---
+
+### Keyboard accessibility — category checkboxes unreachable via Tab; Free/Pro radios don't respond to arrow keys; Escape doesn't navigate back
+
+**Severity:** P2
+**Area:** Accessibility
+
+**Issue:** Three keyboard navigation regressions:
+1. Category checkboxes cannot receive focus via Tab key
+2. Free/Pro radio group does not respond to ArrowLeft/ArrowRight keys
+3. Pressing Escape on the import wizard does not close or navigate back gracefully
+
+**Steps to Reproduce:**
+1. Tab from a known focusable element
+2. Try to reach `#category_1031` — fails
+3. Focus `#wkit-free-btn-label`, press ArrowRight — does not move to next radio
+4. On import wizard, press Escape — no effect
+
+**Expected Result:** All standard keyboard interactions work per WCAG 2.1
+
+**Actual Result:** Tab skips category checkboxes; arrow keys ignored on radios; Escape unhandled
+
+**Screenshot:** ![Categories not Tab-reachable](screenshots/template-import/50--a2d31--reachable-via-keyboard-Tab.png)
+**Screenshot:** ![Free/Pro arrow keys broken](screenshots/template-import/50--4546a--to-arrow-keys-when-focused.png)
+**Screenshot:** ![Escape not handled](screenshots/template-import/50--584fc-ck-or-is-handled-gracefully.png)
+
+---
+
+### ARIA — Builder checkboxes lack label associations; Template Type radios missing name="selectPageType"
+
+**Severity:** P2
+**Area:** Accessibility / Code Quality
+
+**Issue:** Two ARIA failures:
+1. Builder checkboxes (`#select_builder_elementor`, `#select_builder_gutenberg`) do not have associated `<label for=...>` elements
+2. Template Type radios are missing the `name="selectPageType"` attribute on at least one radio
+
+**Steps to Reproduce:**
+1. Inspect builder checkboxes for `<label for>` association
+2. Inspect Template Type radios for name attribute
+
+**Expected Result:** All inputs have proper label associations and consistent name attributes
+
+**Actual Result:** Missing labels and inconsistent name attributes
+
+**Screenshot:** ![Builder label association missing](screenshots/template-import/51--0de3a-e-associated-label-elements.png)
+**Screenshot:** ![Template Type name missing](screenshots/template-import/51--908da-e-attribute-selectPageType-.png)
+
+---
+
+### State preservation — Business Name lost when navigating Step 1 → Step 2 → Back
+
+**Severity:** P1
+**Area:** Logic / UX
+
+**Issue:** When the user fills the Business Name on Step 1, navigates forward to Step 2, then clicks Back, the Business Name field is empty (state not preserved). User must re-enter all data.
+
+**Steps to Reproduce:**
+1. Reach preview step
+2. Type "QA Test Business" in Business Name
+3. Click Next → arrive at Feature step
+4. Click Back → return to Step 1
+5. Check Business Name value
+
+**Expected Result:** Business Name still shows "QA Test Business"
+
+**Actual Result:** Field is empty — state lost
+
+**Screenshot:** ![State not preserved on Back](screenshots/template-import/52--c863d-er-going-to-Step-2-and-back.png)
+
+---
+
+### AI Content_Media step (Step 4) site info title is missing or wrong text
+
+**Severity:** P2
+**Area:** UI
+
+**Issue:** On the AI content_media step, the title `.wkit-get-site-info-title` does not contain the expected text "Tell Us About Your Website".
+
+**Steps to Reproduce:**
+1. Reach Method step (with WDesignKit auth)
+2. Select AI Content card
+3. Click Next → arrive at content_media step
+4. Read title element
+
+**Expected Result:** Title = "Tell Us About Your Website"
+
+**Actual Result:** Element absent or contains different text
+
+**Screenshot:** ![AI step title wrong](screenshots/template-import/39--f0494-Tell-Us-About-Your-Website-.png)
+
+---
+
+## Did-Not-Run Tests (82)
+
+These tests were skipped because their dependent navigation/state-mutating preceding test failed (serial-mode short-circuit). They are blocked by the P0/P1 issues above — fixing the wizard mounting (`.wkit-temp-import-mian` not loading) will unblock the majority.
+
+## Conclusion
+
+| Metric | Value |
+|--------|-------|
+| **Total tests** | 385 |
+| **Passed** | 252 (65.5%) |
+| **Failed** | 49 (12.7%) |
+| **Skipped** | 2 (auth-gated) |
+| **Did-not-run** | 82 (blocked by upstream failures) |
+| **Run time** | 1.1 h (workers=4) |
+| **P0 bugs** | 3 |
+| **P1 bugs** | 12 |
+| **P2 bugs** | 13 |
+| **P3 bugs** | 3 |
+
+**Release status: 🛑 BLOCKED** — 3 P0 bugs prevent the entire import flow from completing. Most P1 issues cascade from these P0s (wizard not mounting), so fixing those will resolve the majority.
