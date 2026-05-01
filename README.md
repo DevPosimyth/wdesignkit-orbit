@@ -118,32 +118,6 @@ AI-CONTEXT.md  ←  paste this to any AI before sharing the zip
 
 ---
 
-### 🖥️ Dashboard — wdesignkit.com
-
-| Area | Coverage |
-|---|---|
-| **Prompt Field** | Load · input · submission · character limits · empty submit behavior |
-| **File Attach** | Supported formats · oversized file rejection · multiple file handling |
-| **Link Insertion** | Valid/invalid URL handling · duplicate link behavior |
-| **Language Selector** | Dropdown visibility · selection · persistence across sessions |
-| **Responsive** | All features tested at 375px · 768px · 1440px |
-
----
-
-### 🤖 Widget Builder AI Chat — wdesignkit.com
-
-| Area | Coverage |
-|---|---|
-| **Attach Files** | File type validation · size limits · error messaging |
-| **Prompt Enhancer** | Toggle behavior · enhancement output |
-| **Strict Mode** | Toggle behavior · mode persistence |
-| **AI Model Selection** | Dropdown visibility · model switching · persistence |
-| **User Credits** | Display accuracy · deduction on use · zero-credit state |
-| **Suggested Widgets** | Visibility · clickability · relevance |
-| **Chat Management** | New chat · history access · deletion |
-| **Chat Controls** | Copy · regenerate · feedback submission |
-
----
 
 ### 🔌 Plugin — WordPress Plugin
 
