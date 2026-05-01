@@ -40,7 +40,7 @@ const SAVE_SECTION_HASH = '/save_template/section';
 
 async function goToSaveTemplate(page, hash = SAVE_TEMPLATE_HASH) {
   await page.goto(PLUGIN_PAGE);
-  await page.waitForLoadState('networkidle');
+  await page.waitForLoadState('domcontentloaded');
   await page.waitForTimeout(2000);
   await page.evaluate((h) => { location.hash = h; }, hash);
   await page.waitForTimeout(3000);
@@ -103,7 +103,7 @@ test.describe('29. Save Template — auth guard & login redirect', () => {
   test('29.01 WDKit-unauthenticated user is redirected to login from #/save_template', async ({ page }) => {
     await wpLogin(page);
     await page.goto(PLUGIN_PAGE);
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('domcontentloaded');
     await page.waitForTimeout(1500);
     await page.evaluate(() => { localStorage.removeItem('wdkit-login'); });
     await page.evaluate(() => { location.hash = '/save_template'; });
@@ -127,7 +127,7 @@ test.describe('29. Save Template — auth guard & login redirect', () => {
     test.skip(!WDKIT_TOKEN, 'WDKIT_API_TOKEN not set — skip auth-dependent test');
     await wpLogin(page);
     await page.goto(PLUGIN_PAGE);
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('domcontentloaded');
     await page.waitForTimeout(1500);
     await page.evaluate((token) => {
       localStorage.setItem('wdkit-login', JSON.stringify({

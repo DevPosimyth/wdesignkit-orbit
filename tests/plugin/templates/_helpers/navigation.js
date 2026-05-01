@@ -10,7 +10,7 @@ const SCREENSHOT_DIR = 'reports/bugs/screenshots/template-import';
 
 async function goToBrowse(page) {
   await page.goto(PLUGIN_PAGE);
-  await page.waitForLoadState('networkidle');
+  await page.waitForLoadState('domcontentloaded');
   await page.waitForTimeout(2000);
   await page.evaluate(() => { location.hash = '/browse'; });
   await page.waitForTimeout(3000);
@@ -20,7 +20,7 @@ async function goToBrowse(page) {
 
 async function goToBrowseViaNav(page) {
   await page.goto(PLUGIN_PAGE);
-  await page.waitForLoadState('networkidle');
+  await page.waitForLoadState('domcontentloaded');
   await page.waitForTimeout(2000);
   const menu = page.locator('.wkit-menu').filter({ has: page.locator('.wdkit-i-templates') }).first();
   const menuVisible = await menu.isVisible({ timeout: 5000 }).catch(() => false);
@@ -41,7 +41,7 @@ async function goToBrowseViaNav(page) {
 
 async function goToMyTemplates(page) {
   await page.goto(PLUGIN_PAGE);
-  await page.waitForLoadState('networkidle');
+  await page.waitForLoadState('domcontentloaded');
   await page.waitForTimeout(2000);
   await page.evaluate(() => { location.hash = '/my_uploaded'; });
   await page.waitForTimeout(3000);
@@ -72,6 +72,47 @@ async function screenshot(page, name) {
   await page.screenshot({ path: `${SCREENSHOT_DIR}/${name}.png` }).catch(() => {});
 }
 
+/**
+ * Navigate to the import wizard for a FREE (non-PRO) template.
+ * Scans visible cards and clicks the first one that has no PRO badge.
+ * Falls back to the first card if all appear PRO or badge is not detectable.
+ */
+async function goToFreeTemplateImport(page) {
+  await goToBrowse(page);
+
+  const cards = page.locator('.wdkit-browse-card');
+  const cardCount = await cards.count();
+
+  let targetCard = null;
+  for (let i = 0; i < Math.min(cardCount, 20); i++) {
+    const card = cards.nth(i);
+    const hasPro = await card.locator('.wdkit-pro-badge, .wkit-pro-badge, [class*="pro-badge"], [class*="pro-lock"]')
+      .count().then(c => c > 0).catch(() => false);
+    if (!hasPro) {
+      targetCard = card;
+      break;
+    }
+  }
+
+  // Fallback to first card if no free card detected
+  if (!targetCard) targetCard = cards.first();
+
+  await expect(targetCard).toBeVisible({ timeout: 15000 });
+  await targetCard.hover({ force: true });
+  await page.waitForTimeout(500);
+
+  const importBtn = targetCard.locator('.wdkit-browse-card-download').first();
+  const btnVisible = await importBtn.isVisible({ timeout: 2000 }).catch(() => false);
+  if (btnVisible) {
+    await importBtn.click({ force: true });
+  } else {
+    await targetCard.click({ force: true });
+  }
+
+  await page.waitForTimeout(3000);
+  await page.locator('.wkit-temp-import-mian').waitFor({ state: 'visible', timeout: 20000 }).catch(() => {});
+}
+
 module.exports = {
   PLUGIN_PAGE,
   SCREENSHOT_DIR,
@@ -79,6 +120,7 @@ module.exports = {
   goToBrowseViaNav,
   goToMyTemplates,
   goToImportPage,
+  goToFreeTemplateImport,
   clickFirstCardImport,
   screenshot,
 };

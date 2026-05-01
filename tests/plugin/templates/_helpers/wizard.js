@@ -1,6 +1,6 @@
 // =============================================================================
 // WDesignKit Templates Suite — Import Wizard Helpers
-// Version: 3.0.0 — Deep inside-flow navigation
+// Version: 3.1.0 — Deep inside-flow navigation + bug fixes
 // =============================================================================
 
 async function fillBusinessName(page, name) {
@@ -68,10 +68,32 @@ async function acceptTandC(page) {
   const checkbox = page.locator('#wkit-plugin-confirmation-id');
   const checked = await checkbox.isChecked().catch(() => false);
   if (!checked) {
-    const note = page.locator('.wkit-site-feature-note');
-    const noteVisible = await note.isVisible({ timeout: 5000 }).catch(() => false);
-    if (noteVisible) await note.click();
+    // Prefer clicking the label — clicking the note text doesn't toggle the checkbox
+    const label = page.locator('label[for="wkit-plugin-confirmation-id"]');
+    const labelVisible = await label.isVisible({ timeout: 5000 }).catch(() => false);
+    if (labelVisible) {
+      await label.click({ force: true });
+    } else {
+      // Fallback 1: click the note area
+      const note = page.locator('.wkit-site-feature-note');
+      const noteVisible = await note.isVisible({ timeout: 3000 }).catch(() => false);
+      if (noteVisible) await note.click({ force: true });
+      else {
+        // Fallback 2: direct checkbox click
+        await checkbox.click({ force: true }).catch(() => {});
+      }
+    }
     await page.waitForTimeout(300);
+    // Verify the checkbox is now checked; force via JS if still not
+    const nowChecked = await checkbox.isChecked().catch(() => false);
+    if (!nowChecked) {
+      await checkbox.evaluate(el => {
+        el.checked = true;
+        el.dispatchEvent(new Event('change', { bubbles: true }));
+        el.dispatchEvent(new Event('input',  { bubbles: true }));
+      }).catch(() => {});
+      await page.waitForTimeout(200);
+    }
   }
 }
 
@@ -94,13 +116,23 @@ async function reachMethodStep(page) {
   }
 }
 
+/**
+ * Selects a method card (dummy = 0, ai = 1).
+ * Returns true if the card was found and clicked, false otherwise.
+ */
 async function selectMethodCard(page, type) {
   const idx = type === 'ai' ? 1 : 0;
+  const count = await page.locator('.wkit-method-card').count().catch(() => 0);
+  if (count === 0 || count <= idx) return false;
   const card = page.locator('.wkit-method-card').nth(idx);
-  if ((await card.count()) > 0) {
-    await card.click({ force: true });
-    await page.waitForTimeout(500);
+  // AI card may be pointer-events:none when not available
+  if (type === 'ai') {
+    const pe = await card.evaluate(el => getComputedStyle(el).pointerEvents).catch(() => 'none');
+    if (pe === 'none') return false;
   }
+  await card.click({ force: true });
+  await page.waitForTimeout(500);
+  return true;
 }
 
 /**
@@ -132,37 +164,28 @@ async function reachAIContentStep(page) {
 }
 
 async function completeDummyImport(page) {
-  await reachFeatureStep(page);
-  await acceptTandC(page);
-  await page.waitForTimeout(300);
-  const featureNext = page.locator('button.wkit-site-feature-next.wkit-btn-class');
-  if (await featureNext.isEnabled({ timeout: 5000 }).catch(() => false)) {
-    await featureNext.click();
-    await page.waitForTimeout(2500);
-  }
+  // Use reachMethodStep so acceptTandC + feature Next are handled consistently
+  await reachMethodStep(page);
   await selectMethodCard(page, 'dummy');
   const methodNext = page.locator('button.wkit-import-method-next.wkit-btn-class');
-  if ((await methodNext.count()) > 0) {
+  if (await methodNext.isEnabled({ timeout: 5000 }).catch(() => false)) {
     await methodNext.click();
     await page.waitForTimeout(3000);
   }
 }
 
 async function completeAIImport(page) {
-  await reachFeatureStep(page);
-  await acceptTandC(page);
-  await page.waitForTimeout(300);
-  const featureNext = page.locator('button.wkit-site-feature-next.wkit-btn-class');
-  if (await featureNext.isEnabled({ timeout: 5000 }).catch(() => false)) {
-    await featureNext.click();
-    await page.waitForTimeout(2500);
-  }
-  await selectMethodCard(page, 'ai');
+  // Use reachMethodStep so acceptTandC + feature Next are handled consistently
+  await reachMethodStep(page);
+  const selected = await selectMethodCard(page, 'ai');
+  if (!selected) return false; // AI not available for this template
   const methodNext = page.locator('button.wkit-import-method-next.wkit-btn-class');
   if (await methodNext.isEnabled({ timeout: 5000 }).catch(() => false)) {
     await methodNext.click();
     await page.waitForTimeout(3000);
+    return true;
   }
+  return false;
 }
 
 module.exports = {

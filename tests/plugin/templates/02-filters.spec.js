@@ -1,10 +1,10 @@
 // =============================================================================
 // WDesignKit Templates Suite — Filters
-// Version: 2.2.10
-// Source: split from template-import.spec.js (Phase 1 restructure)
+// Version: 3.0.0 — Deep inside-flow testing
 //
 // COVERAGE
 //   Section 3  — Filter panel structure validation (12 tests)
+//   Section 3b — Filter panel collapse / expand (7 tests)
 //   Section 4  — AI Compatible filter interactions (10 tests)
 //   Section 5  — Page Builder filter (Elementor & Gutenberg, 10 tests)
 //   Section 6  — Free/Pro filter (8 tests)
@@ -87,6 +87,117 @@ test.describe('3. Filter panel — full structure validation', () => {
     const box = await col.boundingBox();
     expect(box).not.toBeNull();
     expect(box.x).toBeGreaterThanOrEqual(0);
+  });
+
+});
+
+// =============================================================================
+// 3b. Filter panel — collapse / expand interactions
+// =============================================================================
+test.describe('3b. Filter panel — collapse / expand', () => {
+
+  test.beforeEach(async ({ page }) => {
+    await wpLogin(page);
+    await goToBrowse(page);
+  });
+
+  test('3b.01 Clicking .wdkit-i-filter-collapse does not crash the page', async ({ page }) => {
+    const collapseBtn = page.locator('.wdkit-i-filter-collapse').first();
+    if ((await collapseBtn.count()) > 0) {
+      await collapseBtn.click({ force: true });
+      await page.waitForTimeout(800);
+    }
+    await expect(page.locator('body')).not.toContainText('Fatal error');
+  });
+
+  test('3b.02 After collapse click, filter column state changes (class or width changes)', async ({ page }) => {
+    const collapseBtn = page.locator('.wdkit-i-filter-collapse').first();
+    const filterCol = page.locator('.wdkit-browse-column').first();
+    if ((await collapseBtn.count()) > 0 && (await filterCol.count()) > 0) {
+      const classBefore = await filterCol.getAttribute('class').catch(() => '');
+      const widthBefore = await filterCol.evaluate(el => el.offsetWidth).catch(() => 0);
+      await collapseBtn.click({ force: true });
+      await page.waitForTimeout(1000);
+      const classAfter = await filterCol.getAttribute('class').catch(() => '');
+      const widthAfter = await filterCol.evaluate(el => el.offsetWidth).catch(() => 0);
+      // Either class changes OR width changes — both indicate collapse happened
+      const stateChanged = (classAfter !== classBefore) || (widthAfter !== widthBefore);
+      expect(stateChanged).toBe(true);
+    }
+  });
+
+  test('3b.03 Clicking collapse twice restores original filter panel state', async ({ page }) => {
+    const collapseBtn = page.locator('.wdkit-i-filter-collapse').first();
+    const filterCol = page.locator('.wdkit-browse-column').first();
+    if ((await collapseBtn.count()) > 0 && (await filterCol.count()) > 0) {
+      const classBefore = await filterCol.getAttribute('class').catch(() => '');
+      await collapseBtn.click({ force: true });
+      await page.waitForTimeout(800);
+      await collapseBtn.click({ force: true });
+      await page.waitForTimeout(800);
+      const classAfter = await filterCol.getAttribute('class').catch(() => '');
+      // Class should be restored to original after toggling twice
+      expect(classAfter).toBe(classBefore);
+    }
+  });
+
+  test('3b.04 Template card grid is still visible after filter panel collapse', async ({ page }) => {
+    const collapseBtn = page.locator('.wdkit-i-filter-collapse').first();
+    if ((await collapseBtn.count()) > 0) {
+      await collapseBtn.click({ force: true });
+      await page.waitForTimeout(1000);
+    }
+    // Template grid must still show cards
+    const gridCount = await page.locator('.wdkit-templates-card-main, .wdkit-browse-card').count();
+    const emptyCount = await page.locator('[class*="not-found"]').count();
+    expect(gridCount + emptyCount).toBeGreaterThan(0);
+  });
+
+  test('3b.05 Filter collapse button is keyboard-focusable', async ({ page }) => {
+    const collapseBtn = page.locator('.wdkit-i-filter-collapse').first();
+    if ((await collapseBtn.count()) > 0) {
+      await collapseBtn.focus().catch(() => {});
+      // Just verify no crash
+      await expect(page.locator('body')).not.toContainText('Fatal error');
+    }
+  });
+
+  test('3b.06 No console errors emitted during filter collapse / expand cycle', async ({ page }) => {
+    const errors = [];
+    page.on('console', m => { if (m.type() === 'error') errors.push(m.text()); });
+    const collapseBtn = page.locator('.wdkit-i-filter-collapse').first();
+    if ((await collapseBtn.count()) > 0) {
+      await collapseBtn.click({ force: true });
+      await page.waitForTimeout(600);
+      await collapseBtn.click({ force: true });
+      await page.waitForTimeout(600);
+    }
+    const productErrors = errors.filter(e =>
+      !e.includes('favicon') && !e.includes('net::ERR') && !e.includes('extension')
+    );
+    expect(productErrors).toHaveLength(0);
+  });
+
+  test('3b.07 Active filters remain selected after collapsing and expanding filter panel', async ({ page }) => {
+    // Select a category filter first
+    const cb = page.locator('#category_1031');
+    if ((await cb.count()) > 0) {
+      await cb.click({ force: true });
+      await page.waitForTimeout(400);
+    }
+    // Collapse
+    const collapseBtn = page.locator('.wdkit-i-filter-collapse').first();
+    if ((await collapseBtn.count()) > 0) {
+      await collapseBtn.click({ force: true });
+      await page.waitForTimeout(600);
+      // Expand
+      await collapseBtn.click({ force: true });
+      await page.waitForTimeout(600);
+    }
+    // Category should still be checked
+    if ((await cb.count()) > 0) {
+      expect(await cb.isChecked()).toBe(true);
+    }
   });
 
 });

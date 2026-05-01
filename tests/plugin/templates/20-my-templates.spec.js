@@ -59,7 +59,7 @@ test.describe('20. My Templates — navigation & page load', () => {
 
   test('20.04 My Templates submenu link href is #/my_uploaded', async ({ page }) => {
     await page.goto(PLUGIN_PAGE);
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('domcontentloaded');
     await page.waitForTimeout(2000);
     const menu = page.locator('.wkit-menu').filter({ has: page.locator('.wdkit-i-templates') }).first();
     const visible = await menu.isVisible({ timeout: 5000 }).catch(() => false);
@@ -73,7 +73,7 @@ test.describe('20. My Templates — navigation & page load', () => {
 
   test('20.05 Clicking My Templates sidebar link navigates to #/my_uploaded', async ({ page }) => {
     await page.goto(PLUGIN_PAGE);
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('domcontentloaded');
     await page.waitForTimeout(2000);
     const menu = page.locator('.wkit-menu').filter({ has: page.locator('.wdkit-i-templates') }).first();
     const visible = await menu.isVisible({ timeout: 5000 }).catch(() => false);
@@ -145,7 +145,7 @@ test.describe('21. My Templates — auth guard & redirect', () => {
     await wpLogin(page);
     // Remove WDKit cloud auth
     await page.goto(PLUGIN_PAGE);
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('domcontentloaded');
     await page.waitForTimeout(1500);
     await page.evaluate(() => { localStorage.removeItem('wdkit-login'); });
     await page.evaluate(() => { location.hash = '/my_uploaded'; });
@@ -161,7 +161,7 @@ test.describe('21. My Templates — auth guard & redirect', () => {
     test.skip(!WDKIT_TOKEN, 'WDKIT_API_TOKEN not set — skip auth-dependent test');
     await wpLogin(page);
     await page.goto(PLUGIN_PAGE);
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('domcontentloaded');
     await page.waitForTimeout(1500);
     await page.evaluate((token) => {
       localStorage.setItem('wdkit-login', JSON.stringify({
@@ -178,7 +178,7 @@ test.describe('21. My Templates — auth guard & redirect', () => {
   test('21.03 Login redirect preserves intended route (/my_uploaded)', async ({ page }) => {
     await wpLogin(page);
     await page.goto(PLUGIN_PAGE);
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('domcontentloaded');
     await page.waitForTimeout(1500);
     await page.evaluate(() => { localStorage.removeItem('wdkit-login'); });
     await page.evaluate(() => { location.hash = '/my_uploaded'; });

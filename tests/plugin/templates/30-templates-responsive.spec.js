@@ -1,6 +1,6 @@
 // =============================================================================
 // WDesignKit Templates Suite — Responsive Layout
-// Version: 1.0.0
+// Version: 1.1.0  (touch targets corrected to WCAG 2.5.5 ≥44px; networkidle → domcontentloaded)
 // Cross-cutting: tests all template pages at mobile/tablet/desktop viewports
 //
 // COVERAGE
@@ -24,7 +24,7 @@ test.describe('50. Browse library — responsive at all viewports', () => {
 
   for (const vp of VIEWPORTS) {
 
-    test(`50.0${VIEWPORTS.indexOf(vp) + 1} Browse page renders without horizontal overflow at ${vp.width}px`, async ({ page }) => {
+    test(`50. Browse page renders without horizontal overflow — ${vp.name} (${vp.width}px)`, async ({ page }) => {
       await wpLogin(page);
       await page.setViewportSize({ width: vp.width, height: vp.height });
       await goToBrowse(page);
@@ -34,7 +34,7 @@ test.describe('50. Browse library — responsive at all viewports', () => {
       expect(scrollWidth).toBeLessThanOrEqual(clientWidth + 5);
     });
 
-    test(`50.0${VIEWPORTS.indexOf(vp) + 4} Browse page template cards are visible at ${vp.width}px`, async ({ page }) => {
+    test(`50. Browse page template cards are visible — ${vp.name} (${vp.width}px)`, async ({ page }) => {
       await wpLogin(page);
       await page.setViewportSize({ width: vp.width, height: vp.height });
       await goToBrowse(page);
@@ -45,7 +45,7 @@ test.describe('50. Browse library — responsive at all viewports', () => {
       expect(visible || emptyCount > 0).toBe(true);
     });
 
-    test(`50.0${VIEWPORTS.indexOf(vp) + 7} Browse page renders no fatal error at ${vp.width}px`, async ({ page }) => {
+    test(`50. Browse page renders no fatal error — ${vp.name} (${vp.width}px)`, async ({ page }) => {
       await wpLogin(page);
       await page.setViewportSize({ width: vp.width, height: vp.height });
       await goToBrowse(page);
@@ -148,9 +148,9 @@ test.describe('51. Import wizard — responsive at all viewports', () => {
       if (visible) {
         const box = await closeBtn.boundingBox();
         if (box) {
-          // Touch target should be at least 44x44 on mobile
-          expect(box.width).toBeGreaterThanOrEqual(24); // min acceptable
-          expect(box.height).toBeGreaterThanOrEqual(24);
+          // WCAG 2.5.5 — touch target ≥ 44×44px on mobile (was incorrectly 24)
+          expect(box.width).toBeGreaterThanOrEqual(44);
+          expect(box.height).toBeGreaterThanOrEqual(44);
         }
       }
     }
@@ -202,7 +202,7 @@ test.describe('51. Import wizard — responsive at all viewports', () => {
 test.describe('52. My Templates — responsive at all viewports', () => {
 
   for (const vp of VIEWPORTS) {
-    test(`52.0${VIEWPORTS.indexOf(vp) + 1} My Templates page renders without overflow at ${vp.width}px`, async ({ page }) => {
+    test(`52. My Templates renders without overflow — ${vp.name} (${vp.width}px)`, async ({ page }) => {
       await wpLogin(page);
       await page.setViewportSize({ width: vp.width, height: vp.height });
       await goToMyTemplates(page);
@@ -211,7 +211,7 @@ test.describe('52. My Templates — responsive at all viewports', () => {
       expect(scrollWidth).toBeLessThanOrEqual(clientWidth + 5);
     });
 
-    test(`52.0${VIEWPORTS.indexOf(vp) + 4} My Templates tab buttons are visible at ${vp.width}px`, async ({ page }) => {
+    test(`52. My Templates tab buttons visible — ${vp.name} (${vp.width}px)`, async ({ page }) => {
       await wpLogin(page);
       await page.setViewportSize({ width: vp.width, height: vp.height });
       await goToMyTemplates(page);
@@ -232,14 +232,14 @@ test.describe('53. Share With Me — responsive at all viewports', () => {
 
   async function goToShareWithMe(page) {
     await page.goto(PLUGIN_PAGE);
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('domcontentloaded');
     await page.waitForTimeout(2000);
     await page.evaluate(() => { location.hash = '/share_with_me'; });
     await page.waitForTimeout(3000);
   }
 
   for (const vp of VIEWPORTS) {
-    test(`53.0${VIEWPORTS.indexOf(vp) + 1} Share With Me renders without overflow at ${vp.width}px`, async ({ page }) => {
+    test(`53. Share With Me renders without overflow — ${vp.name} (${vp.width}px)`, async ({ page }) => {
       await wpLogin(page);
       await page.setViewportSize({ width: vp.width, height: vp.height });
       await goToShareWithMe(page);
@@ -248,7 +248,7 @@ test.describe('53. Share With Me — responsive at all viewports', () => {
       expect(scrollWidth).toBeLessThanOrEqual(clientWidth + 5);
     });
 
-    test(`53.0${VIEWPORTS.indexOf(vp) + 4} Share With Me tab buttons visible at ${vp.width}px`, async ({ page }) => {
+    test(`53. Share With Me tab buttons visible — ${vp.name} (${vp.width}px)`, async ({ page }) => {
       await wpLogin(page);
       await page.setViewportSize({ width: vp.width, height: vp.height });
       await goToShareWithMe(page);
@@ -277,7 +277,7 @@ test.describe('54. Horizontal overflow — all template pages at 375px', () => {
       await wpLogin(page);
       await page.setViewportSize({ width: 375, height: 812 });
       await page.goto(PLUGIN_PAGE);
-      await page.waitForLoadState('networkidle');
+      await page.waitForLoadState('domcontentloaded');
       await page.waitForTimeout(2000);
       await page.evaluate((h) => { location.hash = h; }, pg.hash);
       await page.waitForTimeout(3000);
@@ -291,7 +291,7 @@ test.describe('54. Horizontal overflow — all template pages at 375px', () => {
     await wpLogin(page);
     await page.setViewportSize({ width: 375, height: 812 });
     await page.goto(PLUGIN_PAGE);
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('domcontentloaded');
     await page.waitForTimeout(2000);
     const scrollWidth = await page.evaluate(() => document.body.scrollWidth);
     const clientWidth = await page.evaluate(() => document.documentElement.clientWidth);
@@ -310,7 +310,7 @@ test.describe('55. Touch target sizes on mobile (44×44px)', () => {
     await page.setViewportSize({ width: 375, height: 812 });
   });
 
-  test('55.01 Import button on browse card meets minimum touch target size', async ({ page }) => {
+  test('55.01 Import button on browse card meets minimum touch target size (WCAG 2.5.5 ≥44px)', async ({ page }) => {
     await goToBrowse(page);
     const card = page.locator('.wdkit-browse-card').first();
     const cardVisible = await card.isVisible({ timeout: 15000 }).catch(() => false);
@@ -322,8 +322,8 @@ test.describe('55. Touch target sizes on mobile (44×44px)', () => {
       if (btnVisible) {
         const box = await importBtn.boundingBox();
         if (box) {
-          expect(box.width).toBeGreaterThanOrEqual(24);
-          expect(box.height).toBeGreaterThanOrEqual(24);
+          expect(box.width).toBeGreaterThanOrEqual(44);
+          expect(box.height).toBeGreaterThanOrEqual(44);
         }
       }
     }
@@ -341,21 +341,21 @@ test.describe('55. Touch target sizes on mobile (44×44px)', () => {
     }
   });
 
-  test('55.03 My Templates tab buttons meet minimum touch target height', async ({ page }) => {
+  test('55.03 My Templates tab buttons meet minimum touch target height (≥44px)', async ({ page }) => {
     await goToMyTemplates(page);
     const tab = page.locator('.wdesignkit-menu').first();
     const visible = await tab.isVisible({ timeout: 5000 }).catch(() => false);
     if (visible) {
       const box = await tab.boundingBox();
       if (box) {
-        expect(box.height).toBeGreaterThanOrEqual(24);
+        expect(box.height).toBeGreaterThanOrEqual(44);
       }
     }
   });
 
-  test('55.04 Share With Me tabs meet minimum touch target height', async ({ page }) => {
+  test('55.04 Share With Me tabs meet minimum touch target height (≥44px)', async ({ page }) => {
     await page.goto(PLUGIN_PAGE);
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('domcontentloaded');
     await page.waitForTimeout(2000);
     await page.evaluate(() => { location.hash = '/share_with_me'; });
     await page.waitForTimeout(3000);
@@ -364,19 +364,19 @@ test.describe('55. Touch target sizes on mobile (44×44px)', () => {
     if (visible) {
       const box = await tab.boundingBox();
       if (box) {
-        expect(box.height).toBeGreaterThanOrEqual(24);
+        expect(box.height).toBeGreaterThanOrEqual(44);
       }
     }
   });
 
-  test('55.05 Favourite button meets minimum touch target height on mobile', async ({ page }) => {
+  test('55.05 Favourite button meets minimum touch target height on mobile (≥44px)', async ({ page }) => {
     await goToMyTemplates(page);
     const btn = page.locator('.wdkit-favourite-btn').first();
     const visible = await btn.isVisible({ timeout: 5000 }).catch(() => false);
     if (visible) {
       const box = await btn.boundingBox();
       if (box) {
-        expect(box.height).toBeGreaterThanOrEqual(24);
+        expect(box.height).toBeGreaterThanOrEqual(44);
       }
     }
   });

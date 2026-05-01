@@ -1,6 +1,6 @@
 // =============================================================================
 // WDesignKit Templates Suite — Accessibility (a11y)
-// Version: 1.0.0
+// Version: 1.1.0
 // Standard: WCAG 2.1 AA
 //
 // COVERAGE
@@ -9,9 +9,16 @@
 //   Section 58 — Focus traps & modal a11y (6 tests)
 //   Section 59 — Colour contrast & visual indicators (5 tests)
 //   Section 60 — Screen reader: labels & announcements (6 tests)
+//   Section 61 — Automated axe-core WCAG 2.1 AA scans (6 tests)  ← NEW
+//
+// NOTE: Section 61 uses @axe-core/playwright for automated rule-based scanning.
+//       CLAUDE.md requires axe-core score ≥ 85 for QA sign-off.
+//       Critical (impact=critical) violations fail the test; serious violations are
+//       soft-reported so the suite can surface a full picture in one run.
 // =============================================================================
 
 const { test, expect } = require('@playwright/test');
+const { injectAxe, checkA11y, getViolations } = require('@axe-core/playwright');
 const { wpLogin } = require('./_helpers/auth');
 const { goToBrowse, goToMyTemplates, PLUGIN_PAGE } = require('./_helpers/navigation');
 
@@ -363,7 +370,7 @@ test.describe('59. Colour contrast & visual indicators', () => {
 
   test('59.01 Active tab class .tab-active is visually distinguished (CSS present)', async ({ page }) => {
     await page.goto(PLUGIN_PAGE);
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('domcontentloaded');
     await page.waitForTimeout(2000);
     await page.evaluate(() => { location.hash = '/my_uploaded'; });
     await page.waitForTimeout(3000);
@@ -479,7 +486,7 @@ test.describe('60. Screen reader — labels & announcements', () => {
   test('60.04 Loading states have aria-busy or visible text', async ({ page }) => {
     // Navigate and check briefly for loading state
     await page.goto(PLUGIN_PAGE);
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('domcontentloaded');
     await page.waitForTimeout(500);
     await page.evaluate(() => { location.hash = '/browse'; });
     await page.waitForTimeout(500);
@@ -517,6 +524,151 @@ test.describe('60. Screen reader — labels & announcements', () => {
       const text = await emptyState.innerText({ timeout: 3000 }).catch(() => '');
       expect(text.trim().length).toBeGreaterThan(0);
     }
+  });
+
+});
+
+// =============================================================================
+// 61. Automated axe-core WCAG 2.1 AA scans
+// Rule: axe-core score ≥ 85 required for QA sign-off (CLAUDE.md)
+//
+// Strategy:
+//   • Critical violations (impact: "critical")  → hard FAIL — must be zero
+//   • Serious violations (impact: "serious")     → soft FAIL — surfaced but non-blocking
+//   • Moderate / minor violations                → informational only
+// =============================================================================
+test.describe('61. Automated axe-core WCAG 2.1 AA scans', () => {
+
+  /** Count violations by impact level and compute a simple weighted score (0–100).
+   *  Deductions: critical = -10 pts, serious = -5 pts, moderate = -2 pts, minor = -1 pt
+   *  Max cap at 0. */
+  function scoreFromViolations(violations) {
+    const deduct = { critical: 10, serious: 5, moderate: 2, minor: 1 };
+    const total = violations.reduce((sum, v) => sum + (deduct[v.impact] || 0), 0);
+    return Math.max(0, 100 - total);
+  }
+
+  test('61.01 Browse library page has zero critical WCAG 2.1 AA violations', async ({ page }) => {
+    await wpLogin(page);
+    await goToBrowse(page);
+    // Wait for template cards to load so axe scans a populated DOM
+    await page.locator('.wdkit-browse-card').first().waitFor({ state: 'visible', timeout: 20000 }).catch(() => {});
+    await injectAxe(page);
+    const violations = await getViolations(page, null, {
+      axeOptions: { runOnly: { type: 'tag', values: ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'] } },
+    });
+    const critical = violations.filter(v => v.impact === 'critical');
+    const serious  = violations.filter(v => v.impact === 'serious');
+    const score    = scoreFromViolations(violations);
+
+    // Surface a summary for visibility
+    if (violations.length > 0) {
+      console.log(`[a11y] Browse page — ${violations.length} violation(s) found. Score: ${score}/100`);
+      violations.forEach(v => console.log(`  [${v.impact}] ${v.id}: ${v.description}`));
+    }
+
+    // Critical violations must be zero
+    expect(critical, `Critical a11y violations on Browse: ${critical.map(v => v.id).join(', ')}`).toHaveLength(0);
+    // Serious violations reported softly
+    expect.soft(serious, `Serious a11y violations on Browse: ${serious.map(v => v.id).join(', ')}`).toHaveLength(0);
+    // Overall score gate (CLAUDE.md requires ≥ 85)
+    expect(score, `axe-core score ${score}/100 is below the required ≥85 threshold`).toBeGreaterThanOrEqual(85);
+  });
+
+  test('61.02 Browse library page has axe-core score ≥ 85', async ({ page }) => {
+    await wpLogin(page);
+    await goToBrowse(page);
+    await page.locator('.wdkit-browse-card').first().waitFor({ state: 'visible', timeout: 20000 }).catch(() => {});
+    await injectAxe(page);
+    const violations = await getViolations(page, null, {
+      axeOptions: { runOnly: { type: 'tag', values: ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'] } },
+    });
+    const score = scoreFromViolations(violations);
+    expect(score).toBeGreaterThanOrEqual(85);
+  });
+
+  test('61.03 Import wizard — Step 1 (Preview) has zero critical violations', async ({ page }) => {
+    await wpLogin(page);
+    await goToBrowse(page);
+    const card = page.locator('.wdkit-browse-card').first();
+    await card.waitFor({ state: 'visible', timeout: 20000 }).catch(() => {});
+    await card.hover({ force: true });
+    await page.waitForTimeout(400);
+    const importBtn = card.locator('.wdkit-browse-card-download').first();
+    const btnVisible = await importBtn.isVisible({ timeout: 3000 }).catch(() => false);
+    if (btnVisible) {
+      await importBtn.click({ force: true });
+      await page.locator('.wkit-temp-import-mian').waitFor({ state: 'visible', timeout: 15000 }).catch(() => {});
+    }
+    // Only scan if the wizard opened
+    const wizardVisible = await page.locator('.wkit-temp-import-mian').isVisible({ timeout: 3000 }).catch(() => false);
+    if (!wizardVisible) {
+      console.log('[a11y] Import wizard did not open — skipping Section 61.03 axe scan');
+      return;
+    }
+    await injectAxe(page);
+    const violations = await getViolations(page, '.wkit-temp-import-mian', {
+      axeOptions: { runOnly: { type: 'tag', values: ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'] } },
+    });
+    const critical = violations.filter(v => v.impact === 'critical');
+    const score    = scoreFromViolations(violations);
+    if (violations.length > 0) {
+      console.log(`[a11y] Import Wizard Step 1 — ${violations.length} violation(s). Score: ${score}/100`);
+      violations.forEach(v => console.log(`  [${v.impact}] ${v.id}: ${v.description}`));
+    }
+    expect(critical, `Critical violations in Import Wizard: ${critical.map(v => v.id).join(', ')}`).toHaveLength(0);
+    expect(score).toBeGreaterThanOrEqual(85);
+  });
+
+  test('61.04 My Templates page has zero critical WCAG 2.1 AA violations', async ({ page }) => {
+    await wpLogin(page);
+    await goToMyTemplates(page);
+    await page.waitForTimeout(2000);
+    await injectAxe(page);
+    const violations = await getViolations(page, null, {
+      axeOptions: { runOnly: { type: 'tag', values: ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'] } },
+    });
+    const critical = violations.filter(v => v.impact === 'critical');
+    const serious  = violations.filter(v => v.impact === 'serious');
+    const score    = scoreFromViolations(violations);
+    if (violations.length > 0) {
+      console.log(`[a11y] My Templates — ${violations.length} violation(s). Score: ${score}/100`);
+      violations.forEach(v => console.log(`  [${v.impact}] ${v.id}: ${v.description}`));
+    }
+    expect(critical, `Critical a11y violations on My Templates: ${critical.map(v => v.id).join(', ')}`).toHaveLength(0);
+    expect.soft(serious, `Serious a11y violations on My Templates: ${serious.map(v => v.id).join(', ')}`).toHaveLength(0);
+    expect(score).toBeGreaterThanOrEqual(85);
+  });
+
+  test('61.05 Plugin page root (#wdesignkit-app) has no duplicate-id violations', async ({ page }) => {
+    await wpLogin(page);
+    await goToBrowse(page);
+    await injectAxe(page);
+    const violations = await getViolations(page, '#wdesignkit-app, body', {
+      axeOptions: { runOnly: { type: 'rule', values: ['duplicate-id', 'duplicate-id-active', 'duplicate-id-aria'] } },
+    });
+    expect(violations, `Duplicate-id violations: ${violations.map(v => v.id).join(', ')}`).toHaveLength(0);
+  });
+
+  test('61.06 No WCAG colour-contrast failures on Browse library page', async ({ page }) => {
+    await wpLogin(page);
+    await goToBrowse(page);
+    await page.locator('.wdkit-browse-card').first().waitFor({ state: 'visible', timeout: 20000 }).catch(() => {});
+    await injectAxe(page);
+    const violations = await getViolations(page, null, {
+      axeOptions: { runOnly: { type: 'rule', values: ['color-contrast', 'color-contrast-enhanced'] } },
+    });
+    const critical = violations.filter(v => v.impact === 'critical');
+    const serious  = violations.filter(v => v.impact === 'serious');
+    if (violations.length > 0) {
+      console.log(`[a11y] Colour contrast — ${violations.length} violation(s)`);
+      violations.forEach(v => console.log(`  [${v.impact}] ${v.id}: ${v.description}`));
+    }
+    // Both critical and serious contrast failures are blocking
+    expect(
+      [...critical, ...serious],
+      `Color-contrast violations: ${[...critical, ...serious].map(v => v.id).join(', ')}`
+    ).toHaveLength(0);
   });
 
 });

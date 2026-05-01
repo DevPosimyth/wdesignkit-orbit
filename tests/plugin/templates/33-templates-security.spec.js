@@ -33,7 +33,7 @@ test.describe('66. Access control & authentication', () => {
   test('66.02 Admin user can access the plugin page', async ({ page }) => {
     await wpLogin(page, ADMIN_USER, ADMIN_PASS);
     await page.goto(PLUGIN_PAGE);
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('domcontentloaded');
     await page.waitForTimeout(2000);
     const count = await page.locator('#wdesignkit-app').count();
     expect(count).toBeGreaterThan(0);
@@ -46,7 +46,7 @@ test.describe('66. Access control & authentication', () => {
     }
     await wpLogin(page, SUBSCRIBER_USER, SUBSCRIBER_PASS);
     await page.goto(PLUGIN_PAGE);
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('domcontentloaded');
     await page.waitForTimeout(2000);
     const url = page.url();
     const bodyText = await page.locator('body').innerText().catch(() => '');
@@ -60,7 +60,7 @@ test.describe('66. Access control & authentication', () => {
   test('66.04 WDKit cloud auth is required for My Templates page', async ({ page }) => {
     await wpLogin(page);
     await page.goto(PLUGIN_PAGE);
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('domcontentloaded');
     await page.waitForTimeout(1500);
     await page.evaluate(() => { localStorage.removeItem('wdkit-login'); });
     await page.evaluate(() => { location.hash = '/my_uploaded'; });
@@ -74,7 +74,7 @@ test.describe('66. Access control & authentication', () => {
   test('66.05 WDKit cloud auth is required for Share With Me page', async ({ page }) => {
     await wpLogin(page);
     await page.goto(PLUGIN_PAGE);
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('domcontentloaded');
     await page.waitForTimeout(1500);
     await page.evaluate(() => { localStorage.removeItem('wdkit-login'); });
     await page.evaluate(() => { location.hash = '/share_with_me'; });
@@ -88,7 +88,7 @@ test.describe('66. Access control & authentication', () => {
   test('66.06 WDKit cloud auth is required for Save Template page', async ({ page }) => {
     await wpLogin(page);
     await page.goto(PLUGIN_PAGE);
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('domcontentloaded');
     await page.waitForTimeout(1500);
     await page.evaluate(() => { localStorage.removeItem('wdkit-login'); });
     await page.evaluate(() => { location.hash = '/save_template'; });
@@ -99,12 +99,13 @@ test.describe('66. Access control & authentication', () => {
     expect(loginVisible).toBe(true);
   });
 
-  test('66.07 Forged wdkit-login localStorage token does not grant access', async ({ page }) => {
+  test('66.07 Forged wdkit-login localStorage token does not grant authenticated access', async ({ page }) => {
     await wpLogin(page);
     await page.goto(PLUGIN_PAGE);
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('domcontentloaded');
     await page.waitForTimeout(1500);
-    // Set a fake/forged token
+
+    // Plant a structurally valid but cryptographically invalid token
     await page.evaluate(() => {
       localStorage.setItem('wdkit-login', JSON.stringify({
         messages: 'Login successful',
@@ -113,10 +114,39 @@ test.describe('66. Access control & authentication', () => {
         user_email: 'hacker@evil.com',
       }));
     });
+
+    // Navigate to My Templates — this requires a real API-validated token
     await page.evaluate(() => { location.hash = '/my_uploaded'; });
-    await page.waitForTimeout(4000);
-    // Page may load the UI (client-side check passes) but API calls should fail
-    // We validate no sensitive data is exposed and no crash occurs
+    await page.waitForTimeout(5000);
+
+    // Determine if access was actually denied (any of these conditions is acceptable):
+    //   a) Redirected to login hash
+    //   b) Login/auth page is shown instead of template content
+    //   c) API responded with an auth error (template list is empty/hidden with error message)
+    //   d) User's templates are NOT shown (no real template cards loaded with the forged email)
+    const currentHash = await page.evaluate(() => location.hash);
+
+    const onLoginPage = currentHash.includes('/login') ||
+      (await page.locator('.wkit-login-page, .wkit-login-main, .wkit-auth-page').count()) > 0;
+
+    const apiErrorShown =
+      (await page.locator('.wkit-api-error, .wkit-error-message, [class*="error"]').count()) > 0 ||
+      (await page.locator('body').getByText(/invalid token|session expired|unauthorized|please log in/i).count()) > 0;
+
+    // Templates loaded for a DIFFERENT (real) user's account would be a data-leak failure.
+    // We check that no real My Templates list is shown successfully for the forged user.
+    const myTemplatesList = await page.locator('.wkit-template-list, .wdkit-my-template-card').count();
+
+    // PASS criteria: either redirected to login, or an error is shown,
+    //                or no template data is shown (token rejected server-side).
+    const accessDenied = onLoginPage || apiErrorShown || (myTemplatesList === 0);
+
+    expect(
+      accessDenied,
+      `Expected forged token to be rejected, but got: hash=${currentHash}, myTemplatesList=${myTemplatesList}`
+    ).toBe(true);
+
+    // Hard check: no PHP fatal error
     await expect(page.locator('body')).not.toContainText('Fatal error');
   });
 
@@ -235,7 +265,7 @@ test.describe('67. XSS prevention in user inputs', () => {
 
   test('67.05 Template name input on save_template does not allow HTML injection', async ({ page }) => {
     await page.goto(PLUGIN_PAGE);
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('domcontentloaded');
     await page.waitForTimeout(2000);
     await page.evaluate(() => { location.hash = '/save_template'; });
     await page.waitForTimeout(3000);
@@ -251,7 +281,7 @@ test.describe('67. XSS prevention in user inputs', () => {
 
   test('67.06 URL hash manipulation does not cause path traversal', async ({ page }) => {
     await page.goto(PLUGIN_PAGE);
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('domcontentloaded');
     await page.waitForTimeout(2000);
     // Attempt path traversal via hash
     const maliciousHashes = [
@@ -316,7 +346,7 @@ test.describe('68. Sensitive data exposure', () => {
 
   test('68.01 No WordPress auth cookies are exposed in client-side JavaScript', async ({ page }) => {
     await page.goto(PLUGIN_PAGE);
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('domcontentloaded');
     await page.waitForTimeout(2000);
     const authCookies = await page.evaluate(() => {
       return document.cookie.match(/wordpress_logged_in|wordpress_sec/) !== null;
@@ -328,7 +358,7 @@ test.describe('68. Sensitive data exposure', () => {
 
   test('68.02 Database password is not exposed in page source', async ({ page }) => {
     await page.goto(PLUGIN_PAGE);
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('domcontentloaded');
     await page.waitForTimeout(2000);
     const content = await page.content();
     expect(content).not.toContain('DB_PASSWORD');
@@ -338,7 +368,7 @@ test.describe('68. Sensitive data exposure', () => {
 
   test('68.03 WordPress secret keys are not exposed in page source', async ({ page }) => {
     await page.goto(PLUGIN_PAGE);
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('domcontentloaded');
     await page.waitForTimeout(2000);
     const content = await page.content();
     expect(content).not.toContain('AUTH_KEY');
@@ -348,7 +378,7 @@ test.describe('68. Sensitive data exposure', () => {
 
   test('68.04 No private API tokens are exposed in wdkitData JS object', async ({ page }) => {
     await page.goto(PLUGIN_PAGE);
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('domcontentloaded');
     await page.waitForTimeout(2000);
     const sensitiveKeys = await page.evaluate(() => {
       if (typeof window.wdkitData === 'undefined') return [];
@@ -362,7 +392,7 @@ test.describe('68. Sensitive data exposure', () => {
 
   test('68.05 WDKit cloud token is not exposed in DOM or page source after login', async ({ page }) => {
     await page.goto(PLUGIN_PAGE);
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('domcontentloaded');
     await page.waitForTimeout(2000);
     // Set a test token in localStorage (simulating login)
     await page.evaluate(() => {
@@ -391,7 +421,7 @@ test.describe('68. Sensitive data exposure', () => {
       }
     });
     await page.goto(PLUGIN_PAGE);
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('domcontentloaded');
     await page.waitForTimeout(2000);
     await page.evaluate(() => { location.hash = '/my_uploaded'; });
     await page.waitForTimeout(4000);
@@ -579,7 +609,7 @@ test.describe('70. Input validation edge cases', () => {
 
   test('70.06 Invalid template ID in URL hash does not expose server errors', async ({ page }) => {
     await page.goto(PLUGIN_PAGE);
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('domcontentloaded');
     await page.waitForTimeout(2000);
     // Navigate to an invalid kit path
     await page.evaluate(() => { location.hash = '/browse/kit/9999999'; });

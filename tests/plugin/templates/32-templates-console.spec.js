@@ -45,7 +45,7 @@ test.describe('61. Console errors — all template pages', () => {
       page.on('console', m => { if (m.type() === 'error') errors.push(m.text()); });
       await wpLogin(page);
       await page.goto(PLUGIN_PAGE);
-      await page.waitForLoadState('networkidle');
+      await page.waitForLoadState('domcontentloaded');
       await page.waitForTimeout(2000);
       await page.evaluate((h) => { location.hash = h; }, pg.hash);
       await page.waitForTimeout(3000);
@@ -59,7 +59,7 @@ test.describe('61. Console errors — all template pages', () => {
     page.on('console', m => { if (m.type() === 'error') errors.push(m.text()); });
     await wpLogin(page);
     await page.goto(PLUGIN_PAGE);
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('domcontentloaded');
     await page.waitForTimeout(2000);
     await page.evaluate(() => { location.hash = '/browse'; });
     await page.waitForTimeout(2500);
@@ -76,7 +76,7 @@ test.describe('61. Console errors — all template pages', () => {
     page.on('console', m => { if (m.type() === 'error') errors.push(m.text()); });
     await wpLogin(page);
     await page.goto(PLUGIN_PAGE);
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('domcontentloaded');
     await page.waitForTimeout(2000);
     await page.evaluate(() => { location.hash = '/browse'; });
     await page.waitForTimeout(2500);
@@ -139,7 +139,7 @@ test.describe('61. Console errors — all template pages', () => {
     page.on('console', m => { if (m.type() === 'error') errors.push(m.text()); });
     await wpLogin(page);
     await page.goto(PLUGIN_PAGE);
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('domcontentloaded');
     await page.waitForTimeout(2000);
     await page.evaluate(() => { location.hash = '/share_with_me'; });
     await page.waitForTimeout(3000);
@@ -169,7 +169,7 @@ test.describe('62. Uncaught JS exceptions — all template pages', () => {
       page.on('pageerror', err => exceptions.push(err.message));
       await wpLogin(page);
       await page.goto(PLUGIN_PAGE);
-      await page.waitForLoadState('networkidle');
+      await page.waitForLoadState('domcontentloaded');
       await page.waitForTimeout(2000);
       await page.evaluate((h) => { location.hash = h; }, pg.hash);
       await page.waitForTimeout(3000);
@@ -242,7 +242,7 @@ test.describe('63. Network health — no 4xx/5xx on template pages', () => {
       });
       await wpLogin(page);
       await page.goto(PLUGIN_PAGE);
-      await page.waitForLoadState('networkidle');
+      await page.waitForLoadState('domcontentloaded');
       await page.waitForTimeout(2000);
       await page.evaluate((h) => { location.hash = h; }, pg.hash);
       await page.waitForTimeout(3000);
@@ -260,7 +260,7 @@ test.describe('63. Network health — no 4xx/5xx on template pages', () => {
     });
     await wpLogin(page);
     await page.goto(PLUGIN_PAGE);
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('domcontentloaded');
     await page.waitForTimeout(3000);
     expect(failed, failed.join('\n')).toHaveLength(0);
   });
@@ -275,7 +275,7 @@ test.describe('63. Network health — no 4xx/5xx on template pages', () => {
     });
     await wpLogin(page);
     await page.goto(PLUGIN_PAGE);
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('domcontentloaded');
     await page.waitForTimeout(3000);
     expect(failed, failed.join('\n')).toHaveLength(0);
   });
@@ -348,7 +348,7 @@ test.describe('64. Console warnings — product warnings on template pages', () 
     });
     await wpLogin(page);
     await page.goto(PLUGIN_PAGE);
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('domcontentloaded');
     await page.waitForTimeout(2000);
     await page.evaluate(() => { location.hash = '/share_with_me'; });
     await page.waitForTimeout(3000);
@@ -364,7 +364,7 @@ test.describe('64. Console warnings — product warnings on template pages', () 
     });
     await wpLogin(page);
     await page.goto(PLUGIN_PAGE);
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('domcontentloaded');
     await page.waitForTimeout(2000);
     await page.evaluate(() => { location.hash = '/browse'; });
     await page.waitForTimeout(3000);
@@ -418,7 +418,7 @@ test.describe('65. Performance — API call deduplication', () => {
     });
     await wpLogin(page);
     await page.goto(PLUGIN_PAGE);
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('domcontentloaded');
     await page.waitForTimeout(2000);
     await page.evaluate(() => { location.hash = '/share_with_me'; });
     await page.waitForTimeout(5000);

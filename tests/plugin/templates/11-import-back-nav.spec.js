@@ -1,18 +1,21 @@
 // =============================================================================
 // WDesignKit Templates Suite — Import Back Navigation
-// Version: 2.2.10
-// Source: split from template-import.spec.js (Phase 1 restructure)
+// Version: 3.1.0 — Deep inside-flow testing
 //
 // COVERAGE
-//   Section 30 — Feature step back navigation to preview (3 tests)
-//   Section 37 — Method step back navigation to feature step (2 tests)
-//   Section 52 — State preservation: back/forward navigation retains form data (3 tests)
+//   Section 30   — Feature step back navigation to preview (3 tests)
+//   Section 37b  — Method step back navigation to feature step (2 tests)
+//   Section 52b  — State preservation: back/forward navigation retains form data (3 tests)
+//   Section 53b  — global_data panel back navigation to site_info panel (6 tests)
+//
+// NOTE: Sections are labelled 37b/52b/53b to avoid numbering conflicts with
+//       06-import-method-step.spec.js (§37) and 30-templates-responsive.spec.js (§52, §53).
 // =============================================================================
 
 const { test, expect } = require('@playwright/test');
 const { wpLogin } = require('./_helpers/auth');
 const { goToBrowse, clickFirstCardImport } = require('./_helpers/navigation');
-const { reachFeatureStep, reachMethodStep, acceptTandC } = require('./_helpers/wizard');
+const { reachFeatureStep, reachMethodStep, reachGlobalDataPanel, acceptTandC } = require('./_helpers/wizard');
 
 // =============================================================================
 // 30. Feature step — Back navigation to preview
@@ -62,9 +65,9 @@ test.describe('30. Feature step — Back navigation to preview', () => {
 });
 
 // =============================================================================
-// 37. Method step — Back navigation to feature step
+// 37b. Method step — Back navigation to feature step
 // =============================================================================
-test.describe('37. Method step — Back navigation to feature step', () => {
+test.describe('37b. Method step — Back navigation to feature step', () => {
   test.describe.configure({ mode: 'serial' });
 
   test.beforeEach(async ({ page }) => {
@@ -76,7 +79,7 @@ test.describe('37. Method step — Back navigation to feature step', () => {
     await page.locator('.wkit-import-method-main').waitFor({ state: 'visible', timeout: 15000 }).catch(() => {});
   });
 
-  test('37.01 Clicking Method Back navigates to Feature step', async ({ page }) => {
+  test('37b.01 Clicking Method Back navigates to Feature step', async ({ page }) => {
     const backBtn = page.locator('button.wkit-import-method-back.wkit-outer-btn-class');
     if ((await backBtn.count()) > 0) {
       await backBtn.click();
@@ -86,7 +89,7 @@ test.describe('37. Method step — Back navigation to feature step', () => {
     }
   });
 
-  test('37.02 Method Back does not cause console errors', async ({ page }) => {
+  test('37b.02 Method Back does not cause console errors', async ({ page }) => {
     const errors = [];
     page.on('console', m => { if (m.type() === 'error') errors.push(m.text()); });
     const backBtn = page.locator('button.wkit-import-method-back.wkit-outer-btn-class');
@@ -103,9 +106,9 @@ test.describe('37. Method step — Back navigation to feature step', () => {
 });
 
 // =============================================================================
-// 52. State preservation — back/forward navigation retains form data
+// 52b. State preservation — back/forward navigation retains form data
 // =============================================================================
-test.describe('52. State preservation — back/forward navigation retains form data', () => {
+test.describe('52b. State preservation — back/forward navigation retains form data', () => {
   test.describe.configure({ mode: 'serial' });
 
   test.beforeEach(async ({ page }) => {
@@ -115,7 +118,7 @@ test.describe('52. State preservation — back/forward navigation retains form d
     await page.locator('.wkit-temp-import-mian').waitFor({ state: 'visible', timeout: 20000 }).catch(() => {});
   });
 
-  test('52.01 Business Name entered on Step 1 is retained after going to Step 2 and back', async ({ page }) => {
+  test('52b.01 Business Name entered on Step 1 is retained after going to Step 2 and back', async ({ page }) => {
     const nameInput = page.locator('input.wkit-site-name-inp');
     if ((await nameInput.count()) > 0) {
       await nameInput.fill('Preserved Business Name');
@@ -137,7 +140,7 @@ test.describe('52. State preservation — back/forward navigation retains form d
     }
   });
 
-  test('52.02 Tagline entered on Step 1 is retained after back navigation', async ({ page }) => {
+  test('52b.02 Tagline entered on Step 1 is retained after back navigation', async ({ page }) => {
     const taglineInput = page.locator('input.wkit-site-tagline-inp');
     const nameInput = page.locator('input.wkit-site-name-inp');
     if ((await taglineInput.count()) > 0 && (await nameInput.count()) > 0) {
@@ -161,7 +164,7 @@ test.describe('52. State preservation — back/forward navigation retains form d
     }
   });
 
-  test('52.03 T&C checkbox state is reset when re-entering feature step', async ({ page }) => {
+  test('52b.03 T&C checkbox state is reset when re-entering feature step', async ({ page }) => {
     const nameInput = page.locator('input.wkit-site-name-inp');
     if ((await nameInput.count()) > 0) { await nameInput.fill('T&C Reset Test'); }
     const nextBtn = page.locator('button.wkit-next-btn.wkit-btn-class');
@@ -181,6 +184,122 @@ test.describe('52. State preservation — back/forward navigation retains form d
     if ((await cb.count()) > 0) {
       await expect.soft(cb).not.toBeChecked({ timeout: 2000 });
     }
+  });
+
+});
+
+// =============================================================================
+// 53b. global_data panel — Back navigation to site_info panel
+// =============================================================================
+test.describe('53b. global_data panel — Back navigation to site_info', () => {
+  test.describe.configure({ mode: 'serial' });
+
+  test.beforeEach(async ({ page }) => {
+    await wpLogin(page);
+    await goToBrowse(page);
+    await clickFirstCardImport(page);
+    await page.locator('.wkit-temp-import-mian').waitFor({ state: 'visible', timeout: 20000 }).catch(() => {});
+    // Navigate to global_data panel (Step 1, panel 2)
+    await reachGlobalDataPanel(page);
+    await page.waitForTimeout(1000);
+  });
+
+  test('53b.01 Back button is present on the global_data panel', async ({ page }) => {
+    // Only assert if global_data panel is actually shown
+    const onGlobalData = await page.locator('.wkit-temp-global-data, .wkit-global-color-main, .wkit-global-typography-main').count();
+    if (onGlobalData > 0) {
+      const backBtn = page.locator(
+        'button.wkit-back-btn, button.wkit-global-data-back, button.wkit-outer-btn-class'
+      ).first();
+      expect(await backBtn.count()).toBeGreaterThan(0);
+    }
+  });
+
+  test('53b.02 Clicking Back on global_data panel returns to site_info (business name input visible)', async ({ page }) => {
+    const onGlobalData = await page.locator('.wkit-temp-global-data, .wkit-global-color-main, .wkit-global-typography-main').count();
+    if (onGlobalData > 0) {
+      const backBtn = page.locator(
+        'button.wkit-back-btn, button.wkit-global-data-back, button.wkit-outer-btn-class'
+      ).first();
+      if ((await backBtn.count()) > 0) {
+        await backBtn.click();
+        await page.waitForTimeout(2000);
+        const nameInput = page.locator('input.wkit-site-name-inp');
+        expect(await nameInput.count()).toBeGreaterThan(0);
+      }
+    }
+  });
+
+  test('53b.03 Business name is preserved when going back from global_data to site_info', async ({ page }) => {
+    const onGlobalData = await page.locator('.wkit-temp-global-data, .wkit-global-color-main, .wkit-global-typography-main').count();
+    if (onGlobalData > 0) {
+      const backBtn = page.locator(
+        'button.wkit-back-btn, button.wkit-global-data-back, button.wkit-outer-btn-class'
+      ).first();
+      if ((await backBtn.count()) > 0) {
+        await backBtn.click();
+        await page.waitForTimeout(2000);
+        const nameInput = page.locator('input.wkit-site-name-inp');
+        if ((await nameInput.count()) > 0) {
+          // The value filled by reachGlobalDataPanel ('QA Global Data Test') should be preserved
+          const value = await nameInput.inputValue().catch(() => '');
+          expect(value.trim().length).toBeGreaterThan(0);
+        }
+      }
+    }
+  });
+
+  test('53b.04 After back from global_data, forward navigation (Next) reaches global_data again', async ({ page }) => {
+    const onGlobalData = await page.locator('.wkit-temp-global-data, .wkit-global-color-main, .wkit-global-typography-main').count();
+    if (onGlobalData > 0) {
+      const backBtn = page.locator(
+        'button.wkit-back-btn, button.wkit-global-data-back, button.wkit-outer-btn-class'
+      ).first();
+      if ((await backBtn.count()) > 0) {
+        await backBtn.click();
+        await page.waitForTimeout(1500);
+        // Click Next again — should go back to global_data or Feature
+        const nextBtn = page.locator('button.wkit-next-btn.wkit-btn-class');
+        if ((await nextBtn.count()) > 0 && await nextBtn.isEnabled({ timeout: 5000 }).catch(() => false)) {
+          await nextBtn.click();
+          await page.waitForTimeout(2500);
+          // Should be on global_data OR Feature step (both valid outcomes)
+          const onGD = await page.locator('.wkit-temp-global-data, .wkit-global-color-main').count();
+          const onFeature = await page.locator('.wkit-import-temp-feature').count();
+          expect(onGD + onFeature).toBeGreaterThan(0);
+        }
+      }
+    }
+  });
+
+  test('53b.05 Breadcrumb "Customize Website" remains active on global_data panel', async ({ page }) => {
+    const onGlobalData = await page.locator('.wkit-temp-global-data, .wkit-global-color-main, .wkit-global-typography-main').count();
+    if (onGlobalData > 0) {
+      const activeBreadcrumb = page.locator('.wkit-active-breadcrumbs .wkit-breadcrumbs-card-title');
+      if ((await activeBreadcrumb.count()) > 0) {
+        const text = await activeBreadcrumb.first().textContent();
+        expect(text.trim()).toMatch(/customize website/i);
+      }
+    }
+  });
+
+  test('53b.06 No console errors when navigating back from global_data to site_info', async ({ page }) => {
+    const errors = [];
+    page.on('console', m => { if (m.type() === 'error') errors.push(m.text()); });
+    const onGlobalData = await page.locator('.wkit-temp-global-data, .wkit-global-color-main, .wkit-global-typography-main').count();
+    if (onGlobalData > 0) {
+      const backBtn = page.locator(
+        'button.wkit-back-btn, button.wkit-global-data-back, button.wkit-outer-btn-class'
+      ).first();
+      if ((await backBtn.count()) > 0) {
+        await backBtn.click();
+        await page.waitForTimeout(2000);
+      }
+    }
+    const productErrors = errors.filter(e =>
+      !e.includes('favicon') && !e.includes('net::ERR') && !e.includes('extension')
+    );
+    expect(productErrors).toHaveLength(0);
   });
 
 });

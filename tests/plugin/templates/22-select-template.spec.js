@@ -46,7 +46,7 @@ test.describe('35. Select Template — Elementor editor integration', () => {
   test('35.01 WDesignKit plugin JS is enqueued on Elementor editor page', async ({ page }) => {
     // Navigate to a new page in WP admin
     await page.goto(ELEMENTOR_EDIT_URL);
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('domcontentloaded');
     await page.waitForTimeout(2000);
     // wdkitData object should be defined by the plugin's wp_localize_script
     const wdkitDataExists = await page.evaluate(() => typeof window.wdkitData !== 'undefined').catch(() => false);
@@ -58,7 +58,7 @@ test.describe('35. Select Template — Elementor editor integration', () => {
     const errors = [];
     page.on('console', m => { if (m.type() === 'error') errors.push(m.text()); });
     await page.goto(ELEMENTOR_EDIT_URL);
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('domcontentloaded');
     await page.waitForTimeout(3000);
     const productErrors = errors.filter(e =>
       (e.includes('wdkit') || e.includes('wdesignkit')) &&
@@ -75,14 +75,14 @@ test.describe('35. Select Template — Elementor editor integration', () => {
       }
     });
     await page.goto(ELEMENTOR_EDIT_URL);
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('domcontentloaded');
     await page.waitForTimeout(2000);
     expect(failed, failed.join('\n')).toHaveLength(0);
   });
 
   test('35.04 Plugin page correctly links to Elementor editor for template editing', async ({ page }) => {
     await page.goto(PLUGIN_PAGE);
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('domcontentloaded');
     await page.waitForTimeout(2000);
     // Check Elementor is in the builder list
     const bodyText = await page.locator('body').innerText().catch(() => '');
@@ -94,7 +94,7 @@ test.describe('35. Select Template — Elementor editor integration', () => {
 
   test('35.05 WDesignKit popup toggle (WdkitPopupToggle) is defined in Elementor editor', async ({ page }) => {
     await page.goto(ELEMENTOR_EDIT_URL);
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('domcontentloaded');
     await page.waitForTimeout(3000);
     // The WdkitPopupToggle object should be available after plugin loads
     const popupToggleDefined = await page.evaluate(() => typeof window.WdkitPopupToggle !== 'undefined').catch(() => false);
@@ -104,7 +104,7 @@ test.describe('35. Select Template — Elementor editor integration', () => {
 
   test('35.06 No PHP errors on Elementor editor page with WDesignKit active', async ({ page }) => {
     await page.goto(ELEMENTOR_EDIT_URL);
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('domcontentloaded');
     await expect(page.locator('body')).not.toContainText('PHP Fatal error');
     await expect(page.locator('body')).not.toContainText('Warning: ');
     await expect(page.locator('body')).not.toContainText('Parse error');
@@ -123,7 +123,7 @@ test.describe('36. Select Template — editor popup load & render', () => {
 
   test('36.01 Plugin page renders the app container for popup mounting', async ({ page }) => {
     await page.goto(PLUGIN_PAGE);
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('domcontentloaded');
     await page.waitForTimeout(2000);
     const count = await page.locator('#wdesignkit-app').count();
     expect(count).toBeGreaterThan(0);
@@ -131,7 +131,7 @@ test.describe('36. Select Template — editor popup load & render', () => {
 
   test('36.02 Browse page is accessible and renders template grid (select template source)', async ({ page }) => {
     await page.goto(PLUGIN_PAGE);
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('domcontentloaded');
     await page.waitForTimeout(2000);
     await page.evaluate(() => { location.hash = '/browse'; });
     await page.waitForTimeout(3000);
@@ -142,7 +142,7 @@ test.describe('36. Select Template — editor popup load & render', () => {
 
   test('36.03 Import wizard is accessible from browse page (template import popup flow)', async ({ page }) => {
     await page.goto(PLUGIN_PAGE);
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('domcontentloaded');
     await page.waitForTimeout(2000);
     await page.evaluate(() => { location.hash = '/browse'; });
     await page.waitForTimeout(3000);
@@ -164,7 +164,7 @@ test.describe('36. Select Template — editor popup load & render', () => {
 
   test('36.04 WDesignKit template import modal (.wkit-temp-import-mian) can be opened', async ({ page }) => {
     await page.goto(PLUGIN_PAGE);
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('domcontentloaded');
     await page.waitForTimeout(2000);
     await page.evaluate(() => { location.hash = '/browse'; });
     await page.waitForTimeout(3000);
@@ -185,7 +185,7 @@ test.describe('36. Select Template — editor popup load & render', () => {
 
   test('36.05 Closing import modal via Escape key does not crash the page', async ({ page }) => {
     await page.goto(PLUGIN_PAGE);
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('domcontentloaded');
     await page.waitForTimeout(2000);
     await page.evaluate(() => { location.hash = '/browse'; });
     await page.waitForTimeout(3000);
@@ -219,7 +219,7 @@ test.describe('37. Select Template — Gutenberg editor integration', () => {
 
   test('37.01 WDesignKit assets are enqueued on Gutenberg editor page', async ({ page }) => {
     await page.goto('/wp-admin/post-new.php');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('domcontentloaded');
     await page.waitForTimeout(2000);
     const wdkitDataExists = await page.evaluate(() => typeof window.wdkitData !== 'undefined').catch(() => false);
     expect(wdkitDataExists).toBe(true);
@@ -229,7 +229,7 @@ test.describe('37. Select Template — Gutenberg editor integration', () => {
     const errors = [];
     page.on('console', m => { if (m.type() === 'error') errors.push(m.text()); });
     await page.goto('/wp-admin/post-new.php');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('domcontentloaded');
     await page.waitForTimeout(3000);
     const productErrors = errors.filter(e =>
       (e.includes('wdkit') || e.includes('wdesignkit')) &&
@@ -240,7 +240,7 @@ test.describe('37. Select Template — Gutenberg editor integration', () => {
 
   test('37.03 No PHP errors on Gutenberg editor page with WDesignKit active', async ({ page }) => {
     await page.goto('/wp-admin/post-new.php');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('domcontentloaded');
     await expect(page.locator('body')).not.toContainText('PHP Fatal error');
     await expect(page.locator('body')).not.toContainText('Parse error');
   });
@@ -253,14 +253,14 @@ test.describe('37. Select Template — Gutenberg editor integration', () => {
       }
     });
     await page.goto('/wp-admin/post-new.php');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('domcontentloaded');
     await page.waitForTimeout(2000);
     expect(failed, failed.join('\n')).toHaveLength(0);
   });
 
   test('37.05 Block editor page loads without crashing due to WDesignKit', async ({ page }) => {
     await page.goto('/wp-admin/post-new.php');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('domcontentloaded');
     await page.waitForTimeout(2000);
     // Block editor container should be present
     const editorCount = await page.locator('#editor, .block-editor, .wp-block-post-content').count();
@@ -281,7 +281,7 @@ test.describe('38. Select Template — Elementor add-section template picker', (
 
   test('38.01 #tmpl-elementor-add-section template script exists when Elementor is active', async ({ page }) => {
     await page.goto(ELEMENTOR_EDIT_URL);
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('domcontentloaded');
     await page.waitForTimeout(3000);
     // This script tag is injected by Elementor
     const scriptCount = await page.locator('#tmpl-elementor-add-section').count();
@@ -291,7 +291,7 @@ test.describe('38. Select Template — Elementor add-section template picker', (
 
   test('38.02 WDesignKit template picker is injected into add-section area', async ({ page }) => {
     await page.goto(ELEMENTOR_EDIT_URL);
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('domcontentloaded');
     await page.waitForTimeout(4000);
     // After injection, WDesignKit elements appear in #tmpl-elementor-add-section
     const pickerCount = await page.locator('.wdesignkit-add-section-container, [data-wdkit], .wkit-add-section').count();
@@ -301,7 +301,7 @@ test.describe('38. Select Template — Elementor add-section template picker', (
 
   test('38.03 Plugin logo is loaded correctly in editor context', async ({ page }) => {
     await page.goto(ELEMENTOR_EDIT_URL);
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('domcontentloaded');
     await page.waitForTimeout(2000);
     // Check for broken image references from WDesignKit
     const brokenImages = await page.evaluate(() => {
@@ -316,7 +316,7 @@ test.describe('38. Select Template — Elementor add-section template picker', (
 
   test('38.04 White label plugin name is rendered in editor if configured', async ({ page }) => {
     await page.goto(ELEMENTOR_EDIT_URL);
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('domcontentloaded');
     await page.waitForTimeout(2000);
     const pluginName = await page.evaluate(() => {
       return window.wdkitData?.wdkit_white_label?.plugin_name || 'WDesignKit';
@@ -332,7 +332,7 @@ test.describe('38. Select Template — Elementor add-section template picker', (
       }
     });
     await page.goto(ELEMENTOR_EDIT_URL);
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('domcontentloaded');
     await page.waitForTimeout(3000);
     expect(exceptions, exceptions.join('\n')).toHaveLength(0);
   });
@@ -349,7 +349,7 @@ test.describe('39. Select Template — console & network health in editor contex
     page.on('console', m => { if (m.type() === 'error') errors.push(m.text()); });
     await wpLogin(page);
     await page.goto(ELEMENTOR_EDIT_URL);
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('domcontentloaded');
     await page.waitForTimeout(3000);
     const productErrors = errors.filter(e =>
       (e.toLowerCase().includes('wdkit') || e.toLowerCase().includes('wdesignkit')) &&
@@ -367,7 +367,7 @@ test.describe('39. Select Template — console & network health in editor contex
     });
     await wpLogin(page);
     await page.goto(ELEMENTOR_EDIT_URL);
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('domcontentloaded');
     await page.waitForTimeout(2000);
     expect(failed, failed.join('\n')).toHaveLength(0);
   });
@@ -377,7 +377,7 @@ test.describe('39. Select Template — console & network health in editor contex
     page.on('console', m => { if (m.type() === 'error') errors.push(m.text()); });
     await wpLogin(page);
     await page.goto(PLUGIN_PAGE);
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('domcontentloaded');
     await page.waitForTimeout(2000);
     const productErrors = errors.filter(e =>
       !e.includes('favicon') && !e.includes('net::ERR') &&
@@ -395,7 +395,7 @@ test.describe('39. Select Template — console & network health in editor contex
     });
     await wpLogin(page);
     await page.goto('/wp-admin/post-new.php');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('domcontentloaded');
     await page.waitForTimeout(3000);
     expect(exceptions, exceptions.join('\n')).toHaveLength(0);
   });
