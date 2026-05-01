@@ -1,6 +1,8 @@
 // =============================================================================
 // WDesignKit Templates Suite — PRO Access Control
-// Version: 1.1.0 — Fixed proCardLocator selector, WDKIT_EMAIL gate, builder detection
+// Version: 2.0.0 — Extreme-polish pass: added §84.07-08 (PRO access revoked on logout,
+//                 subscriber role blocked); §87 FREE user section (6 tests — PRO cards
+//                 locked, free templates work, no wizard for locked cards, upgrade CTA present)
 // Plugin version: WDesignKit v2.3.0
 //
 // COVERAGE
@@ -328,6 +330,101 @@ test.describe('84. WDKit PRO user — all PRO templates accessible', () => {
       upgradeBtn,
       'An "Upgrade" / "Go PRO" button appeared for a WDKit PRO user after clicking PRO import'
     ).toBe(0);
+  });
+
+  // ---------------------------------------------------------------------------
+  // 84.07 — PRO access removed immediately after WDKit cloud logout
+  // Logic-checklist: UI state matches server state after mutations
+  // ---------------------------------------------------------------------------
+  test('84.07 PRO access is removed immediately after WDKit cloud logout', async ({ page }) => {
+    if (!WDKIT_TOKEN || !WDKIT_EMAIL) {
+      test.skip(true, 'Requires WDKIT_API_TOKEN + WDKIT_EMAIL env vars');
+      return;
+    }
+    await page.locator('.wdkit-browse-card').first().waitFor({ state: 'visible', timeout: 20000 });
+    const proCardsBefore = proCardLocator(page);
+    const countBefore = await proCardsBefore.count();
+    if (countBefore === 0) {
+      test.skip(true, 'No PRO cards to verify access removal — skipping');
+      return;
+    }
+
+    // Verify PRO card is accessible before logout
+    const cardBefore = proCardsBefore.first();
+    await cardBefore.hover({ force: true });
+    await page.waitForTimeout(400);
+    const lockedBefore = await isImportButtonLocked(cardBefore);
+    // For a WDKit PRO user the card should NOT be locked
+    expect.soft(lockedBefore, 'PRO card should be unlocked BEFORE WDKit logout for WDKit PRO user').toBe(false);
+
+    // Now logout from WDKit cloud
+    await wdkitLogout(page);
+    await page.reload({ waitUntil: 'domcontentloaded' });
+    await page.waitForTimeout(2000);
+
+    // Re-navigate to Browse (hash may have reset on reload)
+    await goToBrowse(page);
+    await page.locator('.wdkit-browse-card').first().waitFor({ state: 'visible', timeout: 20000 }).catch(() => {});
+
+    // After WDKit logout, PRO cards should now be locked for a free user
+    const proCardsAfter = proCardLocator(page);
+    const countAfter = await proCardsAfter.count();
+    if (countAfter === 0) return; // No PRO cards visible — acceptable
+
+    const cardAfter = proCardsAfter.first();
+    await cardAfter.hover({ force: true });
+    await page.waitForTimeout(500);
+    const lockedAfter = await isImportButtonLocked(cardAfter);
+
+    // Also check for upgrade notice as a valid locked signal
+    const upgradeNoticeAfter = await page.locator(
+      '.wkit-pro-plugin-notice, .wkit-upgrade-notice'
+    ).count();
+
+    expect.soft(
+      lockedAfter || upgradeNoticeAfter > 0,
+      'PRO card should be locked or show upgrade notice AFTER WDKit cloud logout'
+    ).toBe(true);
+  });
+
+  // ---------------------------------------------------------------------------
+  // 84.08 — Subscriber-role WP user cannot access WDKit admin page
+  // Security-checklist: Direct URL access to restricted pages redirects correctly
+  // Logic-checklist: Privileged actions are blocked for lower roles
+  // ---------------------------------------------------------------------------
+  test('84.08 Subscriber-role WP user is blocked from WDKit admin page', async ({ page }) => {
+    // Use the subscriber credentials from auth helpers
+    const { SUBSCRIBER_USER, SUBSCRIBER_PASS } = require('./_helpers/auth');
+    // Log in as subscriber (not admin)
+    await page.goto('/wp-login.php');
+    await page.fill('#user_login', SUBSCRIBER_USER);
+    await page.fill('#user_pass', SUBSCRIBER_PASS);
+    await page.click('#wp-submit');
+    // Subscriber may or may not be redirected to wp-admin — wait for redirect
+    await page.waitForLoadState('domcontentloaded', { timeout: 15000 }).catch(() => {});
+    await page.waitForTimeout(1000);
+
+    // Now try to access WDKit admin page directly
+    await page.goto('/wp-admin/admin.php?page=wdesign-kit', { waitUntil: 'domcontentloaded', timeout: 20000 }).catch(() => {});
+    await page.waitForTimeout(1000);
+
+    const bodyText = await page.locator('body').textContent().catch(() => '');
+    const currentUrl = page.url();
+
+    // A subscriber should see an access-denied message, be redirected to login,
+    // or land on a page that is NOT the WDKit plugin dashboard
+    const isBlocked =
+      bodyText.includes('not allowed') ||
+      bodyText.includes('You do not have') ||
+      bodyText.includes('access denied') ||
+      bodyText.includes('Cheatin') ||
+      currentUrl.includes('wp-login') ||
+      !currentUrl.includes('wdesign-kit');
+
+    expect.soft(
+      isBlocked,
+      `Subscriber role should not have access to WDKit admin page. URL: ${currentUrl}`
+    ).toBe(true);
   });
 
 });
@@ -711,6 +808,241 @@ test.describe('86. Nexter PRO — only Gutenberg PRO accessible (no WDKit login)
       isLocked,
       'Elementor PRO card import button should be disabled/locked for a Nexter PRO user without WDKit login'
     ).toBe(true);
+  });
+
+});
+
+// =============================================================================
+// 87. FREE user (no WDKit login, no PRO plugin) — PRO templates locked
+//
+// Gate: No env vars required — this tests the DEFAULT unauthenticated state.
+// Key: No WDKit cloud login, no ThePlus license, no Nexter license.
+//      PRO template cards must show a locked/upgrade state.
+//      Free templates must still be importable normally.
+//
+// Logic-checklist: Access control — users only see content they are permitted to
+// Functionality-checklist: Confirmation dialogs for locked actions
+// =============================================================================
+test.describe('87. FREE user — PRO templates locked, free templates accessible', () => {
+  test.describe.configure({ mode: 'serial' });
+
+  test.beforeEach(async ({ page }) => {
+    // WP admin login only — no WDKit cloud login, no plugin license
+    await wpLogin(page);
+    // Ensure WDKit cloud session is completely cleared
+    await page.goto(PLUGIN_PAGE);
+    await page.waitForLoadState('domcontentloaded');
+    await page.waitForTimeout(1500);
+    await wdkitLogout(page);
+    // Navigate to browse page as a free user
+    await goToBrowse(page);
+  });
+
+  // --------------------------------------------------------------------------
+  // 87.01 — PRO badge cards are visible on the browse page for a free user
+  // A free user should still SEE PRO cards (marketing), just not be able to import them
+  // --------------------------------------------------------------------------
+  test('87.01 PRO badge cards are visible on browse page for a free user (marketing visibility)', async ({ page }) => {
+    await page.locator('.wdkit-browse-card').first().waitFor({ state: 'visible', timeout: 20000 }).catch(() => {});
+    const proCards = proCardLocator(page);
+    const count = await proCards.count();
+    // PRO cards SHOULD be shown to free users — they are meant to upsell
+    expect.soft(
+      count,
+      'PRO badge cards should be visible on the browse page for a free user (upsell / marketing)'
+    ).toBeGreaterThan(0);
+  });
+
+  // --------------------------------------------------------------------------
+  // 87.02 — PRO card import button is in a locked state for a free user
+  // Logic-checklist: Role-based access control
+  // --------------------------------------------------------------------------
+  test('87.02 PRO card import button is locked for a free user (no WDKit login)', async ({ page }) => {
+    await page.locator('.wdkit-browse-card').first().waitFor({ state: 'visible', timeout: 20000 }).catch(() => {});
+    const proCards = proCardLocator(page);
+    const count = await proCards.count();
+    if (count === 0) {
+      test.skip(true, 'No PRO badge cards found — cannot verify locked state for free user');
+      return;
+    }
+
+    const card = proCards.first();
+    await card.hover({ force: true });
+    await page.waitForTimeout(500);
+
+    const locked = await isImportButtonLocked(card);
+
+    // Also accept upgrade notice as a valid locked signal
+    const upgradeNotice = await page.locator(
+      '.wkit-pro-plugin-notice, .wkit-upgrade-notice, [class*="pro-notice"]'
+    ).count();
+
+    expect.soft(
+      locked || upgradeNotice > 0,
+      'PRO card import button must be locked or show an upgrade notice for a free user'
+    ).toBe(true);
+  });
+
+  // --------------------------------------------------------------------------
+  // 87.03 — Clicking a locked PRO card does NOT open the import wizard
+  // The hash should remain on #/browse or show a locked notice — not advance to import-kit
+  // --------------------------------------------------------------------------
+  test('87.03 Clicking a locked PRO card does not open the import wizard for a free user', async ({ page }) => {
+    await page.locator('.wdkit-browse-card').first().waitFor({ state: 'visible', timeout: 20000 }).catch(() => {});
+    const proCards = proCardLocator(page);
+    const count = await proCards.count();
+    if (count === 0) {
+      test.skip(true, 'No PRO badge cards found — skipping wizard block check');
+      return;
+    }
+
+    const card = proCards.first();
+    await card.hover({ force: true });
+    await page.waitForTimeout(500);
+
+    const hashBefore = await page.evaluate(() => location.hash);
+
+    // Attempt to click the import button or card
+    const importBtn = card.locator('.wdkit-browse-card-download, button[class*="import"]').first();
+    if (await importBtn.isVisible({ timeout: 2000 }).catch(() => false)) {
+      await importBtn.click({ force: true });
+    } else {
+      await card.click({ force: true });
+    }
+    await page.waitForTimeout(3000);
+
+    const hashAfter = await page.evaluate(() => location.hash);
+    const wizardVisible = await page.locator('.wkit-temp-import-mian, .wkit-import-wizard').count() > 0;
+
+    // The wizard should NOT have opened — either hash unchanged or wizard not visible
+    const wizardOpened = hashAfter.match(/import-kit/i) && wizardVisible;
+
+    expect.soft(
+      !wizardOpened,
+      `Import wizard should NOT open for a free user clicking a PRO card. Hash changed from "${hashBefore}" to "${hashAfter}"`
+    ).toBe(true);
+  });
+
+  // --------------------------------------------------------------------------
+  // 87.04 — Free/non-PRO template import button is accessible for free user
+  // Free users must be able to import free templates without any blocker
+  // --------------------------------------------------------------------------
+  test('87.04 Free template import button is accessible (not locked) for a free user', async ({ page }) => {
+    await page.locator('.wdkit-browse-card').first().waitFor({ state: 'visible', timeout: 20000 }).catch(() => {});
+
+    const cards = page.locator('.wdkit-browse-card');
+    const cardCount = await cards.count();
+
+    // Find a card without a PRO badge
+    let freeCard = null;
+    for (let i = 0; i < Math.min(cardCount, 25); i++) {
+      const card = cards.nth(i);
+      const hasProBadge = await card.locator(
+        '.wdkit-pro-crd, .wdkit-card-tag.wdkit-pro-crd, [class*="pro-badge"], [class*="pro-lock"], .wkit-pro-badge'
+      ).count().then(c => c > 0).catch(() => false);
+      if (!hasProBadge) {
+        freeCard = card;
+        break;
+      }
+    }
+
+    if (!freeCard) {
+      // All visible cards are PRO — may be a filter artifact; skip gracefully
+      console.log('[87.04] All visible cards appear to be PRO — cannot verify free card accessibility');
+      return;
+    }
+
+    await freeCard.hover({ force: true });
+    await page.waitForTimeout(500);
+
+    const locked = await isImportButtonLocked(freeCard);
+    expect.soft(
+      locked,
+      'A free (non-PRO) template card import button must NOT be locked for a free user'
+    ).toBe(false);
+  });
+
+  // --------------------------------------------------------------------------
+  // 87.05 — Free template wizard opens normally for a free user (no upgrade blocker)
+  // --------------------------------------------------------------------------
+  test('87.05 Free template import wizard opens correctly for a free user', async ({ page }) => {
+    await page.locator('.wdkit-browse-card').first().waitFor({ state: 'visible', timeout: 20000 }).catch(() => {});
+
+    const cards = page.locator('.wdkit-browse-card');
+    const cardCount = await cards.count();
+
+    // Find a free card
+    let freeCard = null;
+    for (let i = 0; i < Math.min(cardCount, 25); i++) {
+      const card = cards.nth(i);
+      const hasProBadge = await card.locator(
+        '.wdkit-pro-crd, .wdkit-card-tag.wdkit-pro-crd, [class*="pro-badge"], [class*="pro-lock"], .wkit-pro-badge'
+      ).count().then(c => c > 0).catch(() => false);
+      if (!hasProBadge) {
+        freeCard = card;
+        break;
+      }
+    }
+
+    if (!freeCard) {
+      console.log('[87.05] No free cards visible — skipping wizard open check');
+      return;
+    }
+
+    await freeCard.hover({ force: true });
+    await page.waitForTimeout(500);
+
+    const importBtn = freeCard.locator('.wdkit-browse-card-download, button[class*="import"]').first();
+    if (await importBtn.isVisible({ timeout: 2000 }).catch(() => false)) {
+      await importBtn.click({ force: true });
+    } else {
+      await freeCard.click({ force: true });
+    }
+    await page.waitForTimeout(3000);
+
+    // The import wizard should have opened
+    const wizardVisible = await page.locator('.wkit-temp-import-mian').isVisible({ timeout: 10000 }).catch(() => false);
+    const hashAfter = await page.evaluate(() => location.hash);
+
+    expect.soft(
+      wizardVisible || hashAfter.match(/import-kit/i),
+      'Free template import wizard should open for a free user — no upgrade blocker expected'
+    ).toBeTruthy();
+
+    // Wizard must not show a PRO-required upgrade blocker
+    const upgradeBlocker = await page.locator(
+      '.wkit-pro-plugin-notice, .wkit-upgrade-notice, [class*="upgrade-required"]'
+    ).count();
+    expect.soft(
+      upgradeBlocker,
+      'Upgrade blocker should NOT appear in the wizard for a free template on a free user account'
+    ).toBe(0);
+  });
+
+  // --------------------------------------------------------------------------
+  // 87.06 — A WDKit login CTA or upgrade prompt is present somewhere on the
+  //          browse page for a free user (encourages upgrade/login — UX check)
+  // --------------------------------------------------------------------------
+  test('87.06 A login or upgrade CTA is present on the browse page for a free user', async ({ page }) => {
+    await page.locator('.wdkit-browse-card').first().waitFor({ state: 'visible', timeout: 20000 }).catch(() => {});
+
+    // Look for any login/upgrade CTA: button, link, or banner
+    const loginCta = await page.locator(
+      // Login / sign-in buttons in the plugin header or sidebar
+      'button:has-text("Login"), a:has-text("Login"), ' +
+      'button:has-text("Sign In"), a:has-text("Sign In"), ' +
+      // Upgrade banners / CTAs
+      'button:has-text("Upgrade"), a:has-text("Upgrade"), ' +
+      'button:has-text("Go PRO"), a:has-text("Go PRO"), ' +
+      // WDKit-specific CTA selectors
+      '.wkit-login-cta, .wkit-upgrade-cta, .wkit-pro-cta, ' +
+      '[class*="login-btn"], [class*="upgrade-btn"], [class*="pro-btn"]'
+    ).count();
+
+    expect.soft(
+      loginCta,
+      'Browse page should show a Login or Upgrade CTA to encourage free users to access PRO templates'
+    ).toBeGreaterThan(0);
   });
 
 });

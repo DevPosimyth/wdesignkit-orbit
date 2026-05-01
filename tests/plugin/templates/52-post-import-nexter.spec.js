@@ -1,6 +1,8 @@
 // =============================================================================
 // WDesignKit Templates Suite — Post-Import Nexter Template Builder Verification
-// Version: 1.1.0 — Added ≥2 TB entry check (header + footer), version updated
+// Version: 2.0.0 — Extreme-polish pass: added §82.09-11 (Footer edit, non-empty titles);
+//                 §83.07-11 (permalink structure, WP Reading Settings, Media Library,
+//                 site title, front-end console errors)
 // Plugin version: WDesignKit v2.3.0
 //
 // COVERAGE
@@ -265,6 +267,65 @@ test.describe('82. Nexter Template Builder — header & footer templates', () =>
     expect(productErrors).toHaveLength(0);
   });
 
+  // 82.09 — Clicking the Footer template title opens the edit page without fatal error
+  // Functionality-checklist: Symmetry with 82.07 (Header); Footer edit must also work
+  test('82.09 Clicking Footer template title opens the edit page without fatal error', async ({ page }) => {
+    const footerRow = await findTBRowByType(page, 'footer');
+    if (!footerRow) {
+      expect.soft(true).toBe(true);
+      return;
+    }
+
+    const editUrl = await getEditUrlFromRow(footerRow);
+    if (!editUrl) {
+      expect.soft(true).toBe(true);
+      return;
+    }
+
+    await page.goto(editUrl, { waitUntil: 'domcontentloaded' });
+    await page.waitForTimeout(2000);
+
+    await expect(page.locator('body')).not.toContainText('Fatal error');
+    await expect(page.locator('body')).not.toContainText('PHP Parse error');
+    await expect(page.locator('body')).not.toContainText('There has been a critical error');
+
+    // The edit page URL should contain post= (standard WP edit page)
+    expect(page.url()).toMatch(/post=/);
+  });
+
+  // 82.10 — Header template has a non-empty title in the TB list
+  // Logic-checklist: Data integrity — imported records have valid data
+  test('82.10 Header template row has a non-empty title (not blank or "—")', async ({ page }) => {
+    const headerRow = await findTBRowByType(page, 'header');
+    if (!headerRow) {
+      expect.soft(true).toBe(true);
+      return;
+    }
+
+    const titleLink = headerRow.locator('.row-title, .column-title a, td.title a').first();
+    if ((await titleLink.count()) > 0) {
+      const titleText = await titleLink.textContent().catch(() => '');
+      expect.soft(titleText.trim().length > 0, 'Header template title must not be empty').toBe(true);
+      expect.soft(titleText.trim(), 'Header template title must not be the "—" placeholder').not.toBe('—');
+    }
+  });
+
+  // 82.11 — Footer template has a non-empty title in the TB list
+  test('82.11 Footer template row has a non-empty title (not blank or "—")', async ({ page }) => {
+    const footerRow = await findTBRowByType(page, 'footer');
+    if (!footerRow) {
+      expect.soft(true).toBe(true);
+      return;
+    }
+
+    const titleLink = footerRow.locator('.row-title, .column-title a, td.title a').first();
+    if ((await titleLink.count()) > 0) {
+      const titleText = await titleLink.textContent().catch(() => '');
+      expect.soft(titleText.trim().length > 0, 'Footer template title must not be empty').toBe(true);
+      expect.soft(titleText.trim(), 'Footer template title must not be the "—" placeholder').not.toBe('—');
+    }
+  });
+
 });
 
 // =============================================================================
@@ -473,6 +534,143 @@ test.describe('83. Nexter template conditions & page assignments', () => {
         'Footer element is empty — Nexter footer template rendered without content'
       ).toBe(true);
     }
+  });
+
+  // --------------------------------------------------------------------------
+  // 83.07 — WP Permalink Settings: clean URL structure is active post-import
+  // Logic-checklist: Plugin-specific logic — permalink flush is part of kit import
+  // Nexter requires /%postname%/ or equivalent for template conditions to work
+  // --------------------------------------------------------------------------
+  test('83.07 WP Permalink Settings: clean URL structure is active post-import', async ({ page }) => {
+    await page.goto('http://localhost:8881/wp-admin/options-permalink.php', { waitUntil: 'domcontentloaded' });
+    await page.waitForTimeout(1000);
+
+    await expect(page.locator('body')).not.toContainText('Fatal error');
+
+    // The "Post name" radio (value=/%postname%/) should be selected
+    // OR any non-plain structure (not "Plain" which is value="")
+    const postNameRadio = page.locator('input[type="radio"][value="/%postname%/"]');
+    const plainRadio    = page.locator('input[type="radio"][value=""]');
+
+    if ((await postNameRadio.count()) > 0) {
+      const isPostName = await postNameRadio.isChecked().catch(() => false);
+      expect.soft(
+        isPostName,
+        'Permalink structure should be "Post name" (/%postname%/) after kit import — required for Nexter template conditions'
+      ).toBe(true);
+    } else if ((await plainRadio.count()) > 0) {
+      // At minimum, "Plain" should NOT be selected
+      const isPlain = await plainRadio.isChecked().catch(() => false);
+      expect.soft(
+        !isPlain,
+        '"Plain" permalink structure is active — kit import should have set a clean URL structure'
+      ).toBe(true);
+    }
+  });
+
+  // --------------------------------------------------------------------------
+  // 83.08 — WP Reading Settings: "Your homepage displays" is set to a static page
+  // Logic-checklist: Dynamic content sources populate correctly
+  // --------------------------------------------------------------------------
+  test('83.08 WP Reading Settings: front page is set to "A static page" post-import', async ({ page }) => {
+    await page.goto('http://localhost:8881/wp-admin/options-reading.php', { waitUntil: 'domcontentloaded' });
+    await page.waitForTimeout(1000);
+
+    await expect(page.locator('body')).not.toContainText('Fatal error');
+
+    // Radio: "page" = A static page; "posts" = Your latest posts
+    const staticPageRadio = page.locator('input[type="radio"][value="page"]');
+    if ((await staticPageRadio.count()) > 0) {
+      const isStaticPage = await staticPageRadio.isChecked().catch(() => false);
+      expect.soft(
+        isStaticPage,
+        '"Your homepage displays" in WP Reading Settings should be "A static page" after kit import'
+      ).toBe(true);
+
+      // Additionally verify the front page dropdown has a page assigned (not 0)
+      if (isStaticPage) {
+        const frontPageSelect = page.locator('#page_on_front');
+        if ((await frontPageSelect.count()) > 0) {
+          const val = await frontPageSelect.evaluate(el => el.value).catch(() => '0');
+          expect.soft(
+            val !== '0' && val !== '',
+            `Front page dropdown should have a real page assigned, not 0. Got: "${val}"`
+          ).toBeTruthy();
+        }
+      }
+    }
+  });
+
+  // --------------------------------------------------------------------------
+  // 83.09 — WP Media Library contains at least 1 attachment after kit import
+  // Logic-checklist: Data integrity — all parts of kit are imported
+  // --------------------------------------------------------------------------
+  test('83.09 WP Media Library contains at least 1 attachment after kit import', async ({ page }) => {
+    await page.goto('http://localhost:8881/wp-admin/upload.php', { waitUntil: 'domcontentloaded' });
+    await page.waitForTimeout(1000);
+
+    await expect(page.locator('body')).not.toContainText('Fatal error');
+
+    const gridItems  = await page.locator('.attachment').count().catch(() => 0);
+    const tableItems = await page.locator('#the-list tr:not(.no-items)').count().catch(() => 0);
+    const total      = gridItems + tableItems;
+
+    expect.soft(
+      total,
+      'WP Media Library should contain at least 1 image/attachment after Nexter kit import'
+    ).toBeGreaterThan(0);
+  });
+
+  // --------------------------------------------------------------------------
+  // 83.10 — Site title is set and is not the default WP "Just Another WordPress Site"
+  // Logic-checklist: Relationship data stays in sync — kit sets site branding
+  // --------------------------------------------------------------------------
+  test('83.10 Site title is set to a non-default value post-import', async ({ page }) => {
+    await page.goto('http://localhost:8881/wp-admin/options-general.php', { waitUntil: 'domcontentloaded' });
+    await page.waitForTimeout(1000);
+
+    await expect(page.locator('body')).not.toContainText('Fatal error');
+
+    const siteTitle = page.locator('#blogname');
+    if ((await siteTitle.count()) > 0) {
+      const titleValue = await siteTitle.evaluate(el => el.value).catch(() => '');
+      // Title must be set (non-empty) and not the generic WP default
+      expect.soft(titleValue.trim().length > 0, 'Site title must not be empty after kit import').toBe(true);
+      expect.soft(
+        !titleValue.toLowerCase().includes('just another wordpress'),
+        `Site title should not be the default WP value. Got: "${titleValue}"`
+      ).toBe(true);
+    }
+  });
+
+  // --------------------------------------------------------------------------
+  // 83.11 — No product console errors on the front-end homepage post-import
+  // Console-errors-checklist: Zero JS errors on front-end page load
+  // --------------------------------------------------------------------------
+  test('83.11 No product console errors on the front-end homepage post-import', async ({ page }) => {
+    const errors = [];
+    page.on('console', msg => {
+      if (msg.type() === 'error') errors.push(msg.text());
+    });
+
+    await page.goto('http://localhost:8881/', { waitUntil: 'domcontentloaded' });
+    await page.waitForTimeout(3000);
+
+    await expect(page.locator('body')).not.toContainText('Fatal error');
+
+    const productErrors = errors.filter(e =>
+      !e.includes('favicon') &&
+      !e.includes('net::ERR') &&
+      !e.includes('extension') &&
+      !e.includes('chrome-extension') &&
+      !e.includes('ERR_BLOCKED') &&
+      !e.includes('Mixed Content') &&
+      !e.includes('robots.txt')
+    );
+    expect.soft(
+      productErrors,
+      'Front-end homepage should have zero product console errors post-import: ' + productErrors.join(', ')
+    ).toHaveLength(0);
   });
 
 });

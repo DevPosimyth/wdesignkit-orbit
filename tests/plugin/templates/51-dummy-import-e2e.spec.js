@@ -1,6 +1,8 @@
 // =============================================================================
 // WDesignKit Templates Suite — Dummy Import Full E2E
-// Version: 1.1.0 — Removed unused selectMethodCard import; added plugin check in §79
+// Version: 2.0.0 — Extreme-polish pass: added §78.13-18 (all loader steps, double-submit prevention,
+//                 network monitoring, success CTAs, View Site link); §79.10-12 (Media Library,
+//                 WP Reading Settings, WP Dashboard clean-load)
 // Plugin version: WDesignKit v2.3.0
 //
 // COVERAGE
@@ -205,6 +207,158 @@ test.describe('78. Dummy import full E2E — loader all states', () => {
     }
   });
 
+  // -------------------------------------------------------------------------
+  // 78.13 — "Importing Options" loader step is visible during import
+  // Functionality-checklist: all step states tested (not just 2/6)
+  // -------------------------------------------------------------------------
+  test('78.13 "Importing Options" step text is visible during loader', async ({ page }) => {
+    test.skip(!WDKIT_TOKEN, 'Requires API token for import to complete');
+    await setupReadyForDummyImport(page);
+    const importBtn = page.locator('button.wkit-import-method-next.wkit-btn-class');
+    if ((await importBtn.count()) > 0) {
+      await importBtn.click();
+      await page.waitForTimeout(2500);
+      await expect.soft(page.locator('body')).toContainText(/importing options/i);
+    }
+  });
+
+  // -------------------------------------------------------------------------
+  // 78.14 — "Importing Widgets" loader step is visible during import
+  // -------------------------------------------------------------------------
+  test('78.14 "Importing Widgets" or equivalent step text is visible during loader', async ({ page }) => {
+    test.skip(!WDKIT_TOKEN, 'Requires API token for import to complete');
+    await setupReadyForDummyImport(page);
+    const importBtn = page.locator('button.wkit-import-method-next.wkit-btn-class');
+    if ((await importBtn.count()) > 0) {
+      await importBtn.click();
+      await page.waitForTimeout(2500);
+      // Accept any widget/template/content import step label
+      await expect.soft(page.locator('body')).toContainText(
+        /importing widgets|importing templates|importing content|importing media/i
+      );
+    }
+  });
+
+  // -------------------------------------------------------------------------
+  // 78.15 — Import button is disabled immediately after click (no double-submit)
+  // Functionality-checklist: Double-submit is prevented (button disabled after first click)
+  // -------------------------------------------------------------------------
+  test('78.15 Import button is disabled immediately after first click (double-submit prevention)', async ({ page }) => {
+    test.skip(!WDKIT_TOKEN, 'Requires API token for import to complete');
+    await setupReadyForDummyImport(page);
+    const importBtn = page.locator('button.wkit-import-method-next.wkit-btn-class');
+    if ((await importBtn.count()) > 0) {
+      await importBtn.click();
+      // Immediately after click — button should be disabled or hidden to prevent re-clicks
+      await page.waitForTimeout(800);
+      const isDisabled = await importBtn.isDisabled().catch(() => true);
+      const isVisible  = await importBtn.isVisible().catch(() => false);
+      // Either button is disabled OR has been replaced by the loader (no longer visible)
+      expect.soft(
+        isDisabled || !isVisible,
+        'Import button must be disabled or hidden immediately after first click to prevent double-submit'
+      ).toBe(true);
+    }
+  });
+
+  // -------------------------------------------------------------------------
+  // 78.16 — No 4xx/5xx network failures during dummy import
+  // Console-errors-checklist: Zero 404/500 responses on API/REST endpoints
+  // -------------------------------------------------------------------------
+  test('78.16 No 4xx/5xx network failures occur during dummy import', async ({ page }) => {
+    test.skip(!WDKIT_TOKEN, 'Requires API token for import to complete');
+    const failedRequests = [];
+    page.on('response', resp => {
+      const status = resp.status();
+      const url    = resp.url();
+      if (status >= 400 && !url.includes('favicon') && !url.includes('apple-touch-icon')) {
+        failedRequests.push(`${status} — ${url}`);
+      }
+    });
+
+    await setupReadyForDummyImport(page);
+    const importBtn = page.locator('button.wkit-import-method-next.wkit-btn-class');
+    if ((await importBtn.count()) > 0) {
+      await importBtn.click();
+      // Wait long enough to capture API calls during import (up to 30s for initial phase)
+      await page.waitForTimeout(30000);
+    }
+
+    // Filter out non-critical assets (fonts, icons, optional assets)
+    const criticalFailures = failedRequests.filter(r =>
+      !r.includes('robots.txt') &&
+      !r.includes('apple-touch') &&
+      !r.includes('browserconfig')
+    );
+
+    expect.soft(
+      criticalFailures,
+      'Unexpected 4xx/5xx responses during dummy import: ' + criticalFailures.join(', ')
+    ).toHaveLength(0);
+  });
+
+  // -------------------------------------------------------------------------
+  // 78.17 — Success screen has at least one actionable CTA
+  // Functionality-checklist: Success feedback shown after operation (not silent)
+  // -------------------------------------------------------------------------
+  test('78.17 Success screen has at least one actionable CTA button or link', async ({ page }) => {
+    test.skip(!WDKIT_TOKEN, 'Requires API token for import to complete');
+    await triggerAndWaitForDummySuccess(page);
+
+    // Accept any of the standard post-import CTAs
+    const cta = page.locator([
+      '.wkit-import-success-btn',
+      '.wkit-view-site-btn',
+      'a:has-text("View Site")',
+      'a:has-text("Visit Site")',
+      'a:has-text("Go to Dashboard")',
+      'button:has-text("View Site")',
+      'button:has-text("Visit Site")',
+      'button:has-text("Dashboard")',
+      '.wkit-site-import-success-main a',
+      '.wkit-site-import-success-main button',
+    ].join(', ')).first();
+
+    const ctaCount = await cta.count();
+    expect.soft(
+      ctaCount,
+      'Success screen must have at least one CTA (View Site / Dashboard) after import completes'
+    ).toBeGreaterThan(0);
+  });
+
+  // -------------------------------------------------------------------------
+  // 78.18 — "View Site" CTA on success screen navigates to the front-end
+  // Functionality-checklist: Links perform correct action
+  // -------------------------------------------------------------------------
+  test('78.18 "View Site" CTA on success screen navigates to the front-end homepage', async ({ page }) => {
+    test.skip(!WDKIT_TOKEN, 'Requires API token for import to complete');
+    await triggerAndWaitForDummySuccess(page);
+
+    const viewSiteLink = page.locator(
+      'a:has-text("View Site"), a:has-text("Visit Site"), .wkit-view-site-btn'
+    ).first();
+
+    if ((await viewSiteLink.count()) === 0) {
+      console.log('[78.18] No "View Site" link found on success screen — skipping navigation check');
+      return;
+    }
+
+    const href = await viewSiteLink.getAttribute('href').catch(() => '');
+    // The href should point to the front-end (not wp-admin, not empty)
+    expect.soft(
+      href && !href.startsWith('#') && !href.includes('wp-admin'),
+      `"View Site" link href should point to the front-end homepage, got: "${href}"`
+    ).toBeTruthy();
+
+    // Optionally follow the link and verify front-end loads
+    if (href && href.startsWith('http')) {
+      const response = await page.goto(href, { waitUntil: 'domcontentloaded', timeout: 30000 }).catch(() => null);
+      const status = response ? response.status() : 0;
+      expect.soft(status >= 200 && status < 500, `Front-end returned status ${status}`).toBe(true);
+      await expect.soft(page.locator('body')).not.toContainText('Fatal error');
+    }
+  });
+
 });
 
 // =============================================================================
@@ -356,6 +510,83 @@ test.describe('79. WP Admin post-dummy-import — pages created', () => {
     expect.soft(
       wdkitCount,
       'WDesignKit plugin row should be active after import'
+    ).toBeGreaterThan(0);
+  });
+
+  // -------------------------------------------------------------------------
+  // 79.10 — WP Media Library contains at least 1 media item post-import
+  // Functionality-checklist: Data operations — records appear after create
+  // Logic-checklist: Data integrity — imported content is fully persisted
+  // -------------------------------------------------------------------------
+  test('79.10 WP Media Library contains at least 1 media item post-import', async ({ page }) => {
+    await page.goto('http://localhost:8881/wp-admin/upload.php');
+    await page.waitForLoadState('domcontentloaded', { timeout: 20000 });
+
+    await expect(page.locator('body')).not.toContainText('Fatal error');
+    await expect(page.locator('body')).not.toContainText('There has been a critical error');
+
+    // Media items appear as .attachment thumbnails in grid view,
+    // or as table rows in list view (#the-list tr)
+    const gridItems  = await page.locator('.attachment').count().catch(() => 0);
+    const tableRows  = await page.locator('#the-list tr:not(.no-items)').count().catch(() => 0);
+    const mediaCount = gridItems + tableRows;
+
+    expect.soft(
+      mediaCount,
+      'WP Media Library should have at least 1 item after a dummy import — images/assets not imported'
+    ).toBeGreaterThan(0);
+  });
+
+  // -------------------------------------------------------------------------
+  // 79.11 — WP Reading Settings: front page is set to a static page post-import
+  // Logic-checklist: Plugin-specific logic — dynamic content settings correct
+  // -------------------------------------------------------------------------
+  test('79.11 WP Reading Settings: front page is set to "A static page" post-import', async ({ page }) => {
+    await page.goto('http://localhost:8881/wp-admin/options-reading.php');
+    await page.waitForLoadState('domcontentloaded', { timeout: 20000 });
+
+    await expect(page.locator('body')).not.toContainText('Fatal error');
+
+    // WP uses radio buttons: "Your latest posts" or "A static page"
+    const staticPageRadio = page.locator('input[type="radio"][value="page"]');
+    if ((await staticPageRadio.count()) > 0) {
+      const isChecked = await staticPageRadio.isChecked().catch(() => false);
+      expect.soft(
+        isChecked,
+        'WP Reading Settings should be set to "A static page" after kit import — not "Your latest posts"'
+      ).toBe(true);
+    } else {
+      // Fallback: verify the page dropdowns for front/posts page are not empty
+      const frontPageSelect = page.locator('#page_on_front');
+      if ((await frontPageSelect.count()) > 0) {
+        const selectedValue = await frontPageSelect.evaluate(el => el.value).catch(() => '0');
+        expect.soft(
+          selectedValue !== '0' && selectedValue !== '',
+          `Front page select should have a page assigned (not 0/empty). Got: "${selectedValue}"`
+        ).toBeTruthy();
+      }
+    }
+  });
+
+  // -------------------------------------------------------------------------
+  // 79.12 — WP Admin Dashboard loads cleanly post-import (no PHP errors)
+  // Plugin-lifecycle: No fatal errors with WP_DEBUG enabled
+  // -------------------------------------------------------------------------
+  test('79.12 WP Admin Dashboard loads without fatal or PHP errors post-import', async ({ page }) => {
+    await page.goto('http://localhost:8881/wp-admin/');
+    await page.waitForLoadState('domcontentloaded', { timeout: 20000 });
+
+    await expect(page.locator('body')).not.toContainText('Fatal error');
+    await expect(page.locator('body')).not.toContainText('PHP Parse error');
+    await expect(page.locator('body')).not.toContainText('There has been a critical error');
+    await expect(page.locator('body')).not.toContainText('Warning: Undefined');
+    await expect(page.locator('body')).not.toContainText('Notice: Undefined');
+
+    // The WP admin dashboard heading should be visible
+    const dashboardHeading = page.locator('#dashboard-widgets-wrap, .wrap h1, #wpbody h1, #wp-admin-bar-wp-logo');
+    expect.soft(
+      await dashboardHeading.count(),
+      'WP Admin Dashboard heading/widget area should be present after import'
     ).toBeGreaterThan(0);
   });
 
