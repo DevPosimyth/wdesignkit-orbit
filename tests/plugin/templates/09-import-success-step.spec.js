@@ -6,6 +6,20 @@
 //   Section 42 — Success screen all elements (10 tests, gated by WDKIT_TOKEN)
 //   Section 43 — Success screen CTA buttons & links (6 tests, gated by WDKIT_TOKEN)
 //   Section 49 — Post-import pages created & site URL in success CTA (2 tests)
+//   §A  — Security (2 tests)
+//   §B  — Accessibility (2 tests)
+//   §C  — Responsive layout (3 viewports)
+//   §D  — Keyboard navigation (1 test)
+//   §E  — Performance (1 test)
+//   §F  — RTL layout (1 test)
+//
+// MANUAL CHECKS (not automatable — verify manually):
+//   • Pixel-perfect match with Figma design (colors, spacing, typography)
+//   • Screen reader announcement order and content
+//   • Cross-browser visual rendering (Firefox, Safari/WebKit, Edge)
+//   • RTL layout visual correctness (Arabic/Hebrew locales)
+//   • Color contrast ratios in rendered output
+//   • Touch gesture behavior on real mobile devices
 // =============================================================================
 
 const { test, expect } = require('@playwright/test');
@@ -232,4 +246,132 @@ test.describe('49. Post-import — pages created & site URL in success CTA', () 
     await expect.soft(page.locator('.wkit-site-import-success-main')).not.toContainText(/error/i);
   });
 
+});
+
+// =============================================================================
+// §A. Success Step — Security
+// =============================================================================
+test.describe('§A. Success Step — Security', () => {
+  test('§A.01 Success page does not expose user credentials or API keys in source', async ({ page }) => {
+    test.skip(!WDKIT_TOKEN, 'Requires import to complete');
+    await triggerDummyImport(page);
+    const html = await page.content();
+    const hasApiKey = /api[-_]?key\s*[:=]\s*["'][a-zA-Z0-9]{20,}/i.test(html);
+    expect.soft(hasApiKey, 'API key found in success step source').toBe(false);
+  });
+
+  test('§A.02 Success page does not display raw JSON error responses', async ({ page }) => {
+    test.skip(!WDKIT_TOKEN, 'Requires import to complete');
+    await triggerDummyImport(page);
+    const bodyText = await page.locator('body').textContent().catch(() => '');
+    const hasRawJson = /^\s*\{"error":/m.test(bodyText);
+    expect.soft(hasRawJson, 'Raw JSON error response visible on success page').toBe(false);
+  });
+});
+
+// =============================================================================
+// §B. Success Step — Accessibility
+// =============================================================================
+test.describe('§B. Success Step — Accessibility', () => {
+  test('§B.01 Success heading has accessible heading role', async ({ page }) => {
+    test.skip(!WDKIT_TOKEN, 'Requires import to complete');
+    await triggerDummyImport(page);
+    const heading = page.locator('h1, h2, h3, [role="heading"], [class*="success"][class*="title"]').first();
+    const count = await heading.count();
+    expect.soft(count, 'No accessible heading found on success step').toBeGreaterThan(0);
+  });
+
+  test('§B.02 Success action buttons have accessible labels', async ({ page }) => {
+    test.skip(!WDKIT_TOKEN, 'Requires import to complete');
+    await triggerDummyImport(page);
+    const buttons = await page.locator('button, a[href], [role="button"]').all();
+    for (const btn of buttons.slice(0, 5)) {
+      if (!await btn.isVisible().catch(() => false)) continue;
+      const text = await btn.textContent().catch(() => '');
+      const ariaLabel = await btn.getAttribute('aria-label').catch(() => null);
+      const hasLabel = text.trim().length > 0 || (ariaLabel && ariaLabel.trim().length > 0);
+      expect.soft(hasLabel, 'Button missing accessible label on success step').toBe(true);
+    }
+  });
+});
+
+// =============================================================================
+// §C. Success Step — Responsive layout
+// =============================================================================
+test.describe('§C. Success Step — Responsive layout', () => {
+  const VIEWPORTS = [
+    { name: 'mobile', width: 375, height: 812 },
+    { name: 'tablet', width: 768, height: 1024 },
+    { name: 'desktop', width: 1440, height: 900 },
+  ];
+  for (const vp of VIEWPORTS) {
+    test(`§C.01 Success step has no horizontal scroll at ${vp.name} (${vp.width}px)`, async ({ page }) => {
+      test.skip(!WDKIT_TOKEN, 'Requires import to complete');
+      await page.setViewportSize({ width: vp.width, height: vp.height });
+      await triggerDummyImport(page);
+      const hasHScroll = await page.evaluate(() => document.body.scrollWidth > window.innerWidth + 5).catch(() => false);
+      expect.soft(hasHScroll, `Horizontal scroll at ${vp.name}`).toBe(false);
+    });
+  }
+});
+
+// =============================================================================
+// §D. Success Step — Keyboard Navigation
+// =============================================================================
+test.describe('§D. Success Step — Keyboard Navigation', () => {
+  test('§D.01 Tab navigates through success step without focus trap', async ({ page }) => {
+    test.skip(!WDKIT_TOKEN, 'Requires import to complete');
+    await triggerDummyImport(page);
+    for (let i = 0; i < 5; i++) {
+      await page.keyboard.press('Tab');
+      await page.waitForTimeout(150);
+    }
+    await expect(page.locator('body')).not.toContainText('Fatal error');
+  });
+});
+
+// =============================================================================
+// §E. Success Step — Performance
+// =============================================================================
+test.describe('§E. Success Step — Performance', () => {
+  test('§E.01 Success step renders within 5 seconds', async ({ page }) => {
+    test.skip(!WDKIT_TOKEN, 'Requires import to complete');
+    await wpLogin(page);
+    await goToBrowse(page);
+    await clickFirstCardImport(page);
+    await page.locator('.wkit-temp-import-mian').waitFor({ state: 'visible', timeout: 25000 }).catch(() => {});
+    const nameInput = page.locator('input.wkit-site-name-inp');
+    if ((await nameInput.count()) > 0) {
+      await nameInput.fill('QA Perf Test');
+      await page.waitForTimeout(300);
+    }
+    await reachMethodStep(page);
+    const dummyCard = page.locator('.wkit-method-card').first();
+    if ((await dummyCard.count()) > 0) await dummyCard.click({ force: true });
+    const methodNext = page.locator('button.wkit-import-method-next.wkit-btn-class');
+    if ((await methodNext.count()) > 0) await methodNext.click();
+    const t0 = Date.now();
+    await page.locator('.wkit-site-import-success-main').waitFor({ state: 'visible', timeout: 120000 }).catch(() => {});
+    // Measure time for success content to appear after loader completes
+    const contentVisible = await page.locator('.wkit-site-import-success-content').isVisible().catch(() => false);
+    const elapsed = Date.now() - t0;
+    if (contentVisible) {
+      expect.soft(elapsed, `Success step took ${elapsed}ms after import`).toBeLessThan(5000);
+    }
+  });
+});
+
+// =============================================================================
+// §F. Success Step — RTL layout
+// =============================================================================
+test.describe('§F. Success Step — RTL layout', () => {
+  test('§F.01 Success step does not overflow in RTL mode', async ({ page }) => {
+    test.skip(!WDKIT_TOKEN, 'Requires import to complete');
+    await triggerDummyImport(page);
+    await page.evaluate(() => { document.documentElement.setAttribute('dir', 'rtl'); });
+    await page.waitForTimeout(400);
+    const hasHScroll = await page.evaluate(() => document.body.scrollWidth > window.innerWidth + 5).catch(() => false);
+    expect.soft(hasHScroll, 'Overflow in RTL mode on success step').toBe(false);
+    await page.evaluate(() => { document.documentElement.removeAttribute('dir'); });
+  });
 });

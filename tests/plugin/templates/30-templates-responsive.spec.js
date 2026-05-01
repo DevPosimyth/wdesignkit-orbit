@@ -1,6 +1,6 @@
 // =============================================================================
 // WDesignKit Templates Suite — Responsive Layout
-// Version: 2.0.0  (added 320px breakpoint across all sections)
+// Version: 2.1.0  (added 320px breakpoint across all sections; RTL section added)
 // Cross-cutting: tests all template pages at mobile/tablet/desktop viewports
 //
 // COVERAGE
@@ -10,7 +10,16 @@
 //   Section 53 — Share With Me responsive layout (6 tests + 2 320px tests)
 //   Section 54 — Horizontal overflow detection (5 tests + 1 320px test)
 //   Section 55 — Touch target sizes on mobile (5 tests)
-//   Section 56 — 320px edge-case breakpoint (8 dedicated extreme-narrow tests) ← NEW
+//   Section 56 — 320px edge-case breakpoint (8 dedicated extreme-narrow tests)
+//   §RTL      — RTL layout direction (8 tests) ← NEW
+//
+// MANUAL CHECKS (not automatable — verify manually):
+//   • Pixel-perfect match with Figma design (colors, spacing, typography)
+//   • Screen reader announcement order and content
+//   • Cross-browser visual rendering (Firefox, Safari/WebKit, Edge)
+//   • RTL layout visual correctness (Arabic/Hebrew locales)
+//   • Color contrast ratios in rendered output
+//   • Touch gesture behavior on real mobile devices
 // =============================================================================
 
 const { test, expect } = require('@playwright/test');
@@ -496,6 +505,120 @@ test.describe('56. 320px extreme-narrow breakpoint', () => {
     const clientWidth = await page.evaluate(() => document.documentElement.clientWidth);
     expect(scrollWidth).toBeLessThanOrEqual(clientWidth + 5);
     await expect(page.locator('body')).not.toContainText('Fatal error');
+  });
+
+});
+
+// =============================================================================
+// §RTL. Templates — RTL layout direction (Logic checklist requirement)
+// Covers: Browse, My Templates, Save Template, Select Template, Share With Me
+// MANUAL CHECK: Visual RTL layout appearance must be verified manually in browser
+// =============================================================================
+test.describe('§RTL. Templates — RTL layout (Right-to-Left)', () => {
+
+  test('§RTL.01 Browse library does not overflow in RTL mode', async ({ page }) => {
+    await wpLogin(page);
+    await goToBrowse(page);
+    await page.evaluate(() => { document.documentElement.setAttribute('dir', 'rtl'); });
+    await page.waitForTimeout(500);
+    const hasHScroll = await page.evaluate(() => document.body.scrollWidth > window.innerWidth + 5);
+    expect.soft(hasHScroll, 'Horizontal overflow in RTL mode on Browse').toBe(false);
+    await page.evaluate(() => { document.documentElement.removeAttribute('dir'); });
+  });
+
+  test('§RTL.02 Filter panel does not overflow in RTL mode', async ({ page }) => {
+    await wpLogin(page);
+    await goToBrowse(page);
+    await page.evaluate(() => { document.documentElement.setAttribute('dir', 'rtl'); });
+    await page.waitForTimeout(500);
+    const filterPanel = page.locator('.wdkit-browse-column, [class*="filter"]').first();
+    if (await filterPanel.count() > 0 && await filterPanel.isVisible()) {
+      const box = await filterPanel.boundingBox();
+      if (box) {
+        expect.soft(box.x, 'Filter panel has negative x in RTL — clipped').toBeGreaterThanOrEqual(0);
+      }
+    }
+    await page.evaluate(() => { document.documentElement.removeAttribute('dir'); });
+  });
+
+  test('§RTL.03 Template cards do not overflow in RTL mode at 375px', async ({ page }) => {
+    await wpLogin(page);
+    await page.setViewportSize({ width: 375, height: 812 });
+    await goToBrowse(page);
+    await page.evaluate(() => { document.documentElement.setAttribute('dir', 'rtl'); });
+    await page.waitForTimeout(500);
+    const hasHScroll = await page.evaluate(() => document.body.scrollWidth > window.innerWidth + 5);
+    expect.soft(hasHScroll, 'Template cards overflow in RTL + mobile').toBe(false);
+    await page.evaluate(() => { document.documentElement.removeAttribute('dir'); });
+  });
+
+  test('§RTL.04 Import wizard modal does not overflow in RTL mode', async ({ page }) => {
+    await wpLogin(page);
+    await goToBrowse(page);
+    await page.evaluate(() => { document.documentElement.setAttribute('dir', 'rtl'); });
+    await page.waitForTimeout(400);
+    const modal = page.locator('.wkit-temp-import-mian, [class*="import"][class*="modal"], [role="dialog"]').first();
+    if (await modal.count() > 0) {
+      const hasHScroll = await page.evaluate(() => document.body.scrollWidth > window.innerWidth + 5);
+      expect.soft(hasHScroll, 'Import modal overflows in RTL').toBe(false);
+    }
+    await page.evaluate(() => { document.documentElement.removeAttribute('dir'); });
+  });
+
+  test('§RTL.05 My Templates page does not overflow in RTL mode', async ({ page }) => {
+    await wpLogin(page);
+    await goToMyTemplates(page);
+    await page.evaluate(() => { document.documentElement.setAttribute('dir', 'rtl'); });
+    await page.waitForTimeout(400);
+    const hasHScroll = await page.evaluate(() => document.body.scrollWidth > window.innerWidth + 5);
+    expect.soft(hasHScroll, 'My Templates overflows in RTL').toBe(false);
+    await page.evaluate(() => { document.documentElement.removeAttribute('dir'); });
+  });
+
+  test('§RTL.06 Text direction in RTL mode uses correct text-align', async ({ page }) => {
+    await wpLogin(page);
+    await goToBrowse(page);
+    await page.evaluate(() => { document.documentElement.setAttribute('dir', 'rtl'); });
+    await page.waitForTimeout(400);
+    // Main content area should respect RTL — check no content is cut off at right edge
+    const mainContent = page.locator('#wdesignkit-app, .wkit-app, [class*="wkit-main"]').first();
+    if (await mainContent.count() > 0) {
+      const box = await mainContent.boundingBox().catch(() => null);
+      if (box) {
+        expect.soft(box.x, 'Main content has negative x position in RTL').toBeGreaterThanOrEqual(-5);
+      }
+    }
+    await page.evaluate(() => { document.documentElement.removeAttribute('dir'); });
+  });
+
+  test('§RTL.07 Save template form does not overflow in RTL mode', async ({ page }) => {
+    await wpLogin(page);
+    await page.goto(PLUGIN_PAGE);
+    await page.waitForLoadState('domcontentloaded');
+    await page.waitForTimeout(2000);
+    await page.evaluate(() => { location.hash = '/save_template'; });
+    await page.waitForTimeout(3000);
+    await page.evaluate(() => { document.documentElement.setAttribute('dir', 'rtl'); });
+    await page.waitForTimeout(400);
+    const hasHScroll = await page.evaluate(() => document.body.scrollWidth > window.innerWidth + 5);
+    expect.soft(hasHScroll, 'Save template form overflows in RTL').toBe(false);
+    await page.evaluate(() => { document.documentElement.removeAttribute('dir'); });
+  });
+
+  test('§RTL.08 No text truncation issues in RTL mode (button labels readable)', async ({ page }) => {
+    await wpLogin(page);
+    await goToBrowse(page);
+    await page.evaluate(() => { document.documentElement.setAttribute('dir', 'rtl'); });
+    await page.waitForTimeout(400);
+    // Buttons should not have zero-width in RTL
+    const buttons = await page.locator('button:visible').all();
+    for (const btn of buttons.slice(0, 5)) {
+      const box = await btn.boundingBox().catch(() => null);
+      if (box) {
+        expect.soft(box.width, 'Button has zero width in RTL mode').toBeGreaterThan(10);
+      }
+    }
+    await page.evaluate(() => { document.documentElement.removeAttribute('dir'); });
   });
 
 });

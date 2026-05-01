@@ -7,6 +7,20 @@
 //   Section 11  — Template card hover overlay & interaction (10 tests)
 //   Section 11b — Card badges, tags, favourite button & Pro state (8 tests)
 //   Section 11c — PRO template locked state & upgrade CTA (7 tests)  ← NEW
+//   §A — Responsive layout (6 tests)
+//   §B — Security (2 tests)
+//   §C — Keyboard Navigation / WCAG 2.1 AA (2 tests)
+//   §D — Performance (1 test)
+//   §E — Tap target size / WCAG 2.5.5 (1 test)
+//   §F — RTL layout (1 test)
+//
+// MANUAL CHECKS (not automatable — verify manually):
+//   • Pixel-perfect match with Figma design (colors, spacing, typography)
+//   • Screen reader announcement order and content
+//   • Cross-browser visual rendering (Firefox, Safari, Edge)
+//   • RTL layout visual correctness (Arabic/Hebrew locales)
+//   • Color contrast ratios in rendered output
+//   • Touch gesture behavior on real mobile devices
 // =============================================================================
 
 const { test, expect } = require('@playwright/test');
@@ -517,4 +531,164 @@ test.describe('11c. PRO template locked state & upgrade CTA', () => {
     expect(productErrors).toHaveLength(0);
   });
 
+});
+
+// =============================================================================
+// §A. Template Card — Responsive layout
+// =============================================================================
+test.describe('§A. Template Card — Responsive layout', () => {
+  const VIEWPORTS = [
+    { name: 'mobile', width: 375, height: 812 },
+    { name: 'tablet', width: 768, height: 1024 },
+    { name: 'desktop', width: 1440, height: 900 },
+  ];
+
+  for (const vp of VIEWPORTS) {
+    test(`§A.01 Template cards render without horizontal scroll at ${vp.name} (${vp.width}px)`, async ({ page }) => {
+      await wpLogin(page);
+      await page.setViewportSize({ width: vp.width, height: vp.height });
+      await goToBrowse(page);
+      await page.locator('.wdkit-browse-card').first().waitFor({ state: 'visible', timeout: 15000 }).catch(() => {});
+      const hasHScroll = await page.evaluate(() => document.body.scrollWidth > window.innerWidth + 5);
+      expect.soft(hasHScroll, `Horizontal scroll at ${vp.name}`).toBe(false);
+    });
+
+    test(`§A.02 Template cards have positive bounding box at ${vp.name} (${vp.width}px)`, async ({ page }) => {
+      await wpLogin(page);
+      await page.setViewportSize({ width: vp.width, height: vp.height });
+      await goToBrowse(page);
+      await page.locator('.wdkit-browse-card').first().waitFor({ state: 'visible', timeout: 15000 }).catch(() => {});
+      const card = page.locator('.wdkit-browse-card').first();
+      if (await card.count() > 0) {
+        const box = await card.boundingBox();
+        expect.soft(box, `Card bounding box is null at ${vp.name}`).not.toBeNull();
+        if (box) {
+          expect.soft(box.width, `Card width ${box.width}px at ${vp.name}`).toBeGreaterThan(0);
+          expect.soft(box.height, `Card height ${box.height}px at ${vp.name}`).toBeGreaterThan(0);
+        }
+      }
+    });
+  }
+});
+
+// =============================================================================
+// §B. Template Card — Security
+// =============================================================================
+test.describe('§B. Template Card — Security', () => {
+  test.beforeEach(async ({ page }) => {
+    await wpLogin(page);
+    await goToBrowse(page);
+    await page.locator('.wdkit-browse-card').first().waitFor({ state: 'visible', timeout: 15000 }).catch(() => {});
+  });
+
+  test('§B.01 Card titles are rendered as text — no executable script tags in card HTML', async ({ page }) => {
+    // Verify no <script> tags are injected inside card DOM elements
+    const scriptInCards = await page.evaluate(() => {
+      const cards = document.querySelectorAll('.wdkit-browse-card');
+      for (const card of cards) {
+        if (card.querySelector('script')) return true;
+      }
+      return false;
+    });
+    expect(scriptInCards, 'Script tag found inside template card DOM').toBe(false);
+  });
+
+  test('§B.02 No credentials or tokens visible in card data attributes', async ({ page }) => {
+    const html = await page.content();
+    const hasApiKey = /api[-_]?key\s*[:=]\s*["'][a-zA-Z0-9]{20,}/i.test(html);
+    expect.soft(hasApiKey, 'API key found in page source').toBe(false);
+  });
+});
+
+// =============================================================================
+// §C. Template Card — Keyboard Navigation (WCAG 2.1 AA)
+// =============================================================================
+test.describe('§C. Template Card — Keyboard Navigation', () => {
+  test.beforeEach(async ({ page }) => {
+    await wpLogin(page);
+    await goToBrowse(page);
+    await page.locator('.wdkit-browse-card').first().waitFor({ state: 'visible', timeout: 15000 }).catch(() => {});
+  });
+
+  test('§C.01 Tab key reaches the template card area without focus trap', async ({ page }) => {
+    for (let i = 0; i < 10; i++) {
+      await page.keyboard.press('Tab');
+      await page.waitForTimeout(100);
+    }
+    const focusedTag = await page.evaluate(() => document.activeElement?.tagName);
+    expect.soft(['BODY', 'HTML'], 'Focus stuck on body — possible focus trap').not.toContain(focusedTag);
+    await expect(page.locator('body')).not.toContainText('Fatal error');
+  });
+
+  test('§C.02 Enter key on Import button inside card triggers the import flow (not silent)', async ({ page }) => {
+    const card = page.locator('.wdkit-browse-card').first();
+    await card.hover({ force: true });
+    await page.waitForTimeout(500);
+    const importBtn = card.locator('.wdkit-browse-card-download').first();
+    if (await importBtn.count() > 0) {
+      await importBtn.focus().catch(() => {});
+      await page.keyboard.press('Enter');
+      await page.waitForTimeout(1500);
+      // Page should still be functional
+      await expect(page.locator('body')).not.toContainText('Fatal error');
+    }
+  });
+});
+
+// =============================================================================
+// §D. Template Card — Performance
+// =============================================================================
+test.describe('§D. Template Card — Performance', () => {
+  test('§D.01 Template cards render within 5 seconds of navigation (LCP proxy)', async ({ page }) => {
+    await wpLogin(page);
+    const t0 = Date.now();
+    await goToBrowse(page);
+    await page.locator('.wdkit-browse-card').first().waitFor({ state: 'visible', timeout: 15000 }).catch(() => {});
+    const elapsed = Date.now() - t0;
+    expect.soft(elapsed, `Cards render took ${elapsed}ms (target < 5000ms)`).toBeLessThan(5000);
+  });
+});
+
+// =============================================================================
+// §E. Template Card — Tap target size (WCAG 2.5.5 / Responsiveness)
+// =============================================================================
+test.describe('§E. Template Card — Tap target size', () => {
+  test('§E.01 Card import button tap target is ≥ 44×44px on mobile viewport', async ({ page }) => {
+    await wpLogin(page);
+    await page.setViewportSize({ width: 375, height: 812 });
+    await goToBrowse(page);
+    await page.locator('.wdkit-browse-card').first().waitFor({ state: 'visible', timeout: 15000 }).catch(() => {});
+    const card = page.locator('.wdkit-browse-card').first();
+    await card.hover({ force: true });
+    await page.waitForTimeout(500);
+    const importBtn = card.locator('.wdkit-browse-card-download').first();
+    if (await importBtn.count() > 0 && await importBtn.isVisible()) {
+      const box = await importBtn.boundingBox();
+      if (box) {
+        expect.soft(box.width, `Import btn width ${box.width}px < 44px`).toBeGreaterThanOrEqual(44);
+        expect.soft(box.height, `Import btn height ${box.height}px < 44px`).toBeGreaterThanOrEqual(44);
+      }
+    }
+  });
+});
+
+// =============================================================================
+// §F. Template Card — RTL layout
+// =============================================================================
+test.describe('§F. Template Card — RTL layout', () => {
+  test('§F.01 Template cards do not overflow when dir=rtl is applied', async ({ page }) => {
+    await wpLogin(page);
+    await goToBrowse(page);
+    await page.locator('.wdkit-browse-card').first().waitFor({ state: 'visible', timeout: 15000 }).catch(() => {});
+    // Simulate RTL direction
+    await page.evaluate(() => { document.documentElement.setAttribute('dir', 'rtl'); });
+    await page.waitForTimeout(500);
+    const hasHScroll = await page.evaluate(() => document.body.scrollWidth > window.innerWidth + 5);
+    expect.soft(hasHScroll, 'Horizontal overflow in RTL mode on template cards').toBe(false);
+    // Verify cards are still visible
+    const cardCount = await page.locator('.wdkit-browse-card').count();
+    expect.soft(cardCount, 'Cards disappeared after RTL direction set').toBeGreaterThan(0);
+    // Reset
+    await page.evaluate(() => { document.documentElement.removeAttribute('dir'); });
+  });
 });

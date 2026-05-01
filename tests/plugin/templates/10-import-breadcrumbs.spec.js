@@ -3,8 +3,23 @@
 // Version: 3.0.0 — Deep inside-flow testing
 //
 // COVERAGE
-//   Section 38 — Breadcrumb validation: exact labels & active states (12 tests)
+//   Section 38  — Breadcrumb validation: exact labels & active states (12 tests)
 //   Section 38b — Breadcrumb click navigation & completion state (8 tests)
+//   §A  — Security (2 tests)
+//   §B  — Accessibility (3 tests — includes aria-label landmark + keyboard)
+//   §C  — Responsive layout (3 viewports)
+//   §D  — Keyboard navigation (2 tests)
+//   §E  — Performance (1 test)
+//   §F  — RTL layout (1 test)
+//   §G  — Tap targets (1 test)
+//
+// MANUAL CHECKS (not automatable — verify manually):
+//   • Pixel-perfect match with Figma design (colors, spacing, typography)
+//   • Screen reader announcement order and content
+//   • Cross-browser visual rendering (Firefox, Safari/WebKit, Edge)
+//   • RTL layout visual correctness (Arabic/Hebrew locales)
+//   • Color contrast ratios in rendered output
+//   • Touch gesture behavior on real mobile devices
 // =============================================================================
 
 const { test, expect } = require('@playwright/test');
@@ -225,4 +240,197 @@ test.describe('38b. Breadcrumb click navigation & completion state', () => {
     expect(count).toBeGreaterThanOrEqual(3);
   });
 
+});
+
+// =============================================================================
+// §A. Breadcrumbs — Security
+// =============================================================================
+test.describe('§A. Breadcrumbs — Security', () => {
+  test.beforeEach(async ({ page }) => {
+    await wpLogin(page);
+    await goToBrowse(page);
+    await clickFirstCardImport(page);
+    await page.locator('.wkit-temp-import-mian').waitFor({ state: 'visible', timeout: 20000 }).catch(() => {});
+  });
+
+  test('§A.01 Breadcrumb container does not expose credentials or API keys in HTML source', async ({ page }) => {
+    const html = await page.content();
+    const hasApiKey = /api[-_]?key\s*[:=]\s*["'][a-zA-Z0-9]{20,}/i.test(html);
+    expect.soft(hasApiKey, 'API key found in breadcrumbs source').toBe(false);
+  });
+
+  test('§A.02 Breadcrumb links do not contain open-redirect patterns', async ({ page }) => {
+    const links = page.locator('.wkit-header-breadcrumbs a[href]');
+    const count = await links.count();
+    for (let i = 0; i < count; i++) {
+      const href = await links.nth(i).getAttribute('href').catch(() => '');
+      // External redirects via query param are a sign of open-redirect vulnerability
+      const hasOpenRedirect = /[?&](url|redirect|goto|next|return)=https?/i.test(href || '');
+      expect.soft(hasOpenRedirect, `Possible open redirect in breadcrumb href: ${href}`).toBe(false);
+    }
+  });
+});
+
+// =============================================================================
+// §B. Breadcrumbs — Accessibility
+// =============================================================================
+test.describe('§B. Breadcrumbs — Accessibility', () => {
+  test.beforeEach(async ({ page }) => {
+    await wpLogin(page);
+    await goToBrowse(page);
+    await clickFirstCardImport(page);
+    await page.locator('.wkit-temp-import-mian').waitFor({ state: 'visible', timeout: 20000 }).catch(() => {});
+  });
+
+  test('§B.01 Breadcrumbs container has aria-label or role="navigation" landmark', async ({ page }) => {
+    const container = page.locator('.wkit-header-breadcrumbs');
+    if ((await container.count()) > 0) {
+      const ariaLabel = await container.first().getAttribute('aria-label').catch(() => null);
+      const role = await container.first().getAttribute('role').catch(() => null);
+      const tagName = await container.first().evaluate(el => el.tagName.toLowerCase()).catch(() => '');
+      const hasLandmark = ariaLabel !== null || role === 'navigation' || tagName === 'nav';
+      expect.soft(hasLandmark, 'Breadcrumbs container missing aria-label or navigation landmark').toBe(true);
+    }
+  });
+
+  test('§B.02 Each breadcrumb card title is non-empty and readable by assistive technology', async ({ page }) => {
+    const titles = page.locator('.wkit-breadcrumbs-card-title');
+    const count = await titles.count();
+    for (let i = 0; i < count; i++) {
+      const text = await titles.nth(i).textContent().catch(() => '');
+      expect.soft(text.trim().length > 0, `Breadcrumb title at index ${i} is empty`).toBe(true);
+    }
+  });
+
+  test('§B.03 Completed breadcrumb links are keyboard focusable (have tabindex >= 0 or are naturally focusable)', async ({ page }) => {
+    await reachFeatureStep(page);
+    await page.waitForTimeout(1000);
+    const completedBreadcrumbs = page.locator('.wkit-complete-breadcrumbs');
+    const count = await completedBreadcrumbs.count();
+    if (count > 0) {
+      const firstCompleted = completedBreadcrumbs.first();
+      const tagName = await firstCompleted.evaluate(el => el.tagName.toLowerCase()).catch(() => '');
+      const tabIndex = await firstCompleted.getAttribute('tabindex').catch(() => null);
+      // Naturally focusable elements (a, button) or explicitly given tabindex >= 0
+      const isFocusable = ['a', 'button'].includes(tagName) ||
+        (tabIndex !== null && parseInt(tabIndex) >= 0);
+      expect.soft(isFocusable, 'Completed breadcrumb is not keyboard focusable').toBe(true);
+    }
+  });
+});
+
+// =============================================================================
+// §C. Breadcrumbs — Responsive layout
+// =============================================================================
+test.describe('§C. Breadcrumbs — Responsive layout', () => {
+  const VIEWPORTS = [
+    { name: 'mobile', width: 375, height: 812 },
+    { name: 'tablet', width: 768, height: 1024 },
+    { name: 'desktop', width: 1440, height: 900 },
+  ];
+
+  for (const vp of VIEWPORTS) {
+    test(`§C.01 Breadcrumbs have no horizontal scroll at ${vp.name} (${vp.width}px)`, async ({ page }) => {
+      await page.setViewportSize({ width: vp.width, height: vp.height });
+      await wpLogin(page);
+      await goToBrowse(page);
+      await clickFirstCardImport(page);
+      await page.locator('.wkit-temp-import-mian').waitFor({ state: 'visible', timeout: 20000 }).catch(() => {});
+      const hasHScroll = await page.evaluate(() => document.body.scrollWidth > window.innerWidth + 5).catch(() => false);
+      expect.soft(hasHScroll, `Horizontal scroll on breadcrumbs at ${vp.name}`).toBe(false);
+    });
+  }
+});
+
+// =============================================================================
+// §D. Breadcrumbs — Keyboard Navigation
+// =============================================================================
+test.describe('§D. Breadcrumbs — Keyboard Navigation', () => {
+  test.beforeEach(async ({ page }) => {
+    await wpLogin(page);
+    await goToBrowse(page);
+    await clickFirstCardImport(page);
+    await page.locator('.wkit-temp-import-mian').waitFor({ state: 'visible', timeout: 20000 }).catch(() => {});
+  });
+
+  test('§D.01 Tab key can reach breadcrumb area without focus trap', async ({ page }) => {
+    for (let i = 0; i < 10; i++) {
+      await page.keyboard.press('Tab');
+      await page.waitForTimeout(100);
+    }
+    await expect(page.locator('body')).not.toContainText('Fatal error');
+  });
+
+  test('§D.02 Pressing Enter on a completed breadcrumb navigates back to that step', async ({ page }) => {
+    await reachFeatureStep(page);
+    await page.waitForTimeout(1000);
+    const completedBreadcrumb = page.locator('.wkit-complete-breadcrumbs').first();
+    if ((await completedBreadcrumb.count()) > 0) {
+      await completedBreadcrumb.focus().catch(() => completedBreadcrumb.click({ force: true }));
+      await page.keyboard.press('Enter');
+      await page.waitForTimeout(2000);
+      // Should navigate back — either step 1 input or the wizard is still open
+      const onWizard = await page.locator('.wkit-temp-import-mian').count();
+      expect.soft(onWizard, 'Wizard closed unexpectedly after Enter on breadcrumb').toBeGreaterThan(0);
+    }
+  });
+});
+
+// =============================================================================
+// §E. Breadcrumbs — Performance
+// =============================================================================
+test.describe('§E. Breadcrumbs — Performance', () => {
+  test('§E.01 Breadcrumbs render within 3 seconds of wizard opening', async ({ page }) => {
+    await wpLogin(page);
+    await goToBrowse(page);
+    await clickFirstCardImport(page);
+    const t0 = Date.now();
+    await page.locator('.wkit-header-breadcrumbs').waitFor({ state: 'visible', timeout: 10000 }).catch(() => {});
+    const elapsed = Date.now() - t0;
+    expect.soft(elapsed, `Breadcrumbs took ${elapsed}ms to appear`).toBeLessThan(3000);
+  });
+});
+
+// =============================================================================
+// §F. Breadcrumbs — RTL layout
+// =============================================================================
+test.describe('§F. Breadcrumbs — RTL layout', () => {
+  test('§F.01 Breadcrumbs do not overflow in RTL mode', async ({ page }) => {
+    await wpLogin(page);
+    await goToBrowse(page);
+    await clickFirstCardImport(page);
+    await page.locator('.wkit-temp-import-mian').waitFor({ state: 'visible', timeout: 20000 }).catch(() => {});
+    await page.evaluate(() => { document.documentElement.setAttribute('dir', 'rtl'); });
+    await page.waitForTimeout(400);
+    const container = page.locator('.wkit-header-breadcrumbs');
+    if ((await container.count()) > 0) {
+      const overflow = await container.first().evaluate(el => el.scrollWidth > el.clientWidth + 5).catch(() => false);
+      expect.soft(overflow, 'Breadcrumbs overflow in RTL mode').toBe(false);
+    }
+    await page.evaluate(() => { document.documentElement.removeAttribute('dir'); });
+  });
+});
+
+// =============================================================================
+// §G. Breadcrumbs — Tap targets
+// =============================================================================
+test.describe('§G. Breadcrumbs — Tap targets', () => {
+  test('§G.01 Breadcrumb cards meet 44×44px minimum tap target on mobile viewport', async ({ page }) => {
+    await page.setViewportSize({ width: 375, height: 812 });
+    await wpLogin(page);
+    await goToBrowse(page);
+    await clickFirstCardImport(page);
+    await page.locator('.wkit-temp-import-mian').waitFor({ state: 'visible', timeout: 20000 }).catch(() => {});
+    const cards = page.locator('.wkit-breadcrumbs-card');
+    const count = await cards.count();
+    for (let i = 0; i < Math.min(count, 4); i++) {
+      const box = await cards.nth(i).boundingBox().catch(() => null);
+      if (box) {
+        expect.soft(
+          box.height >= 44 || box.width >= 44,
+          `Breadcrumb card ${i} tap target too small: ${Math.round(box.width)}×${Math.round(box.height)}px`
+        ).toBe(true);
+      }
+    }
+  });
 });

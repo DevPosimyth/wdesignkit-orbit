@@ -6,11 +6,24 @@
 //   Section 71 — WP Admin pages created after import (8 tests)
 //   Section 72 — Required plugins installed & activated after import (8 tests)
 //   Section 73 — Global colors & typography added to Elementor kit (8 tests)
-//   Section 74 — Re-import same template: duplicate handling (6 tests)  ← NEW
+//   Section 74 — Re-import same template: duplicate handling (6 tests)
+//   §A  — Responsive layout (3 viewports on WP Admin pages list)
+//   §B  — Keyboard navigation (1 test)
+//   §C  — Performance (1 test)
+//   §D  — RTL layout (1 test)
+//   §E  — Tap targets (1 test)
 //
 // ALL sections are gated by WDKIT_TOKEN — require a completed import.
 // Tests navigate to WP Admin areas (/wp-admin/edit.php?post_type=page,
 // /wp-admin/plugins.php, /) to verify post-import side effects.
+//
+// MANUAL CHECKS (not automatable — verify manually):
+//   • Pixel-perfect match with Figma design (colors, spacing, typography)
+//   • Screen reader announcement order and content
+//   • Cross-browser visual rendering (Firefox, Safari/WebKit, Edge)
+//   • RTL layout visual correctness (Arabic/Hebrew locales)
+//   • Color contrast ratios in rendered output
+//   • Touch gesture behavior on real mobile devices
 // =============================================================================
 
 const { test, expect } = require('@playwright/test');
@@ -564,4 +577,100 @@ test.describe('74. Re-import same template — duplicate handling', () => {
     }
   });
 
+});
+
+// =============================================================================
+// §A. Post-Import — Responsive layout
+// =============================================================================
+test.describe('§A. Post-Import — Responsive layout', () => {
+  const VIEWPORTS = [
+    { name: 'mobile', width: 375, height: 812 },
+    { name: 'tablet', width: 768, height: 1024 },
+    { name: 'desktop', width: 1440, height: 900 },
+  ];
+
+  for (const vp of VIEWPORTS) {
+    test(`§A.01 WP Admin pages list has no horizontal scroll at ${vp.name} (${vp.width}px)`, async ({ page }) => {
+      test.skip(!WDKIT_TOKEN, 'Requires API token for import to complete');
+      await page.setViewportSize({ width: vp.width, height: vp.height });
+      await triggerDummyImportAndVerify(page);
+      await page.goto('/wp-admin/edit.php?post_type=page');
+      await page.waitForLoadState('domcontentloaded', { timeout: 20000 });
+      const hasHScroll = await page.evaluate(() => document.body.scrollWidth > window.innerWidth + 5).catch(() => false);
+      expect.soft(hasHScroll, `Horizontal scroll on WP Admin pages list at ${vp.name}`).toBe(false);
+    });
+  }
+});
+
+// =============================================================================
+// §B. Post-Import — Keyboard Navigation
+// =============================================================================
+test.describe('§B. Post-Import — Keyboard Navigation', () => {
+  test('§B.01 Tab navigates through WP Admin pages list without focus trap', async ({ page }) => {
+    test.skip(!WDKIT_TOKEN, 'Requires API token for import to complete');
+    await triggerDummyImportAndVerify(page);
+    await page.goto('/wp-admin/edit.php?post_type=page');
+    await page.waitForLoadState('domcontentloaded', { timeout: 20000 });
+    for (let i = 0; i < 8; i++) {
+      await page.keyboard.press('Tab');
+      await page.waitForTimeout(100);
+    }
+    await expect(page.locator('body')).not.toContainText('Fatal error');
+  });
+});
+
+// =============================================================================
+// §C. Post-Import — Performance
+// =============================================================================
+test.describe('§C. Post-Import — Performance', () => {
+  test('§C.01 WP Admin pages list loads within 5 seconds after import', async ({ page }) => {
+    test.skip(!WDKIT_TOKEN, 'Requires API token for import to complete');
+    await triggerDummyImportAndVerify(page);
+    const t0 = Date.now();
+    await page.goto('/wp-admin/edit.php?post_type=page');
+    await page.waitForLoadState('domcontentloaded', { timeout: 20000 });
+    const elapsed = Date.now() - t0;
+    expect.soft(elapsed, `WP Admin pages list took ${elapsed}ms to load`).toBeLessThan(5000);
+  });
+});
+
+// =============================================================================
+// §D. Post-Import — RTL layout
+// =============================================================================
+test.describe('§D. Post-Import — RTL layout', () => {
+  test('§D.01 WP Admin pages list does not overflow in RTL mode after import', async ({ page }) => {
+    test.skip(!WDKIT_TOKEN, 'Requires API token for import to complete');
+    await triggerDummyImportAndVerify(page);
+    await page.goto('/wp-admin/edit.php?post_type=page');
+    await page.waitForLoadState('domcontentloaded', { timeout: 20000 });
+    await page.evaluate(() => { document.documentElement.setAttribute('dir', 'rtl'); });
+    await page.waitForTimeout(400);
+    const hasHScroll = await page.evaluate(() => document.body.scrollWidth > window.innerWidth + 5).catch(() => false);
+    expect.soft(hasHScroll, 'WP Admin pages list overflows in RTL mode').toBe(false);
+    await page.evaluate(() => { document.documentElement.removeAttribute('dir'); });
+  });
+});
+
+// =============================================================================
+// §E. Post-Import — Tap targets
+// =============================================================================
+test.describe('§E. Post-Import — Tap targets', () => {
+  test('§E.01 Primary action buttons in WP Admin pages list meet 44×44px tap target on mobile', async ({ page }) => {
+    test.skip(!WDKIT_TOKEN, 'Requires API token for import to complete');
+    await page.setViewportSize({ width: 375, height: 812 });
+    await triggerDummyImportAndVerify(page);
+    await page.goto('/wp-admin/edit.php?post_type=page');
+    await page.waitForLoadState('domcontentloaded', { timeout: 20000 });
+    // Check the Add New button as it is the primary call-to-action
+    const addNew = page.locator('.page-title-action, .wrap .page-title-action').first();
+    if ((await addNew.count()) > 0) {
+      const box = await addNew.boundingBox().catch(() => null);
+      if (box) {
+        expect.soft(
+          box.height >= 44 || box.width >= 44,
+          `Add New button tap target too small: ${Math.round(box.width)}×${Math.round(box.height)}px`
+        ).toBe(true);
+      }
+    }
+  });
 });

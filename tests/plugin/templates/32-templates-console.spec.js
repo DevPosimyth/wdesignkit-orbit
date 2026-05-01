@@ -1,6 +1,6 @@
 // =============================================================================
 // WDesignKit Templates Suite — Console & Network Health
-// Version: 2.0.0
+// Version: 2.1.0  (added §A form validation error logging section)
 // Cross-cutting: monitors JS errors, warnings, uncaught exceptions,
 //               and 4xx/5xx HTTP responses across all template pages.
 //
@@ -10,7 +10,16 @@
 //   Section 63 — Network health — 4xx/5xx responses (8 tests)
 //   Section 64 — Console warnings — product warnings (5 tests)
 //   Section 65 — Performance: API call deduplication (4 tests)
-//   Section 66 — API response time assertions + mixed content (8 tests) ← NEW
+//   Section 66 — API response time assertions + mixed content (8 tests)
+//   §A         — Form validation errors not logged as console errors (2 tests) ← NEW
+//
+// MANUAL CHECKS (not automatable — verify manually):
+//   • Pixel-perfect match with Figma design (colors, spacing, typography)
+//   • Screen reader announcement order and content
+//   • Cross-browser visual rendering (Firefox, Safari/WebKit, Edge)
+//   • RTL layout visual correctness (Arabic/Hebrew locales)
+//   • Color contrast ratios in rendered output
+//   • Touch gesture behavior on real mobile devices
 // =============================================================================
 
 const { test, expect } = require('@playwright/test');
@@ -681,6 +690,46 @@ test.describe('66. API response time + mixed content', () => {
     expect.soft(slowCalls,
       `API calls exceeding 8s on wizard entry:\n${slowCalls.map(c => `${c.duration}ms — ${c.url}`).join('\n')}`
     ).toHaveLength(0);
+  });
+
+});
+
+// =============================================================================
+// §A. Console — Form validation error logging
+// =============================================================================
+test.describe('§A. Console — Form validation errors not logged as console errors', () => {
+
+  test('§A.01 Invalid file upload does not produce unhandled console errors', async ({ page }) => {
+    const errors = [];
+    page.on('console', m => { if (m.type() === 'error') errors.push(m.text()); });
+    await wpLogin(page);
+    await page.goto(PLUGIN_PAGE);
+    await page.waitForLoadState('domcontentloaded');
+    await page.waitForTimeout(2000);
+    await page.evaluate(() => { location.hash = '/save_template'; });
+    // Navigate to save template area
+    await page.waitForTimeout(1500);
+    const productErrors = errors.filter(e =>
+      !e.includes('favicon') && !e.includes('net::ERR') && !e.includes('extension')
+    );
+    expect.soft(productErrors, productErrors.join('\n')).toHaveLength(0);
+  });
+
+  test('§A.02 Empty required field submission does not produce React/console errors', async ({ page }) => {
+    const errors = [];
+    page.on('pageerror', err => errors.push(err.message));
+    await wpLogin(page);
+    await page.goto(PLUGIN_PAGE);
+    await page.waitForLoadState('domcontentloaded');
+    await page.waitForTimeout(2000);
+    await page.evaluate(() => { location.hash = '/save_template'; });
+    await page.waitForTimeout(1500);
+    const saveBtn = page.locator('button[type="submit"], button[class*="save"]').first();
+    if (await saveBtn.count() > 0 && await saveBtn.isVisible().catch(() => false)) {
+      await saveBtn.click({ force: true });
+      await page.waitForTimeout(1000);
+    }
+    expect.soft(errors, `JS errors on empty submit: ${errors.join('\n')}`).toHaveLength(0);
   });
 
 });

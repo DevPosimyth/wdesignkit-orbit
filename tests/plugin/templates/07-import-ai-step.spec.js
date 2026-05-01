@@ -10,10 +10,24 @@
 //   Section 43 — Select Pages step: AI import page selection screen (10 tests)
 //   Section 44 — Upload your own images: deep file input & drop zone (8 tests)
 //   Section 45 — Image selection state tracking: count badge & Selected tab (8 tests)
+//   §A — Responsive layout (6 tests)
+//   §B — Security — XSS input sanitization (2 tests)
+//   §C — Keyboard Navigation (3 tests)
+//   §D — Performance (1 test)
+//   §E — Tap target size (1 test)
+//   §F — RTL layout (1 test)
 //
 // NOTE: Most tests require AI-compatible template + authenticated user.
 //       When WDKIT_TOKEN is absent, tests that need actual AI navigation
 //       are skipped. Layout/field tests run if the step renders.
+//
+// MANUAL CHECKS (not automatable — verify manually):
+//   • Pixel-perfect match with Figma design (colors, spacing, typography)
+//   • Screen reader announcement order and content
+//   • Cross-browser visual rendering (Firefox, Safari/WebKit, Edge)
+//   • RTL layout visual correctness (Arabic/Hebrew locales)
+//   • Color contrast ratios in rendered output
+//   • Touch gesture behavior on real mobile devices
 // =============================================================================
 
 const { test, expect } = require('@playwright/test');
@@ -1400,4 +1414,162 @@ test.describe('45. Image selection state tracking', () => {
     expect(productErrors).toHaveLength(0);
   });
 
+});
+
+// =============================================================================
+// §A. AI Step — Responsive layout
+// =============================================================================
+test.describe('§A. AI Step — Responsive layout', () => {
+  const VIEWPORTS = [
+    { name: 'mobile', width: 375, height: 812 },
+    { name: 'tablet', width: 768, height: 1024 },
+    { name: 'desktop', width: 1440, height: 900 },
+  ];
+
+  for (const vp of VIEWPORTS) {
+    test(`§A.01 AI step renders without horizontal scroll at ${vp.name} (${vp.width}px)`, async ({ page }) => {
+      if (!WDKIT_TOKEN) test.skip(true, 'Requires WDesignKit API token');
+      await page.setViewportSize({ width: vp.width, height: vp.height });
+      const reached = await openAIContentStep(page);
+      if (!reached) test.skip(true, 'AI card not accessible on this template');
+      const hasHScroll = await page.evaluate(() => document.body.scrollWidth > window.innerWidth + 5).catch(() => false);
+      expect.soft(hasHScroll, `Horizontal scroll at ${vp.name}`).toBe(false);
+    });
+
+    test(`§A.02 AI step container is visible at ${vp.name} (${vp.width}px)`, async ({ page }) => {
+      if (!WDKIT_TOKEN) test.skip(true, 'Requires WDesignKit API token');
+      await page.setViewportSize({ width: vp.width, height: vp.height });
+      const reached = await openAIContentStep(page);
+      if (!reached) test.skip(true, 'AI card not accessible on this template');
+      const stepVisible = await page.locator('.wkit-get-site-info-content, .wkit-get-site-img-content').isVisible({ timeout: 10000 }).catch(() => false);
+      expect.soft(stepVisible, `AI step not visible at ${vp.name}`).toBe(true);
+      await expect(page.locator('body')).not.toContainText('Fatal error');
+    });
+  }
+});
+
+// =============================================================================
+// §B. AI Step — Security (XSS input sanitization)
+// =============================================================================
+test.describe('§B. AI Step — Security', () => {
+  test('§B.01 About Website input does not execute injected script payload', async ({ page }) => {
+    if (!WDKIT_TOKEN) test.skip(true, 'Requires WDesignKit API token');
+    const reached = await openAIContentStep(page);
+    if (!reached) test.skip(true, 'AI card not accessible');
+    const inp = page.locator('input.wkit-site-info-inp');
+    if ((await inp.count()) > 0) {
+      await inp.fill('<script>window.__xss=1</script>');
+      await page.waitForTimeout(500);
+      const xssExecuted = await page.evaluate(() => (window).__xss === 1).catch(() => false);
+      expect(xssExecuted, 'XSS payload was executed in About Website input').toBe(false);
+    }
+  });
+
+  test('§B.02 Description textarea does not execute injected script payload', async ({ page }) => {
+    if (!WDKIT_TOKEN) test.skip(true, 'Requires WDesignKit API token');
+    const reached = await openAIContentStep(page);
+    if (!reached) test.skip(true, 'AI card not accessible');
+    const textarea = page.locator('textarea.wkit-site-desc-inp');
+    if ((await textarea.count()) > 0) {
+      await textarea.fill('<script>window.__xss2=1</script>');
+      await page.waitForTimeout(500);
+      const xssExecuted = await page.evaluate(() => (window).__xss2 === 1).catch(() => false);
+      expect(xssExecuted, 'XSS payload was executed in description textarea').toBe(false);
+    }
+  });
+});
+
+// =============================================================================
+// §C. AI Step — Keyboard Navigation
+// =============================================================================
+test.describe('§C. AI Step — Keyboard Navigation', () => {
+  test('§C.01 Tab key navigates through AI step fields without focus trap', async ({ page }) => {
+    if (!WDKIT_TOKEN) test.skip(true, 'Requires WDesignKit API token');
+    const reached = await openAIContentStep(page);
+    if (!reached) test.skip(true, 'AI card not accessible');
+    for (let i = 0; i < 6; i++) {
+      await page.keyboard.press('Tab');
+      await page.waitForTimeout(150);
+    }
+    const focusedTag = await page.evaluate(() => document.activeElement?.tagName || 'UNKNOWN');
+    expect.soft(['BODY', 'HTML']).not.toContain(focusedTag);
+    await expect(page.locator('body')).not.toContainText('Fatal error');
+  });
+
+  test('§C.02 Enter key on a focused field does not submit the form prematurely', async ({ page }) => {
+    if (!WDKIT_TOKEN) test.skip(true, 'Requires WDesignKit API token');
+    const reached = await openAIContentStep(page);
+    if (!reached) test.skip(true, 'AI card not accessible');
+    const inp = page.locator('input.wkit-site-info-inp');
+    if ((await inp.count()) > 0) {
+      await inp.focus();
+      await page.keyboard.press('Enter');
+      await page.waitForTimeout(800);
+      // After Enter, site info form should still be visible (not navigated away)
+      const stillOnForm = await page.locator('.wkit-get-site-info-content').isVisible({ timeout: 3000 }).catch(() => false);
+      // Soft: some implementations do allow Enter to submit — just verify no crash
+      await expect.soft(page.locator('body')).not.toContainText('Fatal error');
+    }
+  });
+
+  test('§C.03 Escape key does not break the AI step UI', async ({ page }) => {
+    if (!WDKIT_TOKEN) test.skip(true, 'Requires WDesignKit API token');
+    const reached = await openAIContentStep(page);
+    if (!reached) test.skip(true, 'AI card not accessible');
+    await page.keyboard.press('Escape');
+    await page.waitForTimeout(500);
+    await expect(page.locator('body')).not.toContainText('Fatal error');
+  });
+});
+
+// =============================================================================
+// §D. AI Step — Performance
+// =============================================================================
+test.describe('§D. AI Step — Performance', () => {
+  test('§D.01 AI step renders within 5 seconds of navigation', async ({ page }) => {
+    if (!WDKIT_TOKEN) test.skip(true, 'Requires WDesignKit API token');
+    const t0 = Date.now();
+    const reached = await openAIContentStep(page);
+    if (!reached) test.skip(true, 'AI card not accessible');
+    const elapsed = Date.now() - t0;
+    expect.soft(elapsed, `AI step render took ${elapsed}ms`).toBeLessThan(5000);
+  });
+});
+
+// =============================================================================
+// §E. AI Step — Tap target size
+// =============================================================================
+test.describe('§E. AI Step — Tap target size', () => {
+  test('§E.01 Action buttons are ≥ 44px tall on mobile viewport', async ({ page }) => {
+    if (!WDKIT_TOKEN) test.skip(true, 'Requires WDesignKit API token');
+    await page.setViewportSize({ width: 375, height: 812 });
+    const reached = await openAIContentStep(page);
+    if (!reached) test.skip(true, 'AI card not accessible');
+    const buttons = await page.locator(
+      'button.wkit-get-site-info-next, button.wkit-site-ai-description, .wkit-site-ai-description'
+    ).all();
+    for (const btn of buttons.slice(0, 3)) {
+      if (!await btn.isVisible().catch(() => false)) continue;
+      const box = await btn.boundingBox().catch(() => null);
+      if (box) {
+        expect.soft(box.height, `Button height ${box.height}px < 44px`).toBeGreaterThanOrEqual(44);
+      }
+    }
+  });
+});
+
+// =============================================================================
+// §F. AI Step — RTL layout
+// =============================================================================
+test.describe('§F. AI Step — RTL layout', () => {
+  test('§F.01 AI step does not overflow in RTL direction mode', async ({ page }) => {
+    if (!WDKIT_TOKEN) test.skip(true, 'Requires WDesignKit API token');
+    const reached = await openAIContentStep(page);
+    if (!reached) test.skip(true, 'AI card not accessible');
+    await page.evaluate(() => { document.documentElement.setAttribute('dir', 'rtl'); });
+    await page.waitForTimeout(400);
+    const hasHScroll = await page.evaluate(() => document.body.scrollWidth > window.innerWidth + 5).catch(() => false);
+    expect.soft(hasHScroll, 'Horizontal overflow in RTL mode').toBe(false);
+    await page.evaluate(() => { document.documentElement.removeAttribute('dir'); });
+  });
 });

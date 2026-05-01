@@ -21,6 +21,14 @@
 //   Section 39 — Console & network health in editor context (4 tests)
 //   Section 40 — XSS, keyboard accessibility & popup security (7 tests) ← NEW
 //
+// MANUAL CHECKS (not automatable — verify manually):
+//   • Pixel-perfect match with Figma design (colors, spacing, typography)
+//   • Screen reader announcement order and content
+//   • Cross-browser visual rendering (Firefox, Safari/WebKit, Edge)
+//   • RTL layout visual correctness (Arabic/Hebrew locales)
+//   • Color contrast ratios in rendered output
+//   • Touch gesture behavior on real mobile devices
+//
 // KEY SELECTORS
 //   #wdkit-elementor                     — Elementor dialog ID
 //   .wkit-contentbox-modal.wdkit-elementor — Elementor popup class
@@ -568,6 +576,182 @@ test.describe('40. Select Template — XSS, keyboard accessibility & popup secur
       expect.soft(mixedContent,
         `Mixed content (HTTP on HTTPS) in select-template flow:\n${mixedContent.join('\n')}`
       ).toHaveLength(0);
+    }
+  });
+
+});
+
+// =============================================================================
+// §A. Select Template — Performance
+// =============================================================================
+test.describe('§A. Select Template — Performance', () => {
+
+  test('§A.01 Browse page (select template source) loads within 5 seconds', async ({ page }) => {
+    await wpLogin(page);
+    const t0 = Date.now();
+    await page.goto(PLUGIN_PAGE);
+    await page.waitForLoadState('domcontentloaded');
+    await page.waitForTimeout(500);
+    await page.evaluate(() => { location.hash = '/browse'; });
+    await page.locator('#wdesignkit-app').waitFor({ state: 'visible', timeout: 8000 });
+    const elapsed = Date.now() - t0;
+    expect.soft(elapsed, `Browse/Select Template load took ${elapsed}ms`).toBeLessThan(5000);
+  });
+
+  test('§A.02 No more than 10 API requests on initial browse page load', async ({ page }) => {
+    let apiCount = 0;
+    page.on('request', req => {
+      if (req.url().includes('admin-ajax.php') || req.url().includes('/wdesignkit/')) apiCount++;
+    });
+    await wpLogin(page);
+    await page.goto(PLUGIN_PAGE);
+    await page.waitForLoadState('domcontentloaded');
+    await page.evaluate(() => { location.hash = '/browse'; });
+    await page.waitForTimeout(2000);
+    expect.soft(apiCount, `Too many API requests: ${apiCount}`).toBeLessThan(10);
+  });
+
+});
+
+// =============================================================================
+// §B. Select Template — Keyboard Navigation
+// =============================================================================
+test.describe('§B. Select Template — Keyboard Navigation', () => {
+
+  test.beforeEach(async ({ page }) => {
+    await wpLogin(page);
+    await page.goto(PLUGIN_PAGE);
+    await page.waitForLoadState('domcontentloaded');
+    await page.waitForTimeout(1000);
+    await page.evaluate(() => { location.hash = '/browse'; });
+    await page.waitForTimeout(3000);
+  });
+
+  test('§B.01 Tab key navigates through template cards on browse page without trap', async ({ page }) => {
+    for (let i = 0; i < 6; i++) {
+      await page.keyboard.press('Tab');
+      await page.waitForTimeout(150);
+    }
+    await expect(page.locator('body')).not.toContainText('Fatal error');
+    const focused = await page.evaluate(() => document.activeElement?.tagName);
+    expect.soft(['BODY', 'HTML']).not.toContain(focused);
+  });
+
+  test('§B.02 Import button on a template card is keyboard accessible (tabIndex >= 0)', async ({ page }) => {
+    const card = page.locator('.wdkit-browse-card').first();
+    if (await card.isVisible({ timeout: 10000 }).catch(() => false)) {
+      await card.hover({ force: true });
+      await page.waitForTimeout(300);
+      const importBtn = card.locator('.wdkit-browse-card-download').first();
+      if (await importBtn.count() > 0) {
+        const isTabable = await importBtn.evaluate(
+          el => el.tabIndex >= 0
+        ).catch(() => false);
+        expect.soft(isTabable, 'Import button on template card is not keyboard accessible').toBe(true);
+      }
+    }
+  });
+
+  test('§B.03 Enter key on import button opens the import wizard', async ({ page }) => {
+    const card = page.locator('.wdkit-browse-card').first();
+    if (await card.isVisible({ timeout: 10000 }).catch(() => false)) {
+      await card.hover({ force: true });
+      await page.waitForTimeout(300);
+      const importBtn = card.locator('.wdkit-browse-card-download').first();
+      if (await importBtn.isVisible({ timeout: 2000 }).catch(() => false)) {
+        await importBtn.focus();
+        await importBtn.press('Enter');
+        await page.waitForTimeout(2000);
+        await expect(page.locator('body')).not.toContainText('Fatal error');
+      }
+    }
+  });
+
+  test('§B.04 Escape key closes import wizard without crash', async ({ page }) => {
+    const card = page.locator('.wdkit-browse-card').first();
+    if (await card.isVisible({ timeout: 10000 }).catch(() => false)) {
+      await card.hover({ force: true });
+      await page.waitForTimeout(300);
+      const importBtn = card.locator('.wdkit-browse-card-download').first();
+      if (await importBtn.isVisible({ timeout: 2000 }).catch(() => false)) {
+        await importBtn.click({ force: true });
+        await page.waitForTimeout(2000);
+        await page.keyboard.press('Escape');
+        await page.waitForTimeout(1000);
+        await expect(page.locator('body')).not.toContainText('Fatal error');
+      }
+    }
+  });
+
+});
+
+// =============================================================================
+// §C. Select Template — RTL layout
+// =============================================================================
+test.describe('§C. Select Template — RTL layout', () => {
+
+  test.beforeEach(async ({ page }) => {
+    await wpLogin(page);
+    await page.goto(PLUGIN_PAGE);
+    await page.waitForLoadState('domcontentloaded');
+    await page.waitForTimeout(1000);
+    await page.evaluate(() => { location.hash = '/browse'; });
+    await page.waitForTimeout(3000);
+  });
+
+  test('§C.01 Browse/Select Template page does not overflow in RTL direction', async ({ page }) => {
+    await page.evaluate(() => { document.documentElement.setAttribute('dir', 'rtl'); });
+    await page.waitForTimeout(400);
+    const hasHScroll = await page.evaluate(() => document.body.scrollWidth > window.innerWidth + 5);
+    expect.soft(hasHScroll, 'Overflow in RTL mode on Browse/Select Template page').toBe(false);
+    await page.evaluate(() => { document.documentElement.removeAttribute('dir'); });
+  });
+
+  test('§C.02 RTL mode does not crash the browse page', async ({ page }) => {
+    await page.evaluate(() => { document.documentElement.setAttribute('dir', 'rtl'); });
+    await page.waitForTimeout(600);
+    await expect(page.locator('body')).not.toContainText('Fatal error');
+    await page.evaluate(() => { document.documentElement.removeAttribute('dir'); });
+  });
+
+});
+
+// =============================================================================
+// §D. Select Template — Tap target size (mobile)
+// =============================================================================
+test.describe('§D. Select Template — Tap target size', () => {
+
+  test.beforeEach(async ({ page }) => {
+    await page.setViewportSize({ width: 375, height: 812 });
+    await wpLogin(page);
+    await page.goto(PLUGIN_PAGE);
+    await page.waitForLoadState('domcontentloaded');
+    await page.waitForTimeout(1000);
+    await page.evaluate(() => { location.hash = '/browse'; });
+    await page.waitForTimeout(3000);
+  });
+
+  test('§D.01 Template card import/select button meets 44×44px tap target on mobile', async ({ page }) => {
+    const card = page.locator('.wdkit-browse-card').first();
+    if (await card.isVisible({ timeout: 10000 }).catch(() => false)) {
+      await card.hover({ force: true });
+      await page.waitForTimeout(300);
+      const importBtn = card.locator('.wdkit-browse-card-download').first();
+      if (await importBtn.isVisible({ timeout: 2000 }).catch(() => false)) {
+        const box = await importBtn.boundingBox();
+        if (box) {
+          expect.soft(box.width, `Import button width ${box.width}px below 44px tap target`).toBeGreaterThanOrEqual(44);
+          expect.soft(box.height, `Import button height ${box.height}px below 44px tap target`).toBeGreaterThanOrEqual(44);
+        }
+      }
+    }
+  });
+
+  test('§D.02 Browse page renders without horizontal overflow at 375px mobile', async ({ page }) => {
+    const container = page.locator('#wdesignkit-app').first();
+    if (await container.count() > 0) {
+      const overflow = await container.evaluate(el => el.scrollWidth > el.clientWidth + 5).catch(() => false);
+      expect.soft(overflow, 'Browse page overflows horizontally at 375px mobile viewport').toBe(false);
     }
   });
 

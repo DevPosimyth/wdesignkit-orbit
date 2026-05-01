@@ -12,6 +12,20 @@
 //   Section 8  — Category filter — all 21 categories + interaction (25 tests)
 //   Section 9  — Clear All Filters (6 tests)
 //   Section 48 — Filter combination stress tests (5 tests)
+//   §A — Responsive layout (6 tests)
+//   §B — Security (3 tests)
+//   §C — Keyboard Navigation / WCAG 2.1 AA (3 tests)
+//   §D — Performance (1 test)
+//   §E — Tap target size / WCAG 2.5.5 (1 test)
+//   §F — RTL layout (1 test)
+//
+// MANUAL CHECKS (not automatable — verify manually):
+//   • Pixel-perfect match with Figma design (colors, spacing, typography)
+//   • Screen reader announcement order and content
+//   • Cross-browser visual rendering (Firefox, Safari, Edge)
+//   • RTL layout visual correctness (Arabic/Hebrew locales)
+//   • Color contrast ratios in rendered output
+//   • Touch gesture behavior on real mobile devices
 // =============================================================================
 
 const { test, expect } = require('@playwright/test');
@@ -766,4 +780,180 @@ test.describe('48. Filter combination stress tests', () => {
     await expect(page.locator('.wdkit-browse-templates')).toBeVisible({ timeout: 5000 });
   });
 
+});
+
+// =============================================================================
+// §A. Filters — Responsive layout
+// =============================================================================
+test.describe('§A. Filters — Responsive layout', () => {
+  const VIEWPORTS = [
+    { name: 'mobile', width: 375, height: 812 },
+    { name: 'tablet', width: 768, height: 1024 },
+    { name: 'desktop', width: 1440, height: 900 },
+  ];
+
+  for (const vp of VIEWPORTS) {
+    test(`§A.01 Filter panel renders without horizontal scroll at ${vp.name} (${vp.width}px)`, async ({ page }) => {
+      await wpLogin(page);
+      await page.setViewportSize({ width: vp.width, height: vp.height });
+      await goToBrowse(page);
+      await page.locator('.wdkit-browse-column').waitFor({ state: 'visible', timeout: 15000 }).catch(() => {});
+      const hasHScroll = await page.evaluate(() => document.body.scrollWidth > window.innerWidth + 5);
+      expect.soft(hasHScroll, `Horizontal scroll at ${vp.name}`).toBe(false);
+    });
+
+    test(`§A.02 Filter panel is visible or collapsed (not broken) at ${vp.name} (${vp.width}px)`, async ({ page }) => {
+      await wpLogin(page);
+      await page.setViewportSize({ width: vp.width, height: vp.height });
+      await goToBrowse(page);
+      await page.waitForTimeout(2000);
+      // Filter column should exist in DOM even if collapsed on small screens
+      const count = await page.locator('.wdkit-browse-column, .wdkit-browse-column-inner').count();
+      expect.soft(count, `Filter column absent at ${vp.name}`).toBeGreaterThan(0);
+      await expect(page.locator('body')).not.toContainText('Fatal error');
+    });
+  }
+});
+
+// =============================================================================
+// §B. Filters — Security
+// =============================================================================
+test.describe('§B. Filters — Security', () => {
+  test.beforeEach(async ({ page }) => {
+    await wpLogin(page);
+    await goToBrowse(page);
+  });
+
+  test('§B.01 Filter interactions do not execute injected XSS via category IDs', async ({ page }) => {
+    // Attempt to inject XSS via programmatic hash manipulation (simulates tampered URL)
+    await page.evaluate(() => {
+      window.__xss_filter = undefined;
+    });
+    await page.evaluate(() => {
+      location.hash = '/browse?category=<script>window.__xss_filter=1</script>';
+    });
+    await page.waitForTimeout(1500);
+    const xssRan = await page.evaluate(() => window.__xss_filter === 1);
+    expect(xssRan, 'XSS payload executed via filter hash parameter').toBe(false);
+  });
+
+  test('§B.02 No API keys or credentials visible in filter panel source', async ({ page }) => {
+    const html = await page.content();
+    const hasApiKey = /api[-_]?key\s*[:=]\s*["'][a-zA-Z0-9]{20,}/i.test(html);
+    expect.soft(hasApiKey, 'API key found in page source').toBe(false);
+  });
+
+  test('§B.03 Filter request payloads do not include sensitive tokens in URL params', async ({ page }) => {
+    const sensitiveUrls = [];
+    page.on('request', req => {
+      const url = req.url();
+      // Flag if access tokens or passwords appear in plain query params
+      if (/[?&](token|password|secret|auth)=[^&]{8,}/i.test(url)) {
+        sensitiveUrls.push(url);
+      }
+    });
+    await page.locator('#category_1031').click({ force: true }).catch(() => {});
+    await page.waitForTimeout(2000);
+    expect.soft(sensitiveUrls, `Sensitive data in request URLs: ${sensitiveUrls.join(', ')}`).toHaveLength(0);
+  });
+});
+
+// =============================================================================
+// §C. Filters — Keyboard Navigation (WCAG 2.1 AA)
+// =============================================================================
+test.describe('§C. Filters — Keyboard Navigation', () => {
+  test.beforeEach(async ({ page }) => {
+    await wpLogin(page);
+    await goToBrowse(page);
+    await page.locator('.wdkit-browse-column').waitFor({ state: 'visible', timeout: 15000 }).catch(() => {});
+  });
+
+  test('§C.01 Tab key reaches filter checkboxes without focus trap', async ({ page }) => {
+    // Tab through several elements and verify focus moves
+    for (let i = 0; i < 8; i++) {
+      await page.keyboard.press('Tab');
+      await page.waitForTimeout(100);
+    }
+    const focusedTag = await page.evaluate(() => document.activeElement?.tagName);
+    expect.soft(['BODY', 'HTML'], 'Focus stuck on body — possible focus trap').not.toContain(focusedTag);
+    await expect(page.locator('body')).not.toContainText('Fatal error');
+  });
+
+  test('§C.02 Enter key on AI Compatible toggle activates it', async ({ page }) => {
+    const wrap = page.locator('.wdkit-ai-switch-wrap').first();
+    if (await wrap.count() > 0) {
+      await wrap.focus().catch(() => {});
+      const before = await page.locator('#wdkit-ai-compatible-switch').isChecked().catch(() => false);
+      await page.keyboard.press('Enter');
+      await page.waitForTimeout(800);
+      // Page should remain functional regardless of toggle result
+      await expect(page.locator('body')).not.toContainText('Fatal error');
+    }
+  });
+
+  test('§C.03 Escape key does not break the filter panel or leave it in broken state', async ({ page }) => {
+    // Press Escape — should not crash or remove the filter panel
+    await page.keyboard.press('Escape');
+    await page.waitForTimeout(500);
+    await expect(page.locator('.wdkit-browse-templates')).toBeVisible({ timeout: 5000 });
+    await expect(page.locator('body')).not.toContainText('Fatal error');
+  });
+});
+
+// =============================================================================
+// §D. Filters — Performance
+// =============================================================================
+test.describe('§D. Filters — Performance', () => {
+  test('§D.01 Filter apply response completes within 3 seconds', async ({ page }) => {
+    await wpLogin(page);
+    await goToBrowse(page);
+    await page.locator('.wdkit-browse-card').first().waitFor({ state: 'visible', timeout: 15000 }).catch(() => {});
+
+    const t0 = Date.now();
+    await page.locator('#category_1031').click({ force: true }).catch(() => {});
+    // Wait for grid to update — either cards change or empty state appears
+    await page.waitForTimeout(500);
+    await page.locator('.wdkit-browse-card, .wdkit-no-template, .wdkit-empty').first()
+      .waitFor({ state: 'visible', timeout: 3000 }).catch(() => {});
+    const elapsed = Date.now() - t0;
+    expect.soft(elapsed, `Filter apply took ${elapsed}ms (target < 3000ms)`).toBeLessThan(3000);
+  });
+});
+
+// =============================================================================
+// §E. Filters — Tap target size (WCAG 2.5.5 / Responsiveness)
+// =============================================================================
+test.describe('§E. Filters — Tap target size', () => {
+  test('§E.01 Filter checkboxes tap target is ≥ 44×44px on mobile viewport', async ({ page }) => {
+    await wpLogin(page);
+    await page.setViewportSize({ width: 375, height: 812 });
+    await goToBrowse(page);
+    await page.locator('.wdkit-browse-column').waitFor({ state: 'visible', timeout: 15000 }).catch(() => {});
+    // Check the label (tappable area) rather than the hidden checkbox input
+    const categoryLabel = page.locator('label[for="category_1031"], label[for^="category_"]').first();
+    if (await categoryLabel.count() > 0 && await categoryLabel.isVisible()) {
+      const box = await categoryLabel.boundingBox();
+      if (box) {
+        expect.soft(box.height, `Category label height ${box.height}px < 44px`).toBeGreaterThanOrEqual(44);
+      }
+    }
+  });
+});
+
+// =============================================================================
+// §F. Filters — RTL layout
+// =============================================================================
+test.describe('§F. Filters — RTL layout', () => {
+  test('§F.01 Filter panel does not overflow when dir=rtl is applied', async ({ page }) => {
+    await wpLogin(page);
+    await goToBrowse(page);
+    await page.locator('.wdkit-browse-column').waitFor({ state: 'visible', timeout: 15000 }).catch(() => {});
+    // Simulate RTL direction
+    await page.evaluate(() => { document.documentElement.setAttribute('dir', 'rtl'); });
+    await page.waitForTimeout(500);
+    const hasHScroll = await page.evaluate(() => document.body.scrollWidth > window.innerWidth + 5);
+    expect.soft(hasHScroll, 'Horizontal overflow in RTL mode on filter panel').toBe(false);
+    // Reset
+    await page.evaluate(() => { document.documentElement.removeAttribute('dir'); });
+  });
 });

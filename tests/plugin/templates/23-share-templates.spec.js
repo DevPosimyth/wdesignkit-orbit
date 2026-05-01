@@ -14,6 +14,14 @@
 //   Section 47 — Console & network health (4 tests)
 //   Section 48 — XSS, empty state guidance, tab persistence & search (7 tests) ← NEW
 //
+// MANUAL CHECKS (not automatable — verify manually):
+//   • Pixel-perfect match with Figma design (colors, spacing, typography)
+//   • Screen reader announcement order and content
+//   • Cross-browser visual rendering (Firefox, Safari/WebKit, Edge)
+//   • RTL layout visual correctness (Arabic/Hebrew locales)
+//   • Color contrast ratios in rendered output
+//   • Touch gesture behavior on real mobile devices
+//
 // KEY SELECTORS (from share_with_me.js source)
 //   .wkit-share-with-me             — root container
 //   .wdkit-share-with-me-inner      — inner wrapper
@@ -707,6 +715,216 @@ test.describe('48. Share With Me — XSS, empty state, tab persistence & search'
     const bodyText = await page.locator('body').textContent({ timeout: 5000 }).catch(() => '');
     // Raw JSON dump detection: { "user_id": ... }
     expect.soft(bodyText, 'Raw API JSON appears to be dumped directly on the Share With Me page').not.toMatch(/^\s*\{"user_id":/m);
+  });
+
+});
+
+// =============================================================================
+// §A. Share Templates — Performance
+// =============================================================================
+test.describe('§A. Share Templates — Performance', () => {
+
+  test('§A.01 Share With Me page loads within 5 seconds', async ({ page }) => {
+    await wpLogin(page);
+    const t0 = Date.now();
+    await goToShareWithMe(page);
+    await page.locator('#wdesignkit-app').waitFor({ state: 'visible', timeout: 8000 });
+    const elapsed = Date.now() - t0;
+    expect.soft(elapsed, `Share With Me load took ${elapsed}ms`).toBeLessThan(5000);
+  });
+
+  test('§A.02 No more than 10 API requests on initial Share With Me load', async ({ page }) => {
+    let apiCount = 0;
+    page.on('request', req => {
+      if (req.url().includes('admin-ajax.php') || req.url().includes('/wdesignkit/')) apiCount++;
+    });
+    await wpLogin(page);
+    await goToShareWithMe(page);
+    await page.waitForTimeout(2000);
+    expect.soft(apiCount, `Too many API requests: ${apiCount}`).toBeLessThan(10);
+  });
+
+});
+
+// =============================================================================
+// §B. Share Templates — Keyboard Navigation
+// =============================================================================
+test.describe('§B. Share Templates — Keyboard Navigation', () => {
+
+  test.beforeEach(async ({ page }) => {
+    await wpLogin(page);
+    await goToShareWithMe(page);
+  });
+
+  test('§B.01 Tab navigates through Share With Me interactive elements without trap', async ({ page }) => {
+    for (let i = 0; i < 6; i++) {
+      await page.keyboard.press('Tab');
+      await page.waitForTimeout(150);
+    }
+    await expect(page.locator('body')).not.toContainText('Fatal error');
+    const focused = await page.evaluate(() => document.activeElement?.tagName);
+    expect.soft(['BODY', 'HTML']).not.toContain(focused);
+  });
+
+  test('§B.02 Content type tabs are keyboard accessible via Tab + Enter', async ({ page }) => {
+    const tab = page.locator('.wdkit-share-tab-box').first();
+    if (await tab.count() > 0) {
+      const isTabable = await tab.evaluate(
+        el => el.tabIndex >= 0 || el.tagName === 'BUTTON' || el.tagName === 'A'
+      ).catch(() => false);
+      expect.soft(isTabable, 'Share With Me tab is not keyboard accessible').toBe(true);
+    }
+  });
+
+  test('§B.03 Enter key on a Share With Me tab activates it without crash', async ({ page }) => {
+    const tab = page.locator('.wdkit-share-tab-box').nth(1);
+    if (await tab.isVisible({ timeout: 5000 }).catch(() => false)) {
+      await tab.focus();
+      await tab.press('Enter');
+      await page.waitForTimeout(1500);
+      await expect(page.locator('body')).not.toContainText('Fatal error');
+    }
+  });
+
+});
+
+// =============================================================================
+// §C. Share Templates — RTL layout
+// =============================================================================
+test.describe('§C. Share Templates — RTL layout', () => {
+
+  test.beforeEach(async ({ page }) => {
+    await wpLogin(page);
+    await goToShareWithMe(page);
+  });
+
+  test('§C.01 Share With Me page does not overflow in RTL direction', async ({ page }) => {
+    await page.evaluate(() => { document.documentElement.setAttribute('dir', 'rtl'); });
+    await page.waitForTimeout(400);
+    const hasHScroll = await page.evaluate(() => document.body.scrollWidth > window.innerWidth + 5);
+    expect.soft(hasHScroll, 'Overflow in RTL mode on Share With Me page').toBe(false);
+    await page.evaluate(() => { document.documentElement.removeAttribute('dir'); });
+  });
+
+  test('§C.02 RTL mode does not crash the Share With Me page', async ({ page }) => {
+    await page.evaluate(() => { document.documentElement.setAttribute('dir', 'rtl'); });
+    await page.waitForTimeout(600);
+    await expect(page.locator('body')).not.toContainText('Fatal error');
+    await page.evaluate(() => { document.documentElement.removeAttribute('dir'); });
+  });
+
+});
+
+// =============================================================================
+// §D. Share Templates — Tap target size (mobile)
+// =============================================================================
+test.describe('§D. Share Templates — Tap target size', () => {
+
+  test.beforeEach(async ({ page }) => {
+    await page.setViewportSize({ width: 375, height: 812 });
+    await wpLogin(page);
+    await goToShareWithMe(page);
+  });
+
+  test('§D.01 Content type tabs meet 44×44px tap target on mobile viewport', async ({ page }) => {
+    const tabs = page.locator('.wdkit-share-tab-box');
+    const count = await tabs.count();
+    for (let i = 0; i < Math.min(count, 3); i++) {
+      const tab = tabs.nth(i);
+      if (await tab.isVisible({ timeout: 3000 }).catch(() => false)) {
+        const box = await tab.boundingBox();
+        if (box) {
+          expect.soft(box.height, `Tab ${i} height ${box.height}px is below 44px tap target`).toBeGreaterThanOrEqual(44);
+        }
+      }
+    }
+  });
+
+  test('§D.02 Share With Me page renders without horizontal overflow at 375px', async ({ page }) => {
+    const container = page.locator('.wkit-share-with-me, #wdesignkit-app').first();
+    if (await container.count() > 0) {
+      const overflow = await container.evaluate(el => el.scrollWidth > el.clientWidth + 5).catch(() => false);
+      expect.soft(overflow, 'Share With Me overflows horizontally at 375px mobile viewport').toBe(false);
+    }
+  });
+
+});
+
+// =============================================================================
+// §E. Share Templates — Form validation (share URL / search fields)
+// =============================================================================
+test.describe('§E. Share Templates — Form validation', () => {
+
+  test.beforeEach(async ({ page }) => {
+    await wpLogin(page);
+    await goToShareWithMe(page);
+  });
+
+  test('§E.01 Search/filter input shows empty state when given a no-match query', async ({ page }) => {
+    const searchInput = page.locator(
+      '.wdkit-search-filter input, input[type="search"], input[type="text"]'
+    ).first();
+    const visible = await searchInput.isVisible({ timeout: 5000 }).catch(() => false);
+    if (!visible) return;
+
+    await searchInput.fill('zzz_nomatch_xyzqwerty_99999');
+    await searchInput.press('Enter');
+    await page.waitForTimeout(2500);
+
+    await expect(page.locator('body')).not.toContainText('Fatal error');
+    const cardCount = await page.locator('.wdkit-browse-card').count();
+    const emptyCount = await page.locator(
+      '.wkit-not-found, [class*="not-found"], [class*="no-result"], [class*="empty"]'
+    ).count();
+    expect.soft(cardCount === 0 || emptyCount > 0,
+      'Zero-result search did not show an empty state'
+    ).toBe(true);
+  });
+
+  test('§E.02 XSS in search/filter input does not execute script', async ({ page }) => {
+    const searchInput = page.locator(
+      '.wdkit-search-filter input, input[type="search"], input[type="text"]'
+    ).first();
+    const visible = await searchInput.isVisible({ timeout: 5000 }).catch(() => false);
+    if (visible) {
+      await searchInput.fill('<script>window.__xss_share_form=1</script>');
+      await searchInput.press('Enter');
+      await page.waitForTimeout(1500);
+    }
+    const xss = await page.evaluate(() => window.__xss_share_form);
+    expect(xss).toBeUndefined();
+  });
+
+  test('§E.03 Share URL or share code field does not crash on invalid URL format', async ({ page }) => {
+    const urlInput = page.locator(
+      'input[type="url"], input[placeholder*="url" i], input[placeholder*="link" i], input[placeholder*="share" i]'
+    ).first();
+    const visible = await urlInput.isVisible({ timeout: 5000 }).catch(() => false);
+    if (visible) {
+      await urlInput.fill('not-a-valid-url-!!!');
+      await page.waitForTimeout(500);
+      await expect(page.locator('body')).not.toContainText('Fatal error');
+    }
+  });
+
+  test('§E.04 Empty search input restores the full shared template list without crash', async ({ page }) => {
+    const searchInput = page.locator(
+      '.wdkit-search-filter input, input[type="search"], input[type="text"]'
+    ).first();
+    const visible = await searchInput.isVisible({ timeout: 5000 }).catch(() => false);
+    if (!visible) return;
+
+    await searchInput.fill('zzz_nomatch_xyzqwerty');
+    await searchInput.press('Enter');
+    await page.waitForTimeout(2000);
+
+    await searchInput.fill('');
+    await searchInput.press('Enter');
+    await page.waitForTimeout(2000);
+
+    await expect(page.locator('body')).not.toContainText('Fatal error');
+    const loop = page.locator('.wdkit-loop');
+    await expect(loop).toBeVisible({ timeout: 5000 });
   });
 
 });

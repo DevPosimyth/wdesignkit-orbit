@@ -1,6 +1,6 @@
 // =============================================================================
 // WDesignKit Templates Suite — Accessibility (a11y)
-// Version: 2.0.0
+// Version: 2.1.0  (added §KB keyboard navigation + §TAP tap target sections)
 // Standard: WCAG 2.1 AA / WCAG 2.2
 //
 // COVERAGE
@@ -10,13 +10,23 @@
 //   Section 59 — Colour contrast & visual indicators (5 tests)
 //   Section 60 — Screen reader: labels & announcements (6 tests)
 //   Section 61 — Automated axe-core WCAG 2.1 AA scans (6 tests)
-//   Section 62 — prefers-reduced-motion respect (6 tests) ← NEW
-//   Section 63 — aria-live dynamic announcements (6 tests) ← NEW
+//   Section 62 — prefers-reduced-motion respect (6 tests)
+//   Section 63 — aria-live dynamic announcements (6 tests)
+//   §KB        — Keyboard navigation WCAG 2.1.1 (8 tests) ← NEW
+//   §TAP       — Tap target size ≥ 44×44px (5 tests) ← NEW
 //
 // NOTE: Section 61 uses @axe-core/playwright for automated rule-based scanning.
 //       CLAUDE.md requires axe-core score ≥ 85 for QA sign-off.
 //       Critical (impact=critical) violations fail the test; serious violations are
 //       soft-reported so the suite can surface a full picture in one run.
+//
+// MANUAL CHECKS (not automatable — verify manually):
+//   • Pixel-perfect match with Figma design (colors, spacing, typography)
+//   • Screen reader announcement order and content
+//   • Cross-browser visual rendering (Firefox, Safari/WebKit, Edge)
+//   • RTL layout visual correctness (Arabic/Hebrew locales)
+//   • Color contrast ratios in rendered output
+//   • Touch gesture behavior on real mobile devices
 // =============================================================================
 
 const { test, expect } = require('@playwright/test');
@@ -930,6 +940,206 @@ test.describe('63. aria-live dynamic announcements', () => {
       hasLiveAncestor,
       'My Templates empty state is not wrapped in an aria-live region'
     ).toBe(true);
+  });
+
+});
+
+// =============================================================================
+// §KB. Templates — Keyboard Navigation (WCAG 2.1 AA — Success Criterion 2.1.1)
+// MANUAL CHECK: Screen reader behavior and announcement order must be tested manually
+// =============================================================================
+test.describe('§KB. Templates — Keyboard Navigation (WCAG 2.1 AA)', () => {
+
+  test.beforeEach(async ({ page }) => {
+    await wpLogin(page);
+    await goToBrowse(page);
+  });
+
+  test('§KB.01 Tab key navigates through Browse page interactive elements', async ({ page }) => {
+    for (let i = 0; i < 8; i++) {
+      await page.keyboard.press('Tab');
+      await page.waitForTimeout(100);
+    }
+    const focusedTag = await page.evaluate(() => document.activeElement?.tagName || 'UNKNOWN');
+    expect.soft(['BODY', 'HTML']).not.toContain(focusedTag);
+    await expect(page.locator('body')).not.toContainText('Fatal error');
+  });
+
+  test('§KB.02 No focus trap exists outside of modal dialogs on Browse page', async ({ page }) => {
+    // Tab 20 times — focus should not cycle within a small set of elements (trap)
+    const focusedElements = [];
+    for (let i = 0; i < 20; i++) {
+      await page.keyboard.press('Tab');
+      await page.waitForTimeout(80);
+      const tag = await page.evaluate(() => document.activeElement?.tagName || '');
+      focusedElements.push(tag);
+    }
+    // Check there's not a repeating cycle of just 2-3 elements (indicates a trap)
+    const unique = new Set(focusedElements);
+    expect.soft(unique.size, 'Focus appears trapped — only cycling between few elements').toBeGreaterThan(3);
+  });
+
+  test('§KB.03 Enter key on Import button triggers the import flow', async ({ page }) => {
+    const importBtn = page.locator('.wdkit-browse-card-download').first();
+    if (await importBtn.count() > 0 && await importBtn.isVisible()) {
+      await importBtn.focus().catch(() => importBtn.scrollIntoViewIfNeeded().catch(() => {}));
+      await page.keyboard.press('Enter');
+      await page.waitForTimeout(1000);
+      await expect(page.locator('body')).not.toContainText('Fatal error');
+    }
+  });
+
+  test('§KB.04 Escape key closes any open modal/overlay', async ({ page }) => {
+    // Open modal if any
+    const importBtn = page.locator('.wdkit-browse-card-download').first();
+    if (await importBtn.isVisible().catch(() => false)) {
+      await importBtn.click({ force: true });
+      await page.waitForTimeout(1000);
+    }
+    await page.keyboard.press('Escape');
+    await page.waitForTimeout(500);
+    // Modal should be closed — no frozen UI
+    await expect(page.locator('body')).not.toContainText('Fatal error');
+  });
+
+  test('§KB.05 Filter checkboxes are togglable via Space key', async ({ page }) => {
+    const checkbox = page.locator('input.wkit-check-box[id^="category_"], input[type="checkbox"]').first();
+    if (await checkbox.count() > 0) {
+      const wasChecked = await checkbox.isChecked().catch(() => false);
+      await checkbox.focus().catch(() => {});
+      await page.keyboard.press('Space');
+      await page.waitForTimeout(500);
+      const isChecked = await checkbox.isChecked().catch(() => false);
+      // State should have changed
+      expect.soft(isChecked, 'Space key did not toggle checkbox').not.toBe(wasChecked);
+    }
+  });
+
+  test('§KB.06 Search input is reachable via Tab key on Browse page', async ({ page }) => {
+    const searchInput = page.locator(
+      'input[placeholder*="search" i], input.wdkit-browse-search-inp, .wdkit-search-inp input'
+    ).first();
+    if (await searchInput.count() === 0) return;
+    // Tab through up to 15 times to reach search input
+    for (let i = 0; i < 15; i++) {
+      await page.keyboard.press('Tab');
+      const isFocused = await searchInput.evaluate(el => el === document.activeElement).catch(() => false);
+      if (isFocused) break;
+    }
+    const isTabable = await searchInput.evaluate(el => el.tabIndex >= 0 && !el.disabled).catch(() => false);
+    expect.soft(isTabable, 'Search input is not keyboard-focusable').toBe(true);
+  });
+
+  test('§KB.07 Arrow keys navigate between filter radio options', async ({ page }) => {
+    const radioGroup = page.locator('input.wkit-freePro-radio-inp').first();
+    if (await radioGroup.count() > 0) {
+      await radioGroup.focus().catch(() => {});
+      await page.keyboard.press('ArrowDown');
+      await page.waitForTimeout(300);
+      await expect(page.locator('body')).not.toContainText('Fatal error');
+    }
+  });
+
+  test('§KB.08 Import wizard Step 1 back button is keyboard accessible', async ({ page }) => {
+    const importBtn = page.locator('.wdkit-browse-card-download').first();
+    if (await importBtn.isVisible().catch(() => false)) {
+      await importBtn.click({ force: true });
+      await page.waitForTimeout(1500);
+      const backBtn = page.locator(
+        '[class*="back"], [class*="prev"], button[aria-label*="back" i], .wkit-back-btn'
+      ).first();
+      if (await backBtn.count() > 0) {
+        const isTabable = await backBtn.evaluate(el => el.tabIndex >= 0 && !el.disabled).catch(() => false);
+        expect.soft(isTabable, 'Back button in wizard is not keyboard accessible').toBe(true);
+      }
+    }
+  });
+
+});
+
+// =============================================================================
+// §TAP. Templates — Tap target size (WCAG 2.5.5 / Touch accessibility)
+// All interactive elements must be ≥ 44×44px on touch viewports
+// MANUAL CHECK: Test on real mobile device for actual touch hit areas
+// =============================================================================
+test.describe('§TAP. Templates — Tap target size (≥ 44×44px)', () => {
+
+  test.beforeEach(async ({ page }) => {
+    await wpLogin(page);
+    await page.setViewportSize({ width: 375, height: 812 });
+    await goToBrowse(page);
+  });
+
+  test('§TAP.01 Import button on template card is ≥ 44×44px on mobile', async ({ page }) => {
+    const importBtn = page.locator('.wdkit-browse-card-download').first();
+    if (await importBtn.count() > 0 && await importBtn.isVisible().catch(() => false)) {
+      const box = await importBtn.boundingBox().catch(() => null);
+      if (box) {
+        expect.soft(box.width, `Import btn width ${box.width}px < 44px`).toBeGreaterThanOrEqual(44);
+        expect.soft(box.height, `Import btn height ${box.height}px < 44px`).toBeGreaterThanOrEqual(44);
+      }
+    }
+  });
+
+  test('§TAP.02 Filter checkboxes have ≥ 44px tap area on mobile', async ({ page }) => {
+    const checkboxLabels = await page.locator(
+      'label:has(input.wkit-check-box), .wkit-filter-check-label, [class*="filter-item"]'
+    ).all();
+    for (const label of checkboxLabels.slice(0, 5)) {
+      if (!await label.isVisible().catch(() => false)) continue;
+      const box = await label.boundingBox().catch(() => null);
+      if (box && box.height > 0) {
+        // Note: 30px minimum for filter items (44px ideal, 30px acceptable per WCAG 2.5.8)
+        expect.soft(box.height, `Filter checkbox tap area ${box.height}px < 30px`).toBeGreaterThanOrEqual(30);
+      }
+    }
+  });
+
+  test('§TAP.03 Navigation menu items are ≥ 44px tall on mobile', async ({ page }) => {
+    const menuItems = await page.locator('.wkit-menu, .wdkit-submenu-link, [class*="menu-item"]').all();
+    for (const item of menuItems.slice(0, 5)) {
+      if (!await item.isVisible().catch(() => false)) continue;
+      const box = await item.boundingBox().catch(() => null);
+      if (box && box.height > 0) {
+        expect.soft(box.height, `Menu item height ${box.height}px < 44px`).toBeGreaterThanOrEqual(44);
+      }
+    }
+  });
+
+  test('§TAP.04 Wizard navigation buttons (Next/Back) are ≥ 44×44px on mobile', async ({ page }) => {
+    const importBtn = page.locator('.wdkit-browse-card-download').first();
+    if (await importBtn.isVisible().catch(() => false)) {
+      await importBtn.click({ force: true });
+      await page.waitForTimeout(1500);
+      const navBtns = await page.locator(
+        '.wkit-next-btn, .wkit-back-btn, [class*="next"], [class*="back"], button[class*="step"]'
+      ).all();
+      for (const btn of navBtns.slice(0, 3)) {
+        if (!await btn.isVisible().catch(() => false)) continue;
+        const box = await btn.boundingBox().catch(() => null);
+        if (box) {
+          expect.soft(box.height, `Wizard nav button height ${box.height}px < 44px`).toBeGreaterThanOrEqual(44);
+        }
+      }
+    }
+  });
+
+  test('§TAP.05 Close/dismiss buttons on overlays/modals are ≥ 44×44px on mobile', async ({ page }) => {
+    const importBtn = page.locator('.wdkit-browse-card-download').first();
+    if (await importBtn.isVisible().catch(() => false)) {
+      await importBtn.click({ force: true });
+      await page.waitForTimeout(1500);
+      const closeBtn = page.locator(
+        '.wkit-close, [class*="close"], button[aria-label*="close" i], .wkit-modal-close'
+      ).first();
+      if (await closeBtn.count() > 0 && await closeBtn.isVisible().catch(() => false)) {
+        const box = await closeBtn.boundingBox().catch(() => null);
+        if (box) {
+          expect.soft(box.width, `Close btn width ${box.width}px < 44px`).toBeGreaterThanOrEqual(44);
+          expect.soft(box.height, `Close btn height ${box.height}px < 44px`).toBeGreaterThanOrEqual(44);
+        }
+      }
+    }
   });
 
 });

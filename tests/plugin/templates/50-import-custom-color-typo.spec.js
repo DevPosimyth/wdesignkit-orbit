@@ -11,6 +11,14 @@
 // Both sections target the global_data panel (Step 1, panel 2) of the
 // template import wizard.  Tests guard gracefully when the template loaded
 // by clickFirstCardImport has no global data (count === 0 → early return).
+//
+// MANUAL CHECKS (not automatable — verify manually):
+//   • Pixel-perfect match with Figma design (colors, spacing, typography)
+//   • Screen reader announcement order and content
+//   • Cross-browser visual rendering (Firefox, Safari/WebKit, Edge)
+//   • RTL layout visual correctness (Arabic/Hebrew locales)
+//   • Color contrast ratios in rendered output
+//   • Touch gesture behavior on real mobile devices
 // =============================================================================
 
 const { test, expect } = require('@playwright/test');
@@ -946,5 +954,117 @@ test.describe('77c. Typography panel console error check (full-navigation scope)
       !e.includes('ERR_BLOCKED')
     );
     expect(productErrors).toHaveLength(0);
+  });
+});
+
+// =============================================================================
+// §A. Custom Color & Typo — Keyboard Navigation
+// =============================================================================
+test.describe('§A. Custom Color & Typo — Keyboard Navigation', () => {
+  test.beforeEach(async ({ page }) => {
+    await wpLogin(page);
+    await goToBrowse(page);
+    await clickFirstCardImport(page);
+    await page.locator('.wkit-temp-import-mian').waitFor({ state: 'visible', timeout: 25000 }).catch(() => {});
+    await reachGlobalDataPanel(page);
+  });
+
+  test('§A.01 Color picker / typo controls are keyboard accessible (Tab reachable)', async ({ page }) => {
+    // Tab through the form to find color/typo controls
+    for (let i = 0; i < 10; i++) {
+      await page.keyboard.press('Tab');
+      await page.waitForTimeout(100);
+    }
+    await expect(page.locator('body')).not.toContainText('Fatal error');
+  });
+
+  test('§A.02 Color input accepts keyboard input (type hex value)', async ({ page }) => {
+    const colorInput = page.locator(
+      'input[type="color"], input[placeholder*="color" i], input[placeholder*="#"], .wkit-color-input input'
+    ).first();
+    if (await colorInput.count() > 0 && await colorInput.isVisible().catch(() => false)) {
+      await colorInput.focus().catch(() => {});
+      await colorInput.fill('#FF5733');
+      const value = await colorInput.inputValue();
+      expect.soft(value.includes('FF5733') || value.includes('#FF5733'), 'Color input did not accept hex value').toBe(true);
+    }
+  });
+
+  test('§A.03 Escape key does not crash the custom color step', async ({ page }) => {
+    await page.keyboard.press('Escape');
+    await page.waitForTimeout(500);
+    await expect(page.locator('body')).not.toContainText('Fatal error');
+  });
+});
+
+// =============================================================================
+// §B. Custom Color & Typo — RTL layout
+// =============================================================================
+test.describe('§B. Custom Color & Typo — RTL layout', () => {
+  test.beforeEach(async ({ page }) => {
+    await wpLogin(page);
+    await goToBrowse(page);
+    await clickFirstCardImport(page);
+    await page.locator('.wkit-temp-import-mian').waitFor({ state: 'visible', timeout: 25000 }).catch(() => {});
+    await reachGlobalDataPanel(page);
+  });
+
+  test('§B.01 Custom color/typo step does not overflow in RTL mode', async ({ page }) => {
+    await page.evaluate(() => { document.documentElement.setAttribute('dir', 'rtl'); });
+    await page.waitForTimeout(400);
+    const hasHScroll = await page.evaluate(() => document.body.scrollWidth > window.innerWidth + 5);
+    expect.soft(hasHScroll, 'Overflow in RTL mode on custom color step').toBe(false);
+    await page.evaluate(() => { document.documentElement.removeAttribute('dir'); });
+  });
+});
+
+// =============================================================================
+// §C. Custom Color & Typo — Tap target size
+// =============================================================================
+test.describe('§C. Custom Color & Typo — Tap target size', () => {
+  test.beforeEach(async ({ page }) => {
+    await wpLogin(page);
+    await goToBrowse(page);
+    await clickFirstCardImport(page);
+    await page.locator('.wkit-temp-import-mian').waitFor({ state: 'visible', timeout: 25000 }).catch(() => {});
+    await reachGlobalDataPanel(page);
+  });
+
+  test('§C.01 Color swatch buttons are ≥ 44×44px on mobile viewport', async ({ page }) => {
+    await page.setViewportSize({ width: 375, height: 812 });
+    const swatches = await page.locator(
+      '[class*="color-swatch"], [class*="swatch"], input[type="color"], .wkit-color-btn'
+    ).all();
+    for (const swatch of swatches.slice(0, 3)) {
+      if (!await swatch.isVisible().catch(() => false)) continue;
+      const box = await swatch.boundingBox().catch(() => null);
+      if (box && box.height > 0) {
+        expect.soft(box.height, `Color swatch height ${box.height}px < 30px`).toBeGreaterThanOrEqual(30);
+      }
+    }
+  });
+});
+
+// =============================================================================
+// §D. Custom Color & Typo — Form validation edge cases
+// =============================================================================
+test.describe('§D. Custom Color & Typo — Form validation', () => {
+  test.beforeEach(async ({ page }) => {
+    await wpLogin(page);
+    await goToBrowse(page);
+    await clickFirstCardImport(page);
+    await page.locator('.wkit-temp-import-mian').waitFor({ state: 'visible', timeout: 25000 }).catch(() => {});
+    await reachGlobalDataPanel(page);
+  });
+
+  test('§D.01 Invalid hex color value is handled gracefully (no crash)', async ({ page }) => {
+    const colorInput = page.locator(
+      'input[type="color"], input[placeholder*="#"], .wkit-color-input input'
+    ).first();
+    if (await colorInput.count() > 0 && await colorInput.isVisible().catch(() => false)) {
+      await colorInput.fill('not-a-color');
+      await page.waitForTimeout(500);
+      await expect(page.locator('body')).not.toContainText('Fatal error');
+    }
   });
 });

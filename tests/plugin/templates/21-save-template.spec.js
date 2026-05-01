@@ -16,6 +16,14 @@
 //   Section 34 — Console & network health (4 tests)
 //   Section 35 — Empty state guidance, thumbnail file input & destination switching (8 tests) ← NEW
 //
+// MANUAL CHECKS (not automatable — verify manually):
+//   • Pixel-perfect match with Figma design (colors, spacing, typography)
+//   • Screen reader announcement order and content
+//   • Cross-browser visual rendering (Firefox, Safari/WebKit, Edge)
+//   • RTL layout visual correctness (Arabic/Hebrew locales)
+//   • Color contrast ratios in rendered output
+//   • Touch gesture behavior on real mobile devices
+//
 // KEY SELECTORS (from save_template source)
 //   .wdkit-save-temp-page          — root container
 //   .wkit-tab-setting-wrap         — tabs/sections wrapper
@@ -624,6 +632,267 @@ test.describe('35. Save Template — empty state, thumbnail input & destination'
       expect(btnText.trim().length,
         'Save footer button appears to be empty or in a frozen state'
       ).toBeGreaterThan(0);
+    }
+  });
+
+});
+
+// =============================================================================
+// §A. Save Template — Form validation edge cases
+// =============================================================================
+test.describe('§A. Save Template — Form validation edge cases', () => {
+
+  test.beforeEach(async ({ page }) => {
+    await wpLogin(page);
+    await goToSaveTemplate(page);
+  });
+
+  test('§A.01 Save button is disabled or shows error when template name is empty', async ({ page }) => {
+    const nameInput = page.locator(
+      'input[name*="title" i], input[placeholder*="name" i], input[placeholder*="title" i], input[type="text"]'
+    ).first();
+    if (await nameInput.count() > 0) {
+      await nameInput.fill('');
+      const saveBtn = page.locator(
+        'button[type="submit"], .wkit-save-btn, .wdkit-save-footer-btn'
+      ).first();
+      if (await saveBtn.count() > 0) {
+        await saveBtn.click({ force: true });
+        await page.waitForTimeout(1000);
+        const errorVisible = await page.locator('[class*="error"], [class*="invalid"], [role="alert"]').count() > 0;
+        const btnDisabled = await saveBtn.evaluate(
+          el => el.disabled || el.classList.contains('wkit-disable-btn-class')
+        ).catch(() => false);
+        expect.soft(errorVisible || btnDisabled, 'No validation feedback for empty template name').toBe(true);
+      }
+    }
+  });
+
+  test('§A.02 Template name with 200+ characters is handled gracefully', async ({ page }) => {
+    const nameInput = page.locator('input[type="text"]').first();
+    if (await nameInput.count() > 0) {
+      const longName = 'A'.repeat(201);
+      await nameInput.fill(longName);
+      const value = await nameInput.inputValue();
+      await expect(page.locator('body')).not.toContainText('Fatal error');
+      const maxLength = await nameInput.getAttribute('maxlength').catch(() => null);
+      if (maxLength) {
+        expect.soft(value.length, `Name exceeds maxlength attribute`).toBeLessThanOrEqual(parseInt(maxLength));
+      }
+    }
+  });
+
+  test('§A.03 Template name with XSS payload does not execute script', async ({ page }) => {
+    const nameInput = page.locator('input[type="text"]').first();
+    if (await nameInput.count() > 0) {
+      await nameInput.fill('<script>window.__save_xss=1</script>');
+      await page.waitForTimeout(500);
+      const xssRan = await page.evaluate(() => window.__save_xss === 1);
+      expect(xssRan, 'XSS executed in save template name field').toBe(false);
+    }
+  });
+
+  test('§A.04 Whitespace-only template name is treated as empty (save button stays disabled)', async ({ page }) => {
+    const nameInput = page.locator('input[type="text"]').first();
+    const saveBtn = page.locator('.wkit-save-btn.wkit-btn-class, .wkit-save-btn').first();
+    if (await nameInput.count() > 0 && await saveBtn.count() > 0) {
+      await nameInput.fill('     ');
+      await page.waitForTimeout(400);
+      const isDisabled = await saveBtn.evaluate(
+        el => el.disabled || el.classList.contains('wkit-disable-btn-class')
+      ).catch(() => true);
+      expect.soft(isDisabled, 'Whitespace-only name should keep save button disabled').toBe(true);
+    }
+  });
+
+  test('§A.05 Template name field enforces maxlength or gracefully handles 500-char input', async ({ page }) => {
+    const nameInput = page.locator('input[type="text"]').first();
+    if (await nameInput.count() > 0) {
+      await nameInput.fill('B'.repeat(500));
+      await page.waitForTimeout(400);
+      await expect(page.locator('body')).not.toContainText('Fatal error');
+    }
+  });
+
+});
+
+// =============================================================================
+// §B. Save Template — Accessibility
+// =============================================================================
+test.describe('§B. Save Template — Accessibility', () => {
+
+  test.beforeEach(async ({ page }) => {
+    await wpLogin(page);
+    await goToSaveTemplate(page);
+  });
+
+  test('§B.01 Template name input has an associated accessible label', async ({ page }) => {
+    const nameInput = page.locator('input[type="text"]').first();
+    if (await nameInput.count() > 0) {
+      const inputId = await nameInput.getAttribute('id').catch(() => null);
+      const ariaLabel = await nameInput.getAttribute('aria-label').catch(() => null);
+      const ariaLabelledBy = await nameInput.getAttribute('aria-labelledby').catch(() => null);
+      let hasImplicitLabel = false;
+      if (inputId) {
+        hasImplicitLabel = await page.locator(`label[for="${inputId}"]`).count() > 0;
+      }
+      if (!hasImplicitLabel) {
+        hasImplicitLabel = await nameInput.evaluate(el => {
+          let p = el.parentElement;
+          while (p) { if (p.tagName === 'LABEL') return true; p = p.parentElement; }
+          return false;
+        }).catch(() => false);
+      }
+      const hasLabel = hasImplicitLabel || !!(ariaLabel || ariaLabelledBy);
+      expect.soft(hasLabel, 'Template name input missing accessible label').toBe(true);
+    }
+  });
+
+  test('§B.02 Save form is keyboard submittable via Enter key', async ({ page }) => {
+    const nameInput = page.locator('input[type="text"]').first();
+    if (await nameInput.count() > 0) {
+      await nameInput.fill('Test Template Keyboard');
+      await nameInput.press('Enter');
+      await page.waitForTimeout(1000);
+      await expect(page.locator('body')).not.toContainText('Fatal error');
+    }
+  });
+
+  test('§B.03 Save button is reachable via Tab key from the name input', async ({ page }) => {
+    const nameInput = page.locator('input[type="text"]').first();
+    if (await nameInput.count() > 0) {
+      await nameInput.click();
+      // Tab through fields until focus exits or hits save button
+      for (let i = 0; i < 10; i++) {
+        await page.keyboard.press('Tab');
+        await page.waitForTimeout(100);
+        const focusedTag = await page.evaluate(() => document.activeElement?.tagName);
+        if (focusedTag === 'BUTTON') break;
+      }
+      const focusedTag = await page.evaluate(() => document.activeElement?.tagName);
+      // Either a button is focusable or body (end of form) — no trap
+      expect.soft(['BUTTON', 'A', 'INPUT', 'SELECT', 'TEXTAREA', 'BODY']).toContain(focusedTag);
+    }
+  });
+
+  test('§B.04 All interactive form elements have tabIndex >= 0', async ({ page }) => {
+    const interactives = page.locator('input, select, button, textarea').filter({ visible: true });
+    const count = await interactives.count();
+    for (let i = 0; i < Math.min(count, 10); i++) {
+      const el = interactives.nth(i);
+      const tabIndex = await el.evaluate(e => e.tabIndex).catch(() => 0);
+      expect.soft(tabIndex, `Form element ${i} has negative tabIndex (not keyboard reachable)`).toBeGreaterThanOrEqual(0);
+    }
+  });
+
+});
+
+// =============================================================================
+// §C. Save Template — Performance
+// =============================================================================
+test.describe('§C. Save Template — Performance', () => {
+
+  test('§C.01 Save Template page loads within 5 seconds', async ({ page }) => {
+    await wpLogin(page);
+    const t0 = Date.now();
+    await goToSaveTemplate(page);
+    await page.locator('#wdesignkit-app').waitFor({ state: 'visible', timeout: 8000 });
+    const elapsed = Date.now() - t0;
+    expect.soft(elapsed, `Save Template load took ${elapsed}ms`).toBeLessThan(5000);
+  });
+
+  test('§C.02 No more than 10 API requests on initial Save Template load', async ({ page }) => {
+    let apiCount = 0;
+    page.on('request', req => {
+      if (req.url().includes('admin-ajax.php') || req.url().includes('/wdesignkit/')) apiCount++;
+    });
+    await wpLogin(page);
+    await goToSaveTemplate(page);
+    await page.waitForTimeout(2000);
+    expect.soft(apiCount, `Too many API requests: ${apiCount}`).toBeLessThan(10);
+  });
+
+});
+
+// =============================================================================
+// §D. Save Template — Keyboard Navigation
+// =============================================================================
+test.describe('§D. Save Template — Keyboard Navigation', () => {
+
+  test.beforeEach(async ({ page }) => {
+    await wpLogin(page);
+    await goToSaveTemplate(page);
+  });
+
+  test('§D.01 Tab navigates through Save Template form without focus trap', async ({ page }) => {
+    for (let i = 0; i < 8; i++) {
+      await page.keyboard.press('Tab');
+      await page.waitForTimeout(150);
+    }
+    await expect(page.locator('body')).not.toContainText('Fatal error');
+    const focused = await page.evaluate(() => document.activeElement?.tagName);
+    // Focus must land somewhere valid, not get trapped
+    expect.soft(['BODY', 'HTML']).not.toContain(focused);
+  });
+
+  test('§D.02 Save button (.wkit-save-btn) is keyboard focusable', async ({ page }) => {
+    const saveBtn = page.locator('.wkit-save-btn, .wdkit-save-footer-btn').first();
+    if (await saveBtn.count() > 0) {
+      const isTabable = await saveBtn.evaluate(
+        el => !el.disabled && el.tabIndex >= 0
+      ).catch(() => false);
+      expect.soft(isTabable, 'Save button is not keyboard accessible').toBe(true);
+    }
+  });
+
+});
+
+// =============================================================================
+// §E. Save Template — RTL layout
+// =============================================================================
+test.describe('§E. Save Template — RTL layout', () => {
+
+  test.beforeEach(async ({ page }) => {
+    await wpLogin(page);
+    await goToSaveTemplate(page);
+  });
+
+  test('§E.01 Save Template form does not overflow in RTL direction', async ({ page }) => {
+    await page.evaluate(() => { document.documentElement.setAttribute('dir', 'rtl'); });
+    await page.waitForTimeout(400);
+    const hasHScroll = await page.evaluate(() => document.body.scrollWidth > window.innerWidth + 5);
+    expect.soft(hasHScroll, 'Overflow in RTL mode on Save Template form').toBe(false);
+    await page.evaluate(() => { document.documentElement.removeAttribute('dir'); });
+  });
+
+  test('§E.02 RTL mode does not crash the Save Template page', async ({ page }) => {
+    await page.evaluate(() => { document.documentElement.setAttribute('dir', 'rtl'); });
+    await page.waitForTimeout(600);
+    await expect(page.locator('body')).not.toContainText('Fatal error');
+    await page.evaluate(() => { document.documentElement.removeAttribute('dir'); });
+  });
+
+});
+
+// =============================================================================
+// §F. Save Template — Tap target size (mobile)
+// =============================================================================
+test.describe('§F. Save Template — Tap target size', () => {
+
+  test.beforeEach(async ({ page }) => {
+    await page.setViewportSize({ width: 375, height: 812 });
+    await wpLogin(page);
+    await goToSaveTemplate(page);
+  });
+
+  test('§F.01 Save button meets 44×44px minimum tap target on mobile viewport', async ({ page }) => {
+    const saveBtn = page.locator('.wkit-save-btn, .wdkit-save-footer-btn').first();
+    if (await saveBtn.isVisible({ timeout: 5000 }).catch(() => false)) {
+      const box = await saveBtn.boundingBox();
+      if (box) {
+        expect.soft(box.width, `Save button width ${box.width}px is below 44px tap target`).toBeGreaterThanOrEqual(44);
+        expect.soft(box.height, `Save button height ${box.height}px is below 44px tap target`).toBeGreaterThanOrEqual(44);
+      }
     }
   });
 

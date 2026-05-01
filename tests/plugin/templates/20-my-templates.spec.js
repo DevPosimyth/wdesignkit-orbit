@@ -15,6 +15,14 @@
 //   Section 28 — Empty state CTA & logic edge cases (7 tests) ← NEW
 //   Section 29 — Tab state persistence & search debounce (6 tests) ← NEW
 //
+// MANUAL CHECKS (not automatable — verify manually):
+//   • Pixel-perfect match with Figma design (colors, spacing, typography)
+//   • Screen reader announcement order and content
+//   • Cross-browser visual rendering (Firefox, Safari/WebKit, Edge)
+//   • RTL layout visual correctness (Arabic/Hebrew locales)
+//   • Color contrast ratios in rendered output
+//   • Touch gesture behavior on real mobile devices
+//
 // KEY SELECTORS (from myuploaded.js source)
 //   .wkit-myupload-main         — root container
 //   .wkit-navbar                — top filter bar
@@ -1029,6 +1037,110 @@ test.describe('29. My Templates — tab state persistence & search debounce', ()
     expect(productErrors,
       `Rapid tab switching caused errors:\n${productErrors.join('\n')}`
     ).toHaveLength(0);
+  });
+
+});
+
+// =============================================================================
+// §A. My Templates — Performance
+// =============================================================================
+test.describe('§A. My Templates — Performance', () => {
+
+  test.beforeEach(async ({ page }) => {
+    await wpLogin(page);
+    await goToMyTemplates(page);
+  });
+
+  test('§A.01 My Templates page loads within 5 seconds', async ({ page }) => {
+    await wpLogin(page);
+    const t0 = Date.now();
+    await goToMyTemplates(page);
+    await page.locator('#wdesignkit-app').waitFor({ state: 'visible', timeout: 8000 });
+    const elapsed = Date.now() - t0;
+    expect.soft(elapsed, `My Templates load took ${elapsed}ms`).toBeLessThan(5000);
+  });
+
+  test('§A.02 No more than 10 API requests on initial My Templates load', async ({ page }) => {
+    let apiCount = 0;
+    page.on('request', req => {
+      if (req.url().includes('admin-ajax.php') || req.url().includes('/wdesignkit/')) apiCount++;
+    });
+    await wpLogin(page);
+    await goToMyTemplates(page);
+    await page.waitForTimeout(2000);
+    expect.soft(apiCount, `Too many API requests: ${apiCount}`).toBeLessThan(10);
+  });
+
+});
+
+// =============================================================================
+// §B. My Templates — Keyboard Navigation
+// =============================================================================
+test.describe('§B. My Templates — Keyboard Navigation', () => {
+
+  test.beforeEach(async ({ page }) => {
+    await wpLogin(page);
+    await goToMyTemplates(page);
+  });
+
+  test('§B.01 Tab navigates through My Templates interactive elements without trap', async ({ page }) => {
+    for (let i = 0; i < 6; i++) {
+      await page.keyboard.press('Tab');
+      await page.waitForTimeout(150);
+    }
+    const focused = await page.evaluate(() => document.activeElement?.tagName);
+    expect.soft(['BODY', 'HTML']).not.toContain(focused);
+  });
+
+  test('§B.02 Upload/Save entry point is keyboard accessible (Tab + Enter)', async ({ page }) => {
+    const uploadBtn = page.locator(
+      'button[class*="upload"], button[class*="save"], .wkit-upload-btn, .wkit-save-btn'
+    ).first();
+    if (await uploadBtn.count() > 0) {
+      const isTabable = await uploadBtn.evaluate(
+        el => !el.disabled && el.tabIndex >= 0
+      ).catch(() => false);
+      expect.soft(isTabable, 'Upload/save button not keyboard accessible').toBe(true);
+    }
+  });
+
+  test('§B.03 Tab key navigation does not land on disabled/hidden elements', async ({ page }) => {
+    await page.keyboard.press('Tab');
+    await page.waitForTimeout(100);
+    const isHidden = await page.evaluate(() => {
+      const el = document.activeElement;
+      if (!el || el === document.body) return false;
+      const style = window.getComputedStyle(el);
+      return style.display === 'none' || style.visibility === 'hidden' || el.getAttribute('aria-hidden') === 'true';
+    });
+    expect.soft(isHidden, 'Tab focus landed on a hidden/aria-hidden element').toBe(false);
+  });
+
+});
+
+// =============================================================================
+// §C. My Templates — RTL layout
+// =============================================================================
+test.describe('§C. My Templates — RTL layout', () => {
+
+  test.beforeEach(async ({ page }) => {
+    await wpLogin(page);
+    await goToMyTemplates(page);
+  });
+
+  test('§C.01 My Templates page does not overflow in RTL direction', async ({ page }) => {
+    await page.evaluate(() => { document.documentElement.setAttribute('dir', 'rtl'); });
+    await page.waitForTimeout(400);
+    const hasHScroll = await page.evaluate(() => document.body.scrollWidth > window.innerWidth + 5);
+    expect.soft(hasHScroll, 'Overflow in RTL mode on My Templates').toBe(false);
+    await page.evaluate(() => { document.documentElement.removeAttribute('dir'); });
+  });
+
+  test('§C.02 RTL mode does not crash the My Templates page', async ({ page }) => {
+    await page.evaluate(() => { document.documentElement.setAttribute('dir', 'rtl'); });
+    await page.waitForTimeout(600);
+    await expect(page.locator('body')).not.toContainText('Fatal error');
+    await page.evaluate(() => { document.documentElement.removeAttribute('dir'); });
   });
 
 });

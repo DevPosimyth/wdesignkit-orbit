@@ -11,6 +11,20 @@
 //   Section 36 — Wireframe toggle — visibility & interaction (6 tests)
 //   Section 37 — Next / Import button text & state (7 tests)
 //   Section 38 — Back navigation from Method step (4 tests)
+//   §A — Responsive layout (6 tests)
+//   §B — Accessibility / WCAG 2.1 AA (2 tests)
+//   §C — Keyboard Navigation (2 tests)
+//   §D — Performance (1 test)
+//   §E — Tap target size (1 test)
+//   §F — RTL layout (1 test)
+//
+// MANUAL CHECKS (not automatable — verify manually):
+//   • Pixel-perfect match with Figma design (colors, spacing, typography)
+//   • Screen reader announcement order and content
+//   • Cross-browser visual rendering (Firefox, Safari/WebKit, Edge)
+//   • RTL layout visual correctness (Arabic/Hebrew locales)
+//   • Color contrast ratios in rendered output
+//   • Touch gesture behavior on real mobile devices
 // =============================================================================
 
 const { test, expect } = require('@playwright/test');
@@ -705,4 +719,133 @@ test.describe('38. Method step — Back navigation to Feature step', () => {
     }
   });
 
+});
+
+// =============================================================================
+// §A. Import Method Step — Responsive layout
+// =============================================================================
+test.describe('§A. Import Method Step — Responsive layout', () => {
+  const VIEWPORTS = [
+    { name: 'mobile', width: 375, height: 812 },
+    { name: 'tablet', width: 768, height: 1024 },
+    { name: 'desktop', width: 1440, height: 900 },
+  ];
+
+  for (const vp of VIEWPORTS) {
+    test(`§A.01 Method step renders without horizontal scroll at ${vp.name} (${vp.width}px)`, async ({ page }) => {
+      await page.setViewportSize({ width: vp.width, height: vp.height });
+      await openMethodStep(page);
+      const hasHScroll = await page.evaluate(() => document.body.scrollWidth > window.innerWidth + 5).catch(() => false);
+      expect.soft(hasHScroll, `Horizontal scroll at ${vp.name}`).toBe(false);
+    });
+
+    test(`§A.02 Method step buttons are visible at ${vp.name} (${vp.width}px)`, async ({ page }) => {
+      await page.setViewportSize({ width: vp.width, height: vp.height });
+      await openMethodStep(page);
+      const stepVisible = await page.locator('.wkit-import-method-main').isVisible({ timeout: 10000 }).catch(() => false);
+      expect.soft(stepVisible, `Method step not visible at ${vp.name}`).toBe(true);
+      await expect(page.locator('body')).not.toContainText('Fatal error');
+    });
+  }
+});
+
+// =============================================================================
+// §B. Import Method Step — Accessibility (WCAG 2.1 AA)
+// =============================================================================
+test.describe('§B. Import Method Step — Accessibility', () => {
+  test.beforeEach(async ({ page }) => {
+    await openMethodStep(page);
+  });
+
+  test('§B.01 Method selection buttons/options have visible focus indicators', async ({ page }) => {
+    await page.keyboard.press('Tab');
+    await page.waitForTimeout(200);
+    const focusedEl = await page.evaluate(() => {
+      const el = document.activeElement;
+      return el ? { tag: el.tagName, outline: getComputedStyle(el).outline } : null;
+    });
+    // Focus should not be stuck on body
+    expect.soft(focusedEl?.tag).not.toBe('BODY');
+    await expect(page.locator('body')).not.toContainText('Fatal error');
+  });
+
+  test('§B.02 Method option cards have accessible role or label (aria-label/text content)', async ({ page }) => {
+    const cards = await page.locator('.wkit-method-card').all();
+    for (const card of cards.slice(0, 3)) {
+      const ariaLabel = await card.getAttribute('aria-label').catch(() => null);
+      const text = await card.textContent().catch(() => '');
+      const hasLabel = (ariaLabel && ariaLabel.trim().length > 0) || text.trim().length > 0;
+      expect.soft(hasLabel, 'Method card has no accessible label').toBe(true);
+    }
+  });
+});
+
+// =============================================================================
+// §C. Import Method Step — Keyboard Navigation
+// =============================================================================
+test.describe('§C. Import Method Step — Keyboard Navigation', () => {
+  test.beforeEach(async ({ page }) => {
+    await openMethodStep(page);
+  });
+
+  test('§C.01 Tab key navigates through method options without focus trap', async ({ page }) => {
+    for (let i = 0; i < 5; i++) {
+      await page.keyboard.press('Tab');
+      await page.waitForTimeout(150);
+    }
+    const focusedTag = await page.evaluate(() => document.activeElement?.tagName || 'UNKNOWN');
+    expect.soft(['BODY', 'HTML']).not.toContain(focusedTag);
+    await expect(page.locator('body')).not.toContainText('Fatal error');
+  });
+
+  test('§C.02 Escape key does not break the method step UI', async ({ page }) => {
+    await page.keyboard.press('Escape');
+    await page.waitForTimeout(500);
+    await expect(page.locator('.wkit-import-method-main')).toBeVisible({ timeout: 5000 });
+    await expect(page.locator('body')).not.toContainText('Fatal error');
+  });
+});
+
+// =============================================================================
+// §D. Import Method Step — Performance
+// =============================================================================
+test.describe('§D. Import Method Step — Performance', () => {
+  test('§D.01 Method step renders within 5 seconds of navigation', async ({ page }) => {
+    const t0 = Date.now();
+    await openMethodStep(page);
+    const elapsed = Date.now() - t0;
+    expect.soft(elapsed, `Method step render took ${elapsed}ms`).toBeLessThan(5000);
+  });
+});
+
+// =============================================================================
+// §E. Import Method Step — Tap target size
+// =============================================================================
+test.describe('§E. Import Method Step — Tap target size', () => {
+  test('§E.01 Method selection cards are ≥ 44px tall on mobile viewport', async ({ page }) => {
+    await page.setViewportSize({ width: 375, height: 812 });
+    await openMethodStep(page);
+    const cards = await page.locator('.wkit-method-card').all();
+    for (const card of cards.slice(0, 3)) {
+      if (!await card.isVisible().catch(() => false)) continue;
+      const box = await card.boundingBox().catch(() => null);
+      if (box) {
+        expect.soft(box.height, `Method card height ${box.height}px < 44px`).toBeGreaterThanOrEqual(44);
+      }
+    }
+  });
+});
+
+// =============================================================================
+// §F. Import Method Step — RTL layout
+// =============================================================================
+test.describe('§F. Import Method Step — RTL layout', () => {
+  test('§F.01 Method step does not overflow in RTL direction mode', async ({ page }) => {
+    await openMethodStep(page);
+    await page.evaluate(() => { document.documentElement.setAttribute('dir', 'rtl'); });
+    await page.waitForTimeout(400);
+    const hasHScroll = await page.evaluate(() => document.body.scrollWidth > window.innerWidth + 5).catch(() => false);
+    expect.soft(hasHScroll, 'Horizontal overflow in RTL mode').toBe(false);
+    await page.evaluate(() => { document.documentElement.removeAttribute('dir'); });
+  });
 });

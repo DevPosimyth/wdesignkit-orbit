@@ -13,6 +13,14 @@
 // Tests navigate to the Nexter TB admin area (edit.php?post_type=nexter_tb)
 // to verify that a kit import creates a Header and Footer template with
 // the correct display conditions and publish status.
+//
+// MANUAL CHECKS (not automatable — verify manually):
+//   • Pixel-perfect match with Figma design (colors, spacing, typography)
+//   • Screen reader announcement order and content
+//   • Cross-browser visual rendering (Firefox, Safari/WebKit, Edge)
+//   • RTL layout visual correctness (Arabic/Hebrew locales)
+//   • Color contrast ratios in rendered output
+//   • Touch gesture behavior on real mobile devices
 // =============================================================================
 
 'use strict';
@@ -673,4 +681,119 @@ test.describe('83. Nexter template conditions & page assignments', () => {
     ).toHaveLength(0);
   });
 
+});
+
+// =============================================================================
+// §A. Post Import Nexter — Performance
+// =============================================================================
+test.describe('§A. Post Import Nexter — Performance', () => {
+  test.beforeEach(async ({ page }) => {
+    test.skip(!WDKIT_TOKEN, 'Requires WDKIT_API_TOKEN — kit import must complete');
+    await triggerDummyAndVerifyNexter(page);
+  });
+
+  test('§A.01 Front-end homepage loads within 5 seconds after kit import', async ({ page }) => {
+    const t0 = Date.now();
+    await page.goto('http://localhost:8881/', { waitUntil: 'domcontentloaded', timeout: 30000 });
+    const elapsed = Date.now() - t0;
+    expect.soft(elapsed, `Front-end homepage load time ${elapsed}ms exceeds 5000ms`).toBeLessThan(5000);
+    await expect(page.locator('body')).not.toContainText('Fatal error');
+  });
+
+  test('§A.02 No excessive API calls on front-end homepage (< 60 requests)', async ({ page }) => {
+    let requestCount = 0;
+    page.on('request', () => { requestCount++; });
+    await page.goto('http://localhost:8881/', { waitUntil: 'networkidle', timeout: 30000 }).catch(() => {});
+    expect.soft(requestCount, `Too many requests on front-end homepage: ${requestCount}`).toBeLessThan(60);
+  });
+});
+
+// =============================================================================
+// §B. Post Import Nexter — Keyboard Navigation
+// =============================================================================
+test.describe('§B. Post Import Nexter — Keyboard Navigation', () => {
+  test.beforeEach(async ({ page }) => {
+    test.skip(!WDKIT_TOKEN, 'Requires WDKIT_API_TOKEN — kit import must complete');
+    await triggerDummyAndVerifyNexter(page);
+  });
+
+  test('§B.01 Tab through Nexter TB list page without focus trap', async ({ page }) => {
+    for (let i = 0; i < 8; i++) {
+      await page.keyboard.press('Tab');
+      await page.waitForTimeout(150);
+    }
+    const tag = await page.evaluate(() => document.activeElement?.tagName || 'UNKNOWN');
+    // Focus must have moved to an interactive element — not stuck on body
+    expect.soft(['BODY', 'HTML']).not.toContain(tag);
+    await expect(page.locator('body')).not.toContainText('Fatal error');
+  });
+});
+
+// =============================================================================
+// §C. Post Import Nexter — RTL layout
+// =============================================================================
+test.describe('§C. Post Import Nexter — RTL layout', () => {
+  test.beforeEach(async ({ page }) => {
+    test.skip(!WDKIT_TOKEN, 'Requires WDKIT_API_TOKEN — kit import must complete');
+    await triggerDummyAndVerifyNexter(page);
+  });
+
+  test('§C.01 Nexter TB list page does not overflow in RTL mode', async ({ page }) => {
+    await page.evaluate(() => { document.documentElement.setAttribute('dir', 'rtl'); });
+    await page.waitForTimeout(400);
+    const hasHScroll = await page.evaluate(() => document.body.scrollWidth > window.innerWidth + 5);
+    expect.soft(hasHScroll, 'Nexter TB list overflows horizontally in RTL mode').toBe(false);
+    await page.evaluate(() => { document.documentElement.removeAttribute('dir'); });
+  });
+});
+
+// =============================================================================
+// §D. Post Import Nexter — Tap target size
+// =============================================================================
+test.describe('§D. Post Import Nexter — Tap target size', () => {
+  test.beforeEach(async ({ page }) => {
+    test.skip(!WDKIT_TOKEN, 'Requires WDKIT_API_TOKEN — kit import must complete');
+    await triggerDummyAndVerifyNexter(page);
+  });
+
+  test('§D.01 CTA buttons on success screen are ≥ 44px tall on mobile viewport', async ({ page }) => {
+    // Navigate to success screen by triggering a fresh import at mobile width
+    await page.setViewportSize({ width: 375, height: 812 });
+    const ctaBtns = await page.locator(
+      '.wkit-import-success-btn, .wkit-view-site-btn, a:has-text("View Site"), button:has-text("View Site")'
+    ).all();
+    for (const btn of ctaBtns.slice(0, 3)) {
+      if (!await btn.isVisible().catch(() => false)) continue;
+      const box = await btn.boundingBox().catch(() => null);
+      if (box) {
+        expect.soft(box.height, `CTA button height ${box.height}px < 44px`).toBeGreaterThanOrEqual(44);
+      }
+    }
+  });
+});
+
+// =============================================================================
+// §E. Post Import Nexter — Form validation / empty state
+// =============================================================================
+test.describe('§E. Post Import Nexter — Form validation / empty state', () => {
+  test.beforeEach(async ({ page }) => {
+    test.skip(!WDKIT_TOKEN, 'Requires WDKIT_API_TOKEN — kit import must complete');
+  });
+
+  test('§E.01 Nexter TB list shows guidance when no pages have been imported', async ({ page }) => {
+    // Navigate directly to the Nexter TB page without running an import
+    await wpLogin(page);
+    await page.goto(NEXTER_TB_URL, { waitUntil: 'domcontentloaded' });
+    await page.waitForTimeout(1500);
+    await expect(page.locator('body')).not.toContainText('Fatal error');
+
+    // Either there are TB entries OR the page shows a meaningful empty state (not a blank panel)
+    const rowCount = await page.locator('#the-list tr:not(.no-items)').count().catch(() => 0);
+    const emptyState = await page.locator('#the-list .no-items, .no-items, .wdkit-empty-state').count().catch(() => 0);
+    const pageHasContent = rowCount > 0 || emptyState > 0;
+    expect.soft(
+      pageHasContent,
+      'Nexter TB page should show either template rows or a meaningful empty-state indicator — not a blank panel'
+    ).toBe(true);
+  });
 });

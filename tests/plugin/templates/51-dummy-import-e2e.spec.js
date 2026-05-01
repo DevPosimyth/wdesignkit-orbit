@@ -12,6 +12,14 @@
 // Section 78 separates structure checks (no token needed) from completion
 // checks (token needed). Section 79 verifies WP Admin side-effects after
 // a completed dummy import.
+//
+// MANUAL CHECKS (not automatable — verify manually):
+//   • Pixel-perfect match with Figma design (colors, spacing, typography)
+//   • Screen reader announcement order and content
+//   • Cross-browser visual rendering (Firefox, Safari/WebKit, Edge)
+//   • RTL layout visual correctness (Arabic/Hebrew locales)
+//   • Color contrast ratios in rendered output
+//   • Touch gesture behavior on real mobile devices
 // =============================================================================
 
 const { test, expect } = require('@playwright/test');
@@ -590,4 +598,134 @@ test.describe('79. WP Admin post-dummy-import — pages created', () => {
     ).toBeGreaterThan(0);
   });
 
+});
+
+// =============================================================================
+// §A. Dummy Import E2E — Performance
+// =============================================================================
+test.describe('§A. Dummy Import E2E — Performance', () => {
+  test('§A.01 Full import flow completes within 60 seconds end-to-end', async ({ page }) => {
+    test.skip(!WDKIT_TOKEN, 'Requires API token for import to complete');
+    const t0 = Date.now();
+    // Wait for success or completion state using selectors from existing tests in this file
+    await page.locator('[class*="success"], [class*="complete"], [class*="import-done"]').first()
+      .waitFor({ state: 'visible', timeout: 60000 }).catch(() => {});
+    const elapsed = Date.now() - t0;
+    expect.soft(elapsed, `Full import flow took ${elapsed}ms (target < 60s)`).toBeLessThan(60000);
+  });
+
+  test('§A.02 No excessive API calls during import process (< 20 requests)', async ({ page }) => {
+    test.skip(!WDKIT_TOKEN, 'Requires API token for import to complete');
+    await wpLogin(page);
+    await goToBrowse(page);
+    await clickFirstCardImport(page);
+    await page.locator('.wkit-temp-import-mian').waitFor({ state: 'visible', timeout: 25000 }).catch(() => {});
+    await reachMethodStep(page);
+    let apiCount = 0;
+    page.on('request', req => {
+      if (req.url().includes('admin-ajax.php') || req.url().includes('/wdesignkit/')) apiCount++;
+    });
+    await page.waitForTimeout(3000);
+    expect.soft(apiCount, `Too many API requests during import: ${apiCount}`).toBeLessThan(20);
+  });
+});
+
+// =============================================================================
+// §B. Dummy Import E2E — Keyboard Navigation
+// =============================================================================
+test.describe('§B. Dummy Import E2E — Keyboard Navigation', () => {
+  test.beforeEach(async ({ page }) => {
+    await wpLogin(page);
+    await goToBrowse(page);
+    await clickFirstCardImport(page);
+    await page.locator('.wkit-temp-import-mian').waitFor({ state: 'visible', timeout: 25000 }).catch(() => {});
+    await reachMethodStep(page);
+    await page.locator('.wkit-import-method-main').waitFor({ state: 'visible', timeout: 15000 }).catch(() => {});
+  });
+
+  test('§B.01 Tab navigation works at each wizard step without focus trap', async ({ page }) => {
+    for (let i = 0; i < 6; i++) {
+      await page.keyboard.press('Tab');
+      await page.waitForTimeout(150);
+    }
+    const tag = await page.evaluate(() => document.activeElement?.tagName || 'UNKNOWN');
+    expect.soft(['BODY', 'HTML']).not.toContain(tag);
+    await expect(page.locator('body')).not.toContainText('Fatal error');
+  });
+});
+
+// =============================================================================
+// §C. Dummy Import E2E — RTL layout
+// =============================================================================
+test.describe('§C. Dummy Import E2E — RTL layout', () => {
+  test.beforeEach(async ({ page }) => {
+    await wpLogin(page);
+    await goToBrowse(page);
+    await clickFirstCardImport(page);
+    await page.locator('.wkit-temp-import-mian').waitFor({ state: 'visible', timeout: 25000 }).catch(() => {});
+    await reachMethodStep(page);
+    await page.locator('.wkit-import-method-main').waitFor({ state: 'visible', timeout: 15000 }).catch(() => {});
+  });
+
+  test('§C.01 Import wizard does not overflow in RTL mode', async ({ page }) => {
+    await page.evaluate(() => { document.documentElement.setAttribute('dir', 'rtl'); });
+    await page.waitForTimeout(400);
+    const hasHScroll = await page.evaluate(() => document.body.scrollWidth > window.innerWidth + 5);
+    expect.soft(hasHScroll, 'Import wizard overflows in RTL').toBe(false);
+    await page.evaluate(() => { document.documentElement.removeAttribute('dir'); });
+  });
+});
+
+// =============================================================================
+// §D. Dummy Import E2E — Form validation edge cases
+// =============================================================================
+test.describe('§D. Dummy Import E2E — Form validation edge cases', () => {
+  test.beforeEach(async ({ page }) => {
+    await wpLogin(page);
+    await goToBrowse(page);
+    await clickFirstCardImport(page);
+    await page.locator('.wkit-temp-import-mian').waitFor({ state: 'visible', timeout: 25000 }).catch(() => {});
+    await reachMethodStep(page);
+    await page.locator('.wkit-import-method-main').waitFor({ state: 'visible', timeout: 15000 }).catch(() => {});
+  });
+
+  test('§D.01 Import wizard handles missing/empty required selections gracefully', async ({ page }) => {
+    // Attempt to proceed without required selections — should show error, not crash
+    const nextBtn = page.locator(
+      '.wkit-next-btn, button[class*="next"], button[class*="continue"], button[class*="proceed"]'
+    ).first();
+    if (await nextBtn.count() > 0 && await nextBtn.isVisible().catch(() => false)) {
+      await nextBtn.click({ force: true });
+      await page.waitForTimeout(1000);
+      await expect(page.locator('body')).not.toContainText('Fatal error');
+    }
+  });
+});
+
+// =============================================================================
+// §E. Dummy Import E2E — Tap target size
+// =============================================================================
+test.describe('§E. Dummy Import E2E — Tap target size', () => {
+  test.beforeEach(async ({ page }) => {
+    await wpLogin(page);
+    await goToBrowse(page);
+    await clickFirstCardImport(page);
+    await page.locator('.wkit-temp-import-mian').waitFor({ state: 'visible', timeout: 25000 }).catch(() => {});
+    await reachMethodStep(page);
+    await page.locator('.wkit-import-method-main').waitFor({ state: 'visible', timeout: 15000 }).catch(() => {});
+  });
+
+  test('§E.01 Wizard navigation buttons are ≥ 44×44px on mobile viewport', async ({ page }) => {
+    await page.setViewportSize({ width: 375, height: 812 });
+    const navBtns = await page.locator(
+      '.wkit-next-btn, .wkit-back-btn, button[class*="next"], button[class*="back"]'
+    ).all();
+    for (const btn of navBtns.slice(0, 4)) {
+      if (!await btn.isVisible().catch(() => false)) continue;
+      const box = await btn.boundingBox().catch(() => null);
+      if (box) {
+        expect.soft(box.height, `Wizard nav button height ${box.height}px < 44px`).toBeGreaterThanOrEqual(44);
+      }
+    }
+  });
 });

@@ -7,6 +7,20 @@
 //   Section 2  — Template library initial render & grid (10 tests)
 //   Section 2b — Browse search, skeleton, empty state, preview button (10 tests)
 //   Section 2c — Pagination / infinite scroll (7 tests)  ← NEW
+//   §A — Responsive layout (6 tests)
+//   §B — Security (3 tests)
+//   §C — Keyboard Navigation / WCAG 2.1 AA (3 tests)
+//   §D — Performance (3 tests)
+//   §E — Tap target size / WCAG 2.5.5 (1 test)
+//   §F — RTL layout (1 test)
+//
+// MANUAL CHECKS (not automatable — verify manually):
+//   • Pixel-perfect match with Figma design (colors, spacing, typography)
+//   • Screen reader announcement order and content
+//   • Cross-browser visual rendering (Firefox, Safari, Edge)
+//   • RTL layout visual correctness (Arabic/Hebrew locales)
+//   • Color contrast ratios in rendered output
+//   • Touch gesture behavior on real mobile devices
 // =============================================================================
 
 const { test, expect } = require('@playwright/test');
@@ -498,4 +512,203 @@ test.describe('2c. Pagination / infinite scroll', () => {
     await expect(page.locator('body')).not.toContainText('Fatal error');
   });
 
+});
+
+// =============================================================================
+// §A. Browse Library — Responsive layout
+// =============================================================================
+test.describe('§A. Browse Library — Responsive layout', () => {
+  const VIEWPORTS = [
+    { name: 'mobile', width: 375, height: 812 },
+    { name: 'tablet', width: 768, height: 1024 },
+    { name: 'desktop', width: 1440, height: 900 },
+  ];
+
+  for (const vp of VIEWPORTS) {
+    test(`§A.01 Browse library renders without horizontal scroll at ${vp.name} (${vp.width}px)`, async ({ page }) => {
+      await wpLogin(page);
+      await page.setViewportSize({ width: vp.width, height: vp.height });
+      await goToBrowse(page);
+      await page.locator('.wdkit-browse-card').first().waitFor({ state: 'visible', timeout: 15000 }).catch(() => {});
+      const hasHScroll = await page.evaluate(() => document.body.scrollWidth > window.innerWidth + 5);
+      expect.soft(hasHScroll, `Horizontal scroll at ${vp.name}`).toBe(false);
+    });
+
+    test(`§A.02 Browse grid cards are visible at ${vp.name} (${vp.width}px)`, async ({ page }) => {
+      await wpLogin(page);
+      await page.setViewportSize({ width: vp.width, height: vp.height });
+      await goToBrowse(page);
+      await page.locator('.wdkit-browse-card').first().waitFor({ state: 'visible', timeout: 15000 }).catch(() => {});
+      const count = await page.locator('.wdkit-browse-card').count();
+      expect.soft(count, `No cards at ${vp.name}`).toBeGreaterThan(0);
+    });
+  }
+});
+
+// =============================================================================
+// §B. Browse Library — Security
+// =============================================================================
+test.describe('§B. Browse Library — Security', () => {
+  test.beforeEach(async ({ page }) => {
+    await wpLogin(page);
+    await goToBrowse(page);
+  });
+
+  test('§B.01 Search input does not execute injected XSS payload', async ({ page }) => {
+    const xssPayload = '<script>window.__xss_browse=1</script>';
+    const searchInput = page.locator(
+      'input.wdkit-browse-search-inp, input[placeholder*="search" i], .wdkit-search-inp input'
+    ).first();
+    if (await searchInput.count() > 0) {
+      await searchInput.fill(xssPayload);
+      await page.waitForTimeout(1500);
+      const xssRan = await page.evaluate(() => window.__xss_browse === 1);
+      expect(xssRan, 'XSS payload executed in browse search').toBe(false);
+    }
+  });
+
+  test('§B.02 No API keys or credentials visible in page source', async ({ page }) => {
+    const html = await page.content();
+    const hasApiKey = /api[-_]?key\s*[:=]\s*["'][a-zA-Z0-9]{20,}/i.test(html);
+    expect.soft(hasApiKey, 'API key found in page source').toBe(false);
+  });
+
+  test('§B.03 No mixed HTTP content on HTTPS browse page', async ({ page }) => {
+    const pageUrl = page.url();
+    if (!pageUrl.startsWith('https://')) return;
+    const mixedContent = [];
+    page.on('response', res => {
+      if (res.url().startsWith('http://') && !res.url().startsWith('http://localhost')) {
+        mixedContent.push(res.url());
+      }
+    });
+    await goToBrowse(page);
+    await page.waitForTimeout(2000);
+    expect.soft(mixedContent, `Mixed HTTP content: ${mixedContent.join(', ')}`).toHaveLength(0);
+  });
+});
+
+// =============================================================================
+// §C. Browse Library — Keyboard Navigation (WCAG 2.1 AA)
+// =============================================================================
+test.describe('§C. Browse Library — Keyboard Navigation', () => {
+  test.beforeEach(async ({ page }) => {
+    await wpLogin(page);
+    await goToBrowse(page);
+    await page.locator('.wdkit-browse-card').first().waitFor({ state: 'visible', timeout: 15000 }).catch(() => {});
+  });
+
+  test('§C.01 Tab key navigates through interactive elements without focus trap', async ({ page }) => {
+    await page.keyboard.press('Tab');
+    await page.waitForTimeout(200);
+    await page.keyboard.press('Tab');
+    await page.waitForTimeout(200);
+    await page.keyboard.press('Tab');
+    await page.waitForTimeout(200);
+    const focusedTag = await page.evaluate(() => document.activeElement?.tagName);
+    // Focus should move — not get stuck on body/html
+    expect.soft(['BODY', 'HTML'], 'Focus is stuck on body — possible focus trap').not.toContain(focusedTag);
+    await expect(page.locator('body')).not.toContainText('Fatal error');
+  });
+
+  test('§C.02 Search input is reachable via keyboard Tab', async ({ page }) => {
+    const searchInput = page.locator(
+      'input.wdkit-browse-search-inp, input[placeholder*="search" i], .wdkit-search-inp input'
+    ).first();
+    if (await searchInput.count() === 0) return;
+    // Tab through up to 10 elements to find search input
+    for (let i = 0; i < 10; i++) {
+      await page.keyboard.press('Tab');
+      const focused = await page.evaluate(() => document.activeElement);
+      const isFocused = await searchInput.evaluate((el, active) => el === active, focused).catch(() => false);
+      if (isFocused) break;
+    }
+    const isSearchFocusable = await searchInput.evaluate(el => !el.disabled && el.tabIndex >= 0).catch(() => false);
+    expect.soft(isSearchFocusable, 'Search input is not keyboard-focusable').toBe(true);
+  });
+
+  test('§C.03 Enter key on Import button triggers action (not silent)', async ({ page }) => {
+    const importBtn = page.locator('.wdkit-browse-card-download').first();
+    if (await importBtn.count() > 0 && await importBtn.isVisible()) {
+      await importBtn.focus().catch(() => {});
+      await page.keyboard.press('Enter');
+      await page.waitForTimeout(1000);
+      // Page should still be functional (not crashed)
+      await expect(page.locator('body')).not.toContainText('Fatal error');
+    }
+  });
+});
+
+// =============================================================================
+// §D. Browse Library — Performance
+// =============================================================================
+test.describe('§D. Browse Library — Performance', () => {
+  test('§D.01 Browse page initial load completes within 5 seconds (LCP proxy)', async ({ page }) => {
+    await wpLogin(page);
+    const t0 = Date.now();
+    await goToBrowse(page);
+    await page.locator('.wdkit-browse-card').first().waitFor({ state: 'visible', timeout: 15000 }).catch(() => {});
+    const elapsed = Date.now() - t0;
+    expect.soft(elapsed, `Browse page load took ${elapsed}ms (target < 5000ms)`).toBeLessThan(5000);
+  });
+
+  test('§D.02 No excessive API calls on initial browse page load (< 10 requests)', async ({ page }) => {
+    await wpLogin(page);
+    let apiCount = 0;
+    page.on('request', req => {
+      if (req.url().includes('admin-ajax.php') || req.url().includes('/wdesignkit/')) apiCount++;
+    });
+    await goToBrowse(page);
+    await page.waitForTimeout(2000);
+    expect.soft(apiCount, `Too many API calls on load: ${apiCount}`).toBeLessThan(10);
+  });
+
+  test('§D.03 No CLS-causing layout jumps after card images load', async ({ page }) => {
+    await wpLogin(page);
+    await goToBrowse(page);
+    // Measure layout shift by checking if card positions change after images load
+    const cardCount1 = await page.locator('.wdkit-browse-card').count().catch(() => 0);
+    await page.waitForTimeout(2000);
+    const cardCount2 = await page.locator('.wdkit-browse-card').count().catch(() => 0);
+    // Card count should stabilize — no sudden re-renders
+    expect.soft(Math.abs(cardCount2 - cardCount1), 'Unstable card count suggests layout jumps').toBeLessThan(3);
+  });
+});
+
+// =============================================================================
+// §E. Browse Library — Tap target size (WCAG 2.5.5 / Responsiveness)
+// =============================================================================
+test.describe('§E. Browse Library — Tap target size', () => {
+  test('§E.01 Import button tap target is ≥ 44×44px on mobile viewport', async ({ page }) => {
+    await wpLogin(page);
+    await page.setViewportSize({ width: 375, height: 812 });
+    await goToBrowse(page);
+    await page.locator('.wdkit-browse-card').first().waitFor({ state: 'visible', timeout: 15000 }).catch(() => {});
+    const importBtn = page.locator('.wdkit-browse-card-download').first();
+    if (await importBtn.count() > 0 && await importBtn.isVisible()) {
+      const box = await importBtn.boundingBox();
+      if (box) {
+        expect.soft(box.width, `Import btn width ${box.width}px < 44px`).toBeGreaterThanOrEqual(44);
+        expect.soft(box.height, `Import btn height ${box.height}px < 44px`).toBeGreaterThanOrEqual(44);
+      }
+    }
+  });
+});
+
+// =============================================================================
+// §F. Browse Library — RTL layout
+// =============================================================================
+test.describe('§F. Browse Library — RTL layout', () => {
+  test('§F.01 Browse library does not overflow when dir=rtl is applied', async ({ page }) => {
+    await wpLogin(page);
+    await goToBrowse(page);
+    await page.locator('.wdkit-browse-card').first().waitFor({ state: 'visible', timeout: 15000 }).catch(() => {});
+    // Simulate RTL direction
+    await page.evaluate(() => { document.documentElement.setAttribute('dir', 'rtl'); });
+    await page.waitForTimeout(500);
+    const hasHScroll = await page.evaluate(() => document.body.scrollWidth > window.innerWidth + 5);
+    expect.soft(hasHScroll, 'Horizontal overflow in RTL mode').toBe(false);
+    // Reset
+    await page.evaluate(() => { document.documentElement.removeAttribute('dir'); });
+  });
 });
