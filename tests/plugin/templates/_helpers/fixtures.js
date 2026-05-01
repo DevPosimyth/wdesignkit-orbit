@@ -67,6 +67,14 @@ const BUILDER_IDS = {
 };
 
 const VIEWPORTS = [
+  { name: 'mobile-xs', width: 320, height: 568 },
+  { name: 'mobile', width: 375, height: 812 },
+  { name: 'tablet', width: 768, height: 1024 },
+  { name: 'desktop', width: 1440, height: 900 },
+];
+
+// Subset for legacy tests that only need 375/768/1440
+const VIEWPORTS_STANDARD = [
   { name: 'mobile', width: 375, height: 812 },
   { name: 'tablet', width: 768, height: 1024 },
   { name: 'desktop', width: 1440, height: 900 },
@@ -80,4 +88,5 @@ module.exports = {
   CATEGORIES,
   BUILDER_IDS,
   VIEWPORTS,
+  VIEWPORTS_STANDARD,
 };

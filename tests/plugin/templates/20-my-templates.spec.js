@@ -1,6 +1,6 @@
 // =============================================================================
 // WDesignKit Templates Suite — My Templates (My Uploaded)
-// Version: 1.0.0
+// Version: 2.0.0
 // Source: split from template-import.spec.js + src/pages/myuploaded/template/myuploaded.js
 //
 // COVERAGE
@@ -12,6 +12,8 @@
 //   Section 25 — Template card grid & empty state (8 tests)
 //   Section 26 — Pagination controls (5 tests)
 //   Section 27 — Console & network health (4 tests)
+//   Section 28 — Empty state CTA & logic edge cases (7 tests) ← NEW
+//   Section 29 — Tab state persistence & search debounce (6 tests) ← NEW
 //
 // KEY SELECTORS (from myuploaded.js source)
 //   .wkit-myupload-main         — root container
@@ -658,6 +660,375 @@ test.describe('27. My Templates — console & network health', () => {
       !e.includes('extension') && !e.includes('chrome-extension')
     );
     expect(productErrors, productErrors.join('\n')).toHaveLength(0);
+  });
+
+});
+
+// =============================================================================
+// 28. My Templates — empty state CTA & logic edge cases
+// =============================================================================
+test.describe('28. My Templates — empty state CTA & logic edge cases', () => {
+
+  test.beforeEach(async ({ page }) => {
+    await wpLogin(page);
+    await goToMyTemplates(page);
+    await page.waitForTimeout(2500);
+  });
+
+  test('28.01 Empty state "Browse Templates" CTA navigates to #/browse', async ({ page }) => {
+    const emptyState = page.locator(
+      '.wkit-not-found, [class*="not-found"], [class*="no-template"], .wkit-no-data'
+    ).first();
+    const emptyVisible = await emptyState.isVisible({ timeout: 5000 }).catch(() => false);
+
+    if (!emptyVisible) {
+      // No empty state present — user has templates, skip the CTA check
+      return;
+    }
+
+    // Look for any link/button inside the empty state that points to browse
+    const browseLink = page.locator(
+      '.wkit-not-found a[href*="browse"], [class*="not-found"] a[href*="browse"], ' +
+      '.wkit-not-found button, [class*="not-found"] button'
+    ).first();
+
+    const browseVisible = await browseLink.isVisible({ timeout: 3000 }).catch(() => false);
+    if (browseVisible) {
+      await browseLink.click();
+      await page.waitForTimeout(2000);
+      const hash = await page.evaluate(() => location.hash);
+      expect(hash).toContain('browse');
+    } else {
+      // CTA may use hash navigation — look for any anchor with #/browse
+      const anyBrowseLink = page.locator('a[href="#/browse"]').first();
+      const anyVisible = await anyBrowseLink.isVisible({ timeout: 3000 }).catch(() => false);
+      if (anyVisible) {
+        await anyBrowseLink.click();
+        await page.waitForTimeout(2000);
+        const hash = await page.evaluate(() => location.hash);
+        expect(hash).toContain('browse');
+      } else {
+        // No CTA visible — log and skip (soft pass — empty state may just have text)
+        console.log('[28.01] No browse CTA found in empty state — may be text-only');
+      }
+    }
+  });
+
+  test('28.02 Empty state is not a blank panel — shows descriptive text', async ({ page }) => {
+    const emptyState = page.locator(
+      '.wkit-not-found, [class*="not-found"], [class*="no-template"], .wkit-no-data'
+    ).first();
+    const emptyVisible = await emptyState.isVisible({ timeout: 5000 }).catch(() => false);
+
+    if (!emptyVisible) {
+      return; // Has templates — empty state not visible, skip
+    }
+
+    const emptyText = await emptyState.innerText({ timeout: 5000 }).catch(() => '');
+    expect(emptyText.trim().length,
+      'Empty state should have descriptive text, not be blank'
+    ).toBeGreaterThan(0);
+  });
+
+  test('28.03 Zero-result search shows empty/no-results state, not a crash', async ({ page }) => {
+    const input = page.locator('.wdkit-search-filter input').first();
+    const visible = await input.isVisible({ timeout: 5000 }).catch(() => false);
+
+    if (!visible) return; // Search not present — nothing to test
+
+    await input.fill('zzz_nomatch_xyzqwerty_99999');
+    await input.press('Enter');
+    await page.waitForTimeout(2500);
+
+    await expect(page.locator('body')).not.toContainText('Fatal error');
+    await expect(page.locator('body')).not.toContainText('Uncaught');
+
+    // Should show empty/no-result indicator — not a blank loop container
+    const noResult = page.locator(
+      '.wkit-not-found, [class*="not-found"], [class*="no-result"], [class*="no-data"], ' +
+      '.wkit-no-data, [class*="empty"]'
+    );
+    const noResultCount = await noResult.count();
+    const cardCount = await page.locator('.wdkit-browse-card').count();
+
+    // Either cards are gone + empty state shown, or 0 cards (both acceptable outcomes)
+    expect(cardCount === 0 || noResultCount > 0).toBe(true);
+  });
+
+  test('28.04 Zero-result search empty state shows helpful text, not blank', async ({ page }) => {
+    const input = page.locator('.wdkit-search-filter input').first();
+    const visible = await input.isVisible({ timeout: 5000 }).catch(() => false);
+
+    if (!visible) return;
+
+    await input.fill('zzz_nomatch_xyzqwerty_99999');
+    await input.press('Enter');
+    await page.waitForTimeout(2500);
+
+    const cardCount = await page.locator('.wdkit-browse-card').count();
+    if (cardCount === 0) {
+      // Empty state should have some text content
+      const loopText = await page.locator('.wdkit-loop').innerText({ timeout: 5000 }).catch(() => '');
+      const appText = await page.locator('#wdesignkit-app').innerText({ timeout: 5000 }).catch(() => '');
+      const combined = loopText + appText;
+      expect(combined.trim().length,
+        'Zero-result state must not be a completely blank panel'
+      ).toBeGreaterThan(0);
+    }
+  });
+
+  test('28.05 Favourite filter with no favourites shows empty state, not crash', async ({ page }) => {
+    // Click favourite filter button to show only favourites
+    const favBtn = page.locator('.wdkit-favourite-btn').first();
+    const visible = await favBtn.isVisible({ timeout: 5000 }).catch(() => false);
+    if (!visible) return;
+
+    await favBtn.click();
+    await page.waitForTimeout(2000);
+
+    await expect(page.locator('body')).not.toContainText('Fatal error');
+
+    const cardCount = await page.locator('.wdkit-browse-card').count();
+    if (cardCount === 0) {
+      // Some empty state indicator should show
+      const appText = await page.locator('#wdesignkit-app').innerText({ timeout: 5000 }).catch(() => '');
+      expect(appText.trim().length,
+        'Favourite filter with no results should show content, not a blank panel'
+      ).toBeGreaterThan(0);
+    }
+  });
+
+  test('28.06 Clearing search after zero-result restores list (no crash)', async ({ page }) => {
+    const input = page.locator('.wdkit-search-filter input').first();
+    const visible = await input.isVisible({ timeout: 5000 }).catch(() => false);
+    if (!visible) return;
+
+    await input.fill('zzz_nomatch_xyzqwerty_99999');
+    await input.press('Enter');
+    await page.waitForTimeout(2000);
+
+    await input.fill('');
+    await input.press('Enter');
+    await page.waitForTimeout(2000);
+
+    await expect(page.locator('body')).not.toContainText('Fatal error');
+    // UI should recover — wdkit-loop should still exist
+    const loop = page.locator('.wdkit-loop');
+    await expect(loop).toBeVisible({ timeout: 5000 });
+  });
+
+  test('28.07 Upload / Save Template entry point is accessible from My Templates page', async ({ page }) => {
+    // The "My Uploaded" page should have a way for user to save/upload a template
+    // This may be a button, CTA, or link — validate it is present and not broken
+    const uploadCTA = page.locator(
+      'a[href*="save_template"], a[href*="#/save_template"], ' +
+      'button[class*="upload"], button[class*="save"], ' +
+      '[class*="upload-btn"], [class*="save-template"]'
+    ).first();
+
+    const ctaCount = await uploadCTA.count();
+    // Soft: some builds may show this only in navbar — accept if anywhere on page
+    const navbarUpload = page.locator('.wkit-navbar a, .wkit-navbar button').filter({
+      hasText: /save|upload|add/i,
+    }).first();
+    const navbarCount = await navbarUpload.count();
+
+    expect.soft(ctaCount + navbarCount,
+      'My Templates page should have at least one upload/save-template entry point'
+    ).toBeGreaterThan(0);
+  });
+
+});
+
+// =============================================================================
+// 29. My Templates — tab state persistence & search debounce
+// =============================================================================
+test.describe('29. My Templates — tab state persistence & search debounce', () => {
+
+  test.beforeEach(async ({ page }) => {
+    await wpLogin(page);
+    await goToMyTemplates(page);
+    await page.waitForTimeout(2000);
+  });
+
+  test('29.01 Active tab survives hash re-navigation (state not lost on soft reload)', async ({ page }) => {
+    // Click "Sections" tab
+    const sectionsTab = page.locator('.wdesignkit-menu').filter({ hasText: /sections/i }).first();
+    const visible = await sectionsTab.isVisible({ timeout: 5000 }).catch(() => false);
+
+    if (!visible) return;
+
+    await sectionsTab.click();
+    await page.waitForTimeout(1000);
+
+    const isActiveBeforeNav = await sectionsTab.evaluate(el => el.classList.contains('tab-active'));
+    expect(isActiveBeforeNav).toBe(true);
+
+    // Navigate away then back to my_uploaded
+    await page.evaluate(() => { location.hash = '/browse'; });
+    await page.waitForTimeout(1500);
+    await page.evaluate(() => { location.hash = '/my_uploaded'; });
+    await page.waitForTimeout(2500);
+
+    // After re-navigation, default tab renders without crash
+    await expect(page.locator('body')).not.toContainText('Fatal error');
+    // At least one tab should be active
+    const activeCount = await page.locator('.wdesignkit-menu.tab-active').count();
+    expect(activeCount).toBeGreaterThanOrEqual(1);
+  });
+
+  test('29.02 Search does not fire an API call on every single keystroke (debounce check)', async ({ page }) => {
+    const input = page.locator('.wdkit-search-filter input').first();
+    const visible = await input.isVisible({ timeout: 5000 }).catch(() => false);
+    if (!visible) return;
+
+    const requestUrls = [];
+    page.on('request', req => {
+      const url = req.url();
+      if (url.includes('admin-ajax.php') || url.includes('wdesignkit') || url.includes('api')) {
+        requestUrls.push(url);
+      }
+    });
+
+    const countBefore = requestUrls.length;
+
+    // Type 6 characters rapidly
+    await input.click();
+    for (const ch of 'agency') {
+      await page.keyboard.type(ch, { delay: 30 });
+    }
+
+    // Wait a short time — debounce window, not full settle
+    await page.waitForTimeout(300);
+    const countDuringTyping = requestUrls.length - countBefore;
+
+    // Wait for debounce to settle
+    await page.waitForTimeout(1200);
+    const countAfterSettle = requestUrls.length - countBefore;
+
+    // Debounced: requests during typing should be fewer than total characters typed (6)
+    // Perfect debounce = 0 during typing, 1 after settle
+    // Acceptable: fewer requests than keystrokes
+    expect.soft(
+      countDuringTyping,
+      `Expected fewer API calls than keystrokes during typing (debounce). Got ${countDuringTyping} during 6 keystrokes.`
+    ).toBeLessThan(6);
+
+    // After settling, at least the settled search request should have fired (if API-driven)
+    // We don't hard-assert this since some implementations use local filter
+    console.log(`[29.02] Requests during typing: ${countDuringTyping} | After settle: ${countAfterSettle}`);
+  });
+
+  test('29.03 Switching tabs clears the search input value', async ({ page }) => {
+    const input = page.locator('.wdkit-search-filter input').first();
+    const visible = await input.isVisible({ timeout: 5000 }).catch(() => false);
+    if (!visible) return;
+
+    // Type something in search
+    await input.fill('agency');
+    await page.waitForTimeout(800);
+
+    // Switch to Sections tab
+    const sectionsTab = page.locator('.wdesignkit-menu').filter({ hasText: /sections/i }).first();
+    const tabVisible = await sectionsTab.isVisible({ timeout: 3000 }).catch(() => false);
+    if (!tabVisible) return;
+
+    await sectionsTab.click();
+    await page.waitForTimeout(1500);
+
+    // Check search input value after tab switch
+    const valueAfterSwitch = await input.inputValue().catch(() => null);
+    if (valueAfterSwitch !== null) {
+      // Soft assert — clearing on tab switch is best practice but may not be implemented
+      expect.soft(valueAfterSwitch,
+        'Search input should be cleared when switching tabs to avoid stale filter'
+      ).toBe('');
+    }
+
+    // Page must not crash regardless
+    await expect(page.locator('body')).not.toContainText('Fatal error');
+  });
+
+  test('29.04 Tab switch combined with active search does not freeze the page', async ({ page }) => {
+    const input = page.locator('.wdkit-search-filter input').first();
+    const inputVisible = await input.isVisible({ timeout: 5000 }).catch(() => false);
+
+    if (inputVisible) {
+      await input.fill('home');
+      await page.waitForTimeout(500);
+    }
+
+    // Rapidly switch all tabs while search filter is active
+    const tabs = page.locator('.wdesignkit-menu');
+    const tabCount = await tabs.count();
+    for (let i = 0; i < tabCount; i++) {
+      const tab = tabs.nth(i);
+      const tabVisible = await tab.isVisible({ timeout: 1000 }).catch(() => false);
+      if (tabVisible) {
+        await tab.click();
+        await page.waitForTimeout(400);
+      }
+    }
+
+    await page.waitForTimeout(1500);
+    await expect(page.locator('body')).not.toContainText('Fatal error');
+
+    // App root must still be visible
+    await expect(page.locator('#wdesignkit-app')).toBeVisible({ timeout: 5000 });
+  });
+
+  test('29.05 Page reload after tab switch lands on default state without error', async ({ page }) => {
+    // Click Sections tab then reload
+    const sectionsTab = page.locator('.wdesignkit-menu').filter({ hasText: /sections/i }).first();
+    const visible = await sectionsTab.isVisible({ timeout: 5000 }).catch(() => false);
+    if (visible) {
+      await sectionsTab.click();
+      await page.waitForTimeout(800);
+    }
+
+    // Simulate reload by re-navigating to the exact same hash URL
+    const currentUrl = page.url();
+    await page.goto(currentUrl, { waitUntil: 'domcontentloaded' });
+    await page.waitForTimeout(3000);
+
+    await expect(page.locator('body')).not.toContainText('Fatal error');
+    // App should render
+    const appText = await page.locator('#wdesignkit-app').innerText({ timeout: 8000 }).catch(() => '');
+    expect(appText.trim().length).toBeGreaterThan(0);
+  });
+
+  test('29.06 Rapid tab switching (6x in 2s) does not cause React unmount error', async ({ page }) => {
+    const errors = [];
+    page.on('console', m => { if (m.type() === 'error') errors.push(m.text()); });
+    page.on('pageerror', err => errors.push(`PAGEERROR: ${err.message}`));
+
+    const tabs = page.locator('.wdesignkit-menu');
+    const tabCount = await tabs.count();
+
+    if (tabCount < 2) return; // Not enough tabs to test
+
+    // Rapid-fire tab switching: 6 clicks, 200ms apart
+    for (let i = 0; i < 6; i++) {
+      const tab = tabs.nth(i % tabCount);
+      const visible = await tab.isVisible({ timeout: 500 }).catch(() => false);
+      if (visible) {
+        await tab.click();
+        await page.waitForTimeout(200);
+      }
+    }
+
+    await page.waitForTimeout(2000);
+
+    const productErrors = errors.filter(e =>
+      !e.includes('favicon') &&
+      !e.includes('net::ERR') &&
+      !e.includes('extension') &&
+      !e.includes('chrome-extension')
+    );
+
+    expect(productErrors,
+      `Rapid tab switching caused errors:\n${productErrors.join('\n')}`
+    ).toHaveLength(0);
   });
 
 });

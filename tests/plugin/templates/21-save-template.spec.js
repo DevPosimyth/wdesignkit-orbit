@@ -1,6 +1,6 @@
 // =============================================================================
 // WDesignKit Templates Suite — Save Template
-// Version: 1.0.0
+// Version: 2.0.0
 // Source: src/pages/save_template/main_save_template.js
 //
 // IMPORTANT: The save_template route is only active when use_editor !== 'wdkit'
@@ -14,6 +14,7 @@
 //   Section 32 — Save form: upload UI states (7 tests)
 //   Section 33 — Save form: destination (My Upload vs Workspace) (5 tests)
 //   Section 34 — Console & network health (4 tests)
+//   Section 35 — Empty state guidance, thumbnail file input & destination switching (8 tests) ← NEW
 //
 // KEY SELECTORS (from save_template source)
 //   .wdkit-save-temp-page          — root container
@@ -497,6 +498,133 @@ test.describe('34. Save Template — console & network health', () => {
       !e.includes('extension') && !e.includes('chrome-extension')
     );
     expect(productErrors, productErrors.join('\n')).toHaveLength(0);
+  });
+
+});
+
+// =============================================================================
+// 35. Save Template — empty state guidance, thumbnail file input & destination switching
+// =============================================================================
+test.describe('35. Save Template — empty state, thumbnail input & destination', () => {
+
+  test.beforeEach(async ({ page }) => {
+    await wpLogin(page);
+    await goToSaveTemplate(page);
+    await page.waitForTimeout(1500);
+  });
+
+  test('35.01 Save Template page shows descriptive content — not a blank page', async ({ page }) => {
+    const appText = await page.locator('#wdesignkit-app').innerText({ timeout: 10000 }).catch(() => '');
+    // Either shows the form or redirects to login — both are valid, neither should be blank
+    expect(appText.trim().length,
+      'Save Template page renders blank — no form, no login redirect'
+    ).toBeGreaterThan(0);
+  });
+
+  test('35.02 Thumbnail image upload input is restricted to image file types', async ({ page }) => {
+    // Look for a file input that accepts images in the save template form
+    const thumbInput = page.locator(
+      '.wdkit-save-temp-image-upload input[type="file"], ' +
+      'input[type="file"][accept*="image"], ' +
+      'input[type="file"][id*="thumb" i], ' +
+      'input[type="file"][id*="img" i]'
+    ).first();
+
+    const count = await thumbInput.count();
+    if (count > 0) {
+      const accept = await thumbInput.getAttribute('accept');
+      if (accept) {
+        const hasImageRestriction =
+          accept.includes('image/') || accept.includes('.jpg') || accept.includes('.png');
+        expect(hasImageRestriction,
+          `Thumbnail file input accept="${accept}" does not restrict to images`
+        ).toBe(true);
+      }
+      // Hard: must NOT accept executables
+      if (accept) {
+        expect(accept.toLowerCase()).not.toContain('.php');
+        expect(accept.toLowerCase()).not.toContain('.exe');
+      }
+    }
+  });
+
+  test('35.03 Destination dropdown switches between "My Upload" and "Workspace" options', async ({ page }) => {
+    const dropdown = page.locator('.wkit-saveTemplate-dowpDown').first();
+    const exists = await dropdown.count() > 0;
+    if (!exists) return;
+
+    // Look for option buttons or select options
+    const workspaceOption = page.locator('[value="workspace"], [data-type="workspace"], option[value="workspace"]').first();
+    const myUploadOption = page.locator('[value="my_upload"], [data-type="my_upload"], option[value="my_upload"]').first();
+
+    const workspaceExists = await workspaceOption.count() > 0;
+    const myUploadExists = await myUploadOption.count() > 0;
+
+    // At least one destination option should exist
+    expect.soft(workspaceExists || myUploadExists,
+      'No destination options found in save template dropdown (expected my_upload and/or workspace)'
+    ).toBe(true);
+  });
+
+  test('35.04 Clicking "Workspace" destination option does not crash the page', async ({ page }) => {
+    const workspaceOption = page.locator('[value="workspace"], [data-type="workspace"]').first();
+    const exists = await workspaceOption.isVisible({ timeout: 3000 }).catch(() => false);
+    if (exists) {
+      await workspaceOption.click({ force: true });
+      await page.waitForTimeout(1000);
+    }
+    await expect(page.locator('body')).not.toContainText('Fatal error');
+  });
+
+  test('35.05 Template type tabs (Pages / Sections / Kits) are present in the save form', async ({ page }) => {
+    // The save form should let users choose what type of template they are saving
+    const tabs = page.locator('.wkit-tab-setting-wrap, .section-page-post-type, [class*="type-tab"], [class*="template-type"]');
+    const count = await tabs.count();
+
+    // Alternatively, look for labels/buttons for type selection
+    const typeLabels = page.locator('label, button').filter({ hasText: /pages|sections|kits/i });
+    const labelCount = await typeLabels.count();
+
+    expect.soft(count + labelCount,
+      'Save form has no type selection UI (Pages/Sections/Kits tabs) — user cannot categorize their template'
+    ).toBeGreaterThan(0);
+  });
+
+  test('35.06 XSS in template name does not render script in the save form', async ({ page }) => {
+    const nameInput = page.locator('input[type="text"]').first();
+    const exists = await nameInput.count() > 0;
+    if (exists) {
+      await nameInput.fill('<img src=x onerror="window.__xss_save=1">');
+      await page.waitForTimeout(1000);
+    }
+    const xss = await page.evaluate(() => window.__xss_save);
+    expect(xss).toBeUndefined();
+  });
+
+  test('35.07 Save form renders at 375px mobile viewport without overflow', async ({ page }) => {
+    await page.setViewportSize({ width: 375, height: 812 });
+    await page.waitForTimeout(800);
+
+    const saveRoot = page.locator('.wdkit-save-temp-page, #wdesignkit-app').first();
+    if ((await saveRoot.count()) > 0) {
+      const overflow = await saveRoot.evaluate(el => el.scrollWidth > el.clientWidth + 5).catch(() => false);
+      expect.soft(overflow,
+        'Save Template form overflows horizontally at 375px mobile viewport'
+      ).toBe(false);
+    }
+  });
+
+  test('35.08 Save form footer save button .wdkit-save-footer-btn is present and not frozen', async ({ page }) => {
+    const footerBtn = page.locator('.wdkit-save-footer-btn').first();
+    const exists = await footerBtn.count() > 0;
+    if (exists) {
+      await expect(footerBtn).toBeVisible({ timeout: 5000 });
+      // Button should not be in a loading/spinner state on initial load
+      const btnText = await footerBtn.textContent().catch(() => '');
+      expect(btnText.trim().length,
+        'Save footer button appears to be empty or in a frozen state'
+      ).toBeGreaterThan(0);
+    }
   });
 
 });

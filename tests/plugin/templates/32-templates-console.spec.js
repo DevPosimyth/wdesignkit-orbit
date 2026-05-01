@@ -1,6 +1,6 @@
 // =============================================================================
 // WDesignKit Templates Suite — Console & Network Health
-// Version: 1.0.0
+// Version: 2.0.0
 // Cross-cutting: monitors JS errors, warnings, uncaught exceptions,
 //               and 4xx/5xx HTTP responses across all template pages.
 //
@@ -10,6 +10,7 @@
 //   Section 63 — Network health — 4xx/5xx responses (8 tests)
 //   Section 64 — Console warnings — product warnings (5 tests)
 //   Section 65 — Performance: API call deduplication (4 tests)
+//   Section 66 — API response time assertions + mixed content (8 tests) ← NEW
 // =============================================================================
 
 const { test, expect } = require('@playwright/test');
@@ -445,6 +446,241 @@ test.describe('65. Performance — API call deduplication', () => {
     const afterCount = apiCalls.length;
     // A single filter change should trigger at most 2-3 API calls
     expect(afterCount - beforeCount).toBeLessThanOrEqual(5);
+  });
+
+});
+
+// =============================================================================
+// 66. API response time assertions + mixed content check
+// =============================================================================
+test.describe('66. API response time + mixed content', () => {
+
+  test('66.01 Browse page initial template API call completes in ≤ 5s', async ({ page }) => {
+    let browseApiDuration = null;
+
+    page.on('request', req => {
+      if (req.url().includes('admin-ajax') && req.method() === 'POST') {
+        const startTime = Date.now();
+        req['_qaStartTime'] = startTime;
+      }
+    });
+
+    page.on('response', async res => {
+      if (res.url().includes('admin-ajax') && res.request().method() === 'POST') {
+        const startTime = res.request()['_qaStartTime'];
+        if (startTime) {
+          const duration = Date.now() - startTime;
+          if (browseApiDuration === null || duration > browseApiDuration) {
+            browseApiDuration = duration;
+          }
+        }
+      }
+    });
+
+    await wpLogin(page);
+    await goToBrowse(page);
+    await page.waitForTimeout(5000);
+
+    if (browseApiDuration !== null) {
+      console.log(`[66.01] Browse API response time: ${browseApiDuration}ms`);
+      expect.soft(
+        browseApiDuration,
+        `Browse template API took ${browseApiDuration}ms — threshold is 5000ms`
+      ).toBeLessThanOrEqual(5000);
+    } else {
+      // No AJAX call observed — may be cached or uses a different endpoint
+      console.log('[66.01] No admin-ajax POST detected on browse load — may be using cached/inline data');
+    }
+  });
+
+  test('66.02 My Templates API call completes in ≤ 5s', async ({ page }) => {
+    const responseTimes = [];
+
+    page.on('response', async res => {
+      if (res.url().includes('admin-ajax') && res.request().method() === 'POST') {
+        const timing = res.timing();
+        if (timing && timing.responseEnd > 0 && timing.requestStart > 0) {
+          responseTimes.push(timing.responseEnd - timing.requestStart);
+        }
+      }
+    });
+
+    await wpLogin(page);
+    await goToMyTemplates(page);
+    await page.waitForTimeout(5000);
+
+    if (responseTimes.length > 0) {
+      const maxTime = Math.max(...responseTimes);
+      console.log(`[66.02] My Templates max API response time: ${maxTime}ms`);
+      expect.soft(
+        maxTime,
+        `My Templates API took ${maxTime}ms — expected ≤ 5000ms`
+      ).toBeLessThanOrEqual(5000);
+    }
+  });
+
+  test('66.03 No mixed content (HTTP resources on HTTPS page)', async ({ page }) => {
+    const mixedContent = [];
+
+    page.on('response', res => {
+      const reqUrl = res.url();
+      const pageUrl = page.url();
+      // If page is HTTPS but resource is HTTP — mixed content
+      if (pageUrl.startsWith('https://') && reqUrl.startsWith('http://')) {
+        // Ignore localhost
+        if (!reqUrl.includes('localhost') && !reqUrl.includes('127.0.0.1')) {
+          mixedContent.push(reqUrl);
+        }
+      }
+    });
+
+    await wpLogin(page);
+    await goToBrowse(page);
+    await page.waitForTimeout(4000);
+
+    // Only flag if the site itself is HTTPS
+    const isHttps = page.url().startsWith('https://');
+    if (isHttps) {
+      expect.soft(mixedContent,
+        `Mixed content detected (HTTP resources on HTTPS page):\n${mixedContent.join('\n')}`
+      ).toHaveLength(0);
+    } else {
+      console.log('[66.03] Site is not HTTPS — mixed content check skipped');
+    }
+  });
+
+  test('66.04 No mixed content on My Templates page', async ({ page }) => {
+    const mixedContent = [];
+
+    page.on('response', res => {
+      const reqUrl = res.url();
+      if (page.url().startsWith('https://') && reqUrl.startsWith('http://')) {
+        if (!reqUrl.includes('localhost') && !reqUrl.includes('127.0.0.1')) {
+          mixedContent.push(reqUrl);
+        }
+      }
+    });
+
+    await wpLogin(page);
+    await goToMyTemplates(page);
+    await page.waitForTimeout(4000);
+
+    const isHttps = page.url().startsWith('https://');
+    if (isHttps) {
+      expect.soft(mixedContent,
+        `Mixed content on My Templates:\n${mixedContent.join('\n')}`
+      ).toHaveLength(0);
+    }
+  });
+
+  test('66.05 API response content-type is application/json (not text/html)', async ({ page }) => {
+    const nonJsonAjaxResponses = [];
+
+    page.on('response', async res => {
+      const url = res.url();
+      if (url.includes('admin-ajax') && res.request().method() === 'POST') {
+        const contentType = res.headers()['content-type'] || '';
+        if (!contentType.includes('json') && !contentType.includes('application')) {
+          nonJsonAjaxResponses.push({ url, contentType });
+        }
+      }
+    });
+
+    await wpLogin(page);
+    await goToBrowse(page);
+    await page.waitForTimeout(4000);
+
+    expect.soft(nonJsonAjaxResponses,
+      `AJAX calls returning non-JSON content-type (may be PHP errors returned as HTML):\n` +
+      nonJsonAjaxResponses.map(r => `${r.contentType} — ${r.url}`).join('\n')
+    ).toHaveLength(0);
+  });
+
+  test('66.06 Browse page loads templates within 10 seconds of navigation', async ({ page }) => {
+    const startTime = Date.now();
+
+    await wpLogin(page);
+    await page.goto(PLUGIN_PAGE);
+    await page.waitForLoadState('domcontentloaded');
+    await page.waitForTimeout(1500);
+    await page.evaluate(() => { location.hash = '/browse'; });
+
+    // Wait for cards or empty state to appear
+    await Promise.race([
+      page.locator('.wdkit-browse-card').first().waitFor({ state: 'visible', timeout: 10000 }),
+      page.locator('.wkit-not-found, [class*="not-found"]').first().waitFor({ state: 'visible', timeout: 10000 }),
+    ]).catch(() => {});
+
+    const elapsed = Date.now() - startTime;
+    console.log(`[66.06] Browse page render time: ${elapsed}ms`);
+    expect(elapsed, `Browse page took ${elapsed}ms — expected under 10000ms`).toBeLessThan(10000);
+  });
+
+  test('66.07 No console errors related to CORS on template pages', async ({ page }) => {
+    const corsErrors = [];
+
+    page.on('console', m => {
+      if (m.type() === 'error') {
+        const text = m.text();
+        if (
+          text.toLowerCase().includes('cors') ||
+          text.toLowerCase().includes('cross-origin') ||
+          text.toLowerCase().includes('access-control-allow-origin') ||
+          text.toLowerCase().includes('no \'access-control')
+        ) {
+          corsErrors.push(text);
+        }
+      }
+    });
+
+    await wpLogin(page);
+    await goToBrowse(page);
+    await page.waitForTimeout(3500);
+
+    expect.soft(corsErrors,
+      `CORS errors detected:\n${corsErrors.join('\n')}`
+    ).toHaveLength(0);
+  });
+
+  test('66.08 No slow API calls take more than 8s on the import wizard entry', async ({ page }) => {
+    const slowCalls = [];
+
+    page.on('request', req => {
+      if (req.url().includes('admin-ajax')) {
+        req['_qa_start'] = Date.now();
+      }
+    });
+    page.on('response', async res => {
+      if (res.url().includes('admin-ajax')) {
+        const start = res.request()['_qa_start'];
+        if (start) {
+          const duration = Date.now() - start;
+          if (duration > 8000) {
+            slowCalls.push({ url: res.url(), duration });
+          }
+        }
+      }
+    });
+
+    await wpLogin(page);
+    await goToBrowse(page);
+    await page.waitForTimeout(3000);
+
+    const firstCard = page.locator('.wdkit-browse-card').first();
+    const cardVisible = await firstCard.isVisible({ timeout: 10000 }).catch(() => false);
+    if (cardVisible) {
+      await firstCard.hover({ force: true });
+      await page.waitForTimeout(300);
+      const importBtn = firstCard.locator('.wdkit-browse-card-download').first();
+      if (await importBtn.isVisible({ timeout: 2000 }).catch(() => false)) {
+        await importBtn.click({ force: true });
+        await page.waitForTimeout(5000);
+      }
+    }
+
+    expect.soft(slowCalls,
+      `API calls exceeding 8s on wizard entry:\n${slowCalls.map(c => `${c.duration}ms — ${c.url}`).join('\n')}`
+    ).toHaveLength(0);
   });
 
 });

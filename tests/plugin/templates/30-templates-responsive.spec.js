@@ -1,15 +1,16 @@
 // =============================================================================
 // WDesignKit Templates Suite — Responsive Layout
-// Version: 1.1.0  (touch targets corrected to WCAG 2.5.5 ≥44px; networkidle → domcontentloaded)
+// Version: 2.0.0  (added 320px breakpoint across all sections)
 // Cross-cutting: tests all template pages at mobile/tablet/desktop viewports
 //
 // COVERAGE
-//   Section 50 — Browse library responsive layout (9 tests)
-//   Section 51 — Import wizard responsive layout (9 tests)
-//   Section 52 — My Templates responsive layout (6 tests)
-//   Section 53 — Share With Me responsive layout (6 tests)
-//   Section 54 — Horizontal overflow detection (5 tests)
+//   Section 50 — Browse library responsive layout (9 tests + 3 320px tests)
+//   Section 51 — Import wizard responsive layout (9 tests + 4 320px tests)
+//   Section 52 — My Templates responsive layout (6 tests + 2 320px tests)
+//   Section 53 — Share With Me responsive layout (6 tests + 2 320px tests)
+//   Section 54 — Horizontal overflow detection (5 tests + 1 320px test)
 //   Section 55 — Touch target sizes on mobile (5 tests)
+//   Section 56 — 320px edge-case breakpoint (8 dedicated extreme-narrow tests) ← NEW
 // =============================================================================
 
 const { test, expect } = require('@playwright/test');
@@ -379,6 +380,122 @@ test.describe('55. Touch target sizes on mobile (44×44px)', () => {
         expect(box.height).toBeGreaterThanOrEqual(44);
       }
     }
+  });
+
+});
+
+// =============================================================================
+// 56. 320px edge-case breakpoint — extreme-narrow viewport (NEW)
+//
+// 320px is the minimum width mandated by WCAG 1.4.10 (Reflow).
+// All template pages must render without horizontal overflow and be
+// fully usable at this width without horizontal scrolling.
+// =============================================================================
+test.describe('56. 320px extreme-narrow breakpoint', () => {
+
+  const VIEWPORT_320 = { width: 320, height: 568 };
+
+  test.beforeEach(async ({ page }) => {
+    await wpLogin(page);
+    await page.setViewportSize(VIEWPORT_320);
+  });
+
+  test('56.01 Browse library has no horizontal overflow at 320px', async ({ page }) => {
+    await goToBrowse(page);
+    const scrollWidth = await page.evaluate(() => document.body.scrollWidth);
+    const clientWidth = await page.evaluate(() => document.documentElement.clientWidth);
+    expect(scrollWidth, `Horizontal overflow at 320px: scrollWidth=${scrollWidth} > clientWidth=${clientWidth}`).toBeLessThanOrEqual(clientWidth + 5);
+  });
+
+  test('56.02 Browse library renders cards or empty state — not blank at 320px', async ({ page }) => {
+    await goToBrowse(page);
+    const cardCount = await page.locator('.wdkit-browse-card').count();
+    const emptyCount = await page.locator('[class*="not-found"], .wkit-not-found').count();
+    const skeletonCount = await page.locator('[class*="skeleton"]').count();
+    expect(cardCount + emptyCount + skeletonCount).toBeGreaterThan(0);
+    await expect(page.locator('body')).not.toContainText('Fatal error');
+  });
+
+  test('56.03 Import wizard opens without overflow at 320px', async ({ page }) => {
+    await goToBrowse(page);
+    const card = page.locator('.wdkit-browse-card').first();
+    if (!(await card.isVisible({ timeout: 15000 }).catch(() => false))) return;
+    await card.hover({ force: true });
+    await page.waitForTimeout(400);
+    const importBtn = card.locator('.wdkit-browse-card-download').first();
+    if (!(await importBtn.isVisible({ timeout: 2000 }).catch(() => false))) return;
+    await importBtn.click({ force: true });
+    await page.locator('.wkit-temp-import-mian').waitFor({ state: 'visible', timeout: 15000 }).catch(() => {});
+    const modal = page.locator('.wkit-temp-import-mian').first();
+    if (await modal.count() > 0) {
+      const scrollWidth = await page.evaluate(() => document.body.scrollWidth);
+      const clientWidth = await page.evaluate(() => document.documentElement.clientWidth);
+      expect(scrollWidth).toBeLessThanOrEqual(clientWidth + 5);
+      await expect(modal).toBeVisible({ timeout: 5000 });
+    }
+    await expect(page.locator('body')).not.toContainText('Fatal error');
+  });
+
+  test('56.04 Import wizard breadcrumb text is readable at 320px (no cut-off)', async ({ page }) => {
+    await goToBrowse(page);
+    const card = page.locator('.wdkit-browse-card').first();
+    if (!(await card.isVisible({ timeout: 15000 }).catch(() => false))) return;
+    await card.hover({ force: true });
+    await page.waitForTimeout(400);
+    const importBtn = card.locator('.wdkit-browse-card-download').first();
+    if (!(await importBtn.isVisible({ timeout: 2000 }).catch(() => false))) return;
+    await importBtn.click({ force: true });
+    await page.locator('.wkit-temp-import-mian').waitFor({ state: 'visible', timeout: 15000 }).catch(() => {});
+    const breadcrumbs = page.locator('.wkit-header-breadcrumbs, .wkit-breadcrumbs-card').first();
+    if (await breadcrumbs.count() > 0) {
+      // Breadcrumbs must not overflow the modal horizontally
+      const overflow = await breadcrumbs.evaluate(el => el.scrollWidth > el.clientWidth + 5);
+      expect.soft(overflow, 'Breadcrumbs overflow horizontally at 320px').toBe(false);
+    }
+  });
+
+  test('56.05 My Templates page has no horizontal overflow at 320px', async ({ page }) => {
+    await goToMyTemplates(page);
+    const scrollWidth = await page.evaluate(() => document.body.scrollWidth);
+    const clientWidth = await page.evaluate(() => document.documentElement.clientWidth);
+    expect(scrollWidth).toBeLessThanOrEqual(clientWidth + 5);
+    await expect(page.locator('body')).not.toContainText('Fatal error');
+  });
+
+  test('56.06 Share With Me page has no horizontal overflow at 320px', async ({ page }) => {
+    await page.goto(PLUGIN_PAGE);
+    await page.waitForLoadState('domcontentloaded');
+    await page.waitForTimeout(2000);
+    await page.evaluate(() => { location.hash = '/share_with_me'; });
+    await page.waitForTimeout(3000);
+    const scrollWidth = await page.evaluate(() => document.body.scrollWidth);
+    const clientWidth = await page.evaluate(() => document.documentElement.clientWidth);
+    expect(scrollWidth).toBeLessThanOrEqual(clientWidth + 5);
+    await expect(page.locator('body')).not.toContainText('Fatal error');
+  });
+
+  test('56.07 Filter sidebar does not force horizontal scroll at 320px', async ({ page }) => {
+    await goToBrowse(page);
+    const filterColumn = page.locator('.wdkit-browse-column').first();
+    if (await filterColumn.count() > 0) {
+      const overflow = await filterColumn.evaluate(el => el.scrollWidth > el.clientWidth + 5);
+      expect.soft(overflow, 'Filter sidebar overflows at 320px').toBe(false);
+    }
+    const scrollWidth = await page.evaluate(() => document.body.scrollWidth);
+    const clientWidth = await page.evaluate(() => document.documentElement.clientWidth);
+    expect(scrollWidth).toBeLessThanOrEqual(clientWidth + 5);
+  });
+
+  test('56.08 Save Template page has no horizontal overflow at 320px', async ({ page }) => {
+    await page.goto(PLUGIN_PAGE);
+    await page.waitForLoadState('domcontentloaded');
+    await page.waitForTimeout(2000);
+    await page.evaluate(() => { location.hash = '/save_template'; });
+    await page.waitForTimeout(3000);
+    const scrollWidth = await page.evaluate(() => document.body.scrollWidth);
+    const clientWidth = await page.evaluate(() => document.documentElement.clientWidth);
+    expect(scrollWidth).toBeLessThanOrEqual(clientWidth + 5);
+    await expect(page.locator('body')).not.toContainText('Fatal error');
   });
 
 });

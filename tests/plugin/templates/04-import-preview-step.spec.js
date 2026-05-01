@@ -1,6 +1,6 @@
 // =============================================================================
 // WDesignKit Templates Suite — Import Preview Step (Step 1)
-// Version: 3.1.0 — Deep inside-flow testing
+// Version: 3.2.0 — Deep inside-flow testing
 //
 // COVERAGE
 //   Section 12  — Import wizard entry point (7 tests)
@@ -19,7 +19,8 @@
 //   Section 25  — Pro plugin notice (3 tests)
 //   Section 26  — Logo Upload section — all interactions (10 tests)
 //   Section 27  — Next button text & plugin requirements notice (6 tests)
-//   Section 27b — Wizard close / ESC / mid-flow browser refresh (7 tests)  ← NEW
+//   Section 27b — Wizard close / ESC / mid-flow browser refresh (7 tests)
+//   Section 28  — Logo file input validation — accept attribute & file type security (7 tests) ← NEW
 // =============================================================================
 
 const { test, expect } = require('@playwright/test');
@@ -1636,6 +1637,172 @@ test.describe('27b. Wizard close / ESC key / mid-flow browser refresh', () => {
       !e.includes('extension') && !e.includes('ERR_BLOCKED')
     );
     expect(productErrors).toHaveLength(0);
+  });
+
+});
+
+// =============================================================================
+// 28. Logo file input validation — accept attribute & file type security
+// Validates that the logo upload input in the wizard properly restricts to image
+// file types and does not silently accept executable or script files.
+// =============================================================================
+test.describe('28. Logo file input — accept attribute & file type security', () => {
+  test.describe.configure({ mode: 'serial' });
+
+  test.beforeEach(async ({ page }) => {
+    await openWizardStep1(page);
+  });
+
+  // Helper: locate the logo file input within the wizard
+  async function findLogoFileInput(page) {
+    return page.locator(
+      'input[type="file"][accept*="image"], ' +
+      '.wkit-site-logo-main input[type="file"], ' +
+      '.wkit-temp-logo input[type="file"], ' +
+      'input[type="file"][id*="logo" i], ' +
+      'input[type="file"][name*="logo" i]'
+    ).first();
+  }
+
+  test('28.01 Logo file input element exists in the wizard DOM', async ({ page }) => {
+    const fileInput = await findLogoFileInput(page);
+    const count = await fileInput.count();
+
+    // The file input may be hidden (display:none) — check DOM presence, not visibility
+    const totalFileInputs = await page.locator('input[type="file"]').count();
+    expect.soft(totalFileInputs,
+      'No file input[type="file"] found in the wizard — logo upload may be broken'
+    ).toBeGreaterThan(0);
+  });
+
+  test('28.02 Logo file input accept attribute restricts to image MIME types', async ({ page }) => {
+    const fileInput = await findLogoFileInput(page);
+    const count = await fileInput.count();
+
+    if (count > 0) {
+      const accept = await fileInput.getAttribute('accept');
+      if (accept) {
+        // Accept should contain image/ MIME types or image extensions
+        const hasImageRestriction =
+          accept.includes('image/') ||
+          accept.includes('.jpg') ||
+          accept.includes('.png') ||
+          accept.includes('.svg') ||
+          accept.includes('.gif') ||
+          accept.includes('.webp');
+
+        expect(hasImageRestriction,
+          `Logo file input accept="${accept}" does not restrict to images — security risk`
+        ).toBe(true);
+      } else {
+        // No accept attribute is a security gap
+        expect.soft(accept,
+          'Logo file input has no "accept" attribute — any file type can be selected'
+        ).not.toBeNull();
+      }
+    }
+  });
+
+  test('28.03 Logo file input accept does NOT include .php, .js, or .exe extensions', async ({ page }) => {
+    const fileInput = await findLogoFileInput(page);
+    const count = await fileInput.count();
+
+    if (count > 0) {
+      const accept = await fileInput.getAttribute('accept');
+      if (accept) {
+        // Hard assert — these must never be accepted
+        expect(accept.toLowerCase(), 'Logo input should NOT accept .php files').not.toContain('.php');
+        expect(accept.toLowerCase(), 'Logo input should NOT accept .js files (non-image)').not.toContain('application/javascript');
+        expect(accept.toLowerCase(), 'Logo input should NOT accept .exe files').not.toContain('.exe');
+        expect(accept.toLowerCase(), 'Logo input should NOT accept text/html').not.toContain('text/html');
+      }
+    }
+  });
+
+  test('28.04 Logo file input has a corresponding label for accessibility', async ({ page }) => {
+    const fileInput = await findLogoFileInput(page);
+    const count = await fileInput.count();
+
+    if (count > 0) {
+      const id = await fileInput.getAttribute('id');
+      const ariaLabel = await fileInput.getAttribute('aria-label');
+
+      if (id) {
+        const explicitLabel = page.locator(`label[for="${id}"]`);
+        const explicitCount = await explicitLabel.count();
+        // Either explicit label or aria-label must exist
+        expect.soft(explicitCount + (ariaLabel ? 1 : 0),
+          `Logo file input (id="${id}") has neither a <label for> nor aria-label — accessibility gap`
+        ).toBeGreaterThan(0);
+      } else {
+        // No id — check for implicit label (file input wrapped in label)
+        const wrappedInLabel = await fileInput.evaluate(el => {
+          let parent = el.parentElement;
+          while (parent) {
+            if (parent.tagName === 'LABEL') return true;
+            parent = parent.parentElement;
+          }
+          return false;
+        });
+        expect.soft(wrappedInLabel || !!ariaLabel,
+          'Logo file input is not associated with a label — keyboard/screen reader users cannot identify it'
+        ).toBe(true);
+      }
+    }
+  });
+
+  test('28.05 Logo file input does not accept application/octet-stream wildcard', async ({ page }) => {
+    const fileInput = await findLogoFileInput(page);
+    const count = await fileInput.count();
+
+    if (count > 0) {
+      const accept = await fileInput.getAttribute('accept');
+      if (accept) {
+        // application/octet-stream would allow any binary file
+        expect.soft(accept,
+          'Logo file input accept includes "application/octet-stream" — allows arbitrary binary upload'
+        ).not.toContain('application/octet-stream');
+        // Wildcard * would allow any type
+        expect.soft(accept,
+          'Logo file input accept="*" allows any file type — security risk'
+        ).not.toBe('*');
+        expect.soft(accept.trim(),
+          'Logo file input accept="*/*" allows any file type — security risk'
+        ).not.toBe('*/*');
+      }
+    }
+  });
+
+  test('28.06 No console errors when the logo upload area is interacted with', async ({ page }) => {
+    const errors = [];
+    page.on('console', m => { if (m.type() === 'error') errors.push(m.text()); });
+
+    // Click the logo upload area (may open file picker or do nothing — just verify no crash)
+    const logoSection = page.locator('.wkit-site-logo-main, .wkit-temp-logo').first();
+    if ((await logoSection.count()) > 0) {
+      await logoSection.click({ force: true }).catch(() => {});
+      await page.waitForTimeout(800);
+    }
+
+    const productErrors = errors.filter(e =>
+      !e.includes('favicon') && !e.includes('net::ERR') &&
+      !e.includes('extension') && !e.includes('chrome-extension')
+    );
+    expect(productErrors, `Console errors on logo area interaction:\n${productErrors.join('\n')}`).toHaveLength(0);
+  });
+
+  test('28.07 Logo section shows image format guidance text or icon', async ({ page }) => {
+    const logoSection = page.locator('.wkit-site-logo-main, .wkit-temp-logo').first();
+    if ((await logoSection.count()) > 0) {
+      const text = await logoSection.textContent().catch(() => '');
+      const hasIcon = await logoSection.locator('i, svg').count() > 0;
+      const hasFormatHint = /png|jpg|jpeg|svg|webp|image|logo|upload/i.test(text);
+
+      // Either has format hint text OR has an icon representing upload
+      expect.soft(hasFormatHint || hasIcon,
+        'Logo upload area has no format guidance text or icon — users may not know what file types to use'
+      ).toBe(true);
+    }
   });
 
 });

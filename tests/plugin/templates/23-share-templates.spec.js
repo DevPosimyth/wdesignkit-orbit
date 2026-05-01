@@ -1,6 +1,6 @@
 // =============================================================================
 // WDesignKit Templates Suite — Share With Me
-// Version: 1.0.0
+// Version: 2.0.0
 // Source: src/pages/share_with_me/main_share_with_me.js
 //
 // COVERAGE
@@ -12,6 +12,7 @@
 //   Section 45 — Code Snippet tab (4 tests)
 //   Section 46 — Pagination controls (4 tests)
 //   Section 47 — Console & network health (4 tests)
+//   Section 48 — XSS, empty state guidance, tab persistence & search (7 tests) ← NEW
 //
 // KEY SELECTORS (from share_with_me.js source)
 //   .wkit-share-with-me             — root container
@@ -578,6 +579,134 @@ test.describe('47. Share With Me — console & network health', () => {
       !e.includes('extension') && !e.includes('chrome-extension')
     );
     expect(productErrors, productErrors.join('\n')).toHaveLength(0);
+  });
+
+});
+
+// =============================================================================
+// 48. Share With Me — XSS, empty state guidance, tab persistence & search
+// =============================================================================
+test.describe('48. Share With Me — XSS, empty state, tab persistence & search', () => {
+
+  test.beforeEach(async ({ page }) => {
+    await wpLogin(page);
+    await goToShareWithMe(page);
+    await page.waitForTimeout(1500);
+  });
+
+  test('48.01 Share With Me empty state shows descriptive guidance (not blank panel)', async ({ page }) => {
+    await page.waitForTimeout(3000);
+    const cardCount = await page.locator('.wdesign-kit-main .wdkit-browse-card').count();
+    if (cardCount === 0) {
+      // Empty state — should show some text or guidance
+      const appText = await page.locator('.wkit-share-with-me, .wdkit-share-with-me-inner, #wdesignkit-app')
+        .first().innerText({ timeout: 5000 }).catch(() => '');
+      expect(appText.trim().length,
+        'Share With Me empty state is completely blank — users need guidance on how to receive shared templates'
+      ).toBeGreaterThan(0);
+    }
+  });
+
+  test('48.02 XSS injection in share template search does not execute script', async ({ page }) => {
+    // Look for a search input on the share page
+    const searchInput = page.locator('.wdkit-search-filter input, input[type="search"], input[type="text"]').first();
+    const visible = await searchInput.isVisible({ timeout: 5000 }).catch(() => false);
+
+    if (visible) {
+      await searchInput.fill('<script>window.__xss_share=1</script>');
+      await searchInput.press('Enter');
+      await page.waitForTimeout(1500);
+    }
+
+    const xss = await page.evaluate(() => window.__xss_share);
+    expect(xss).toBeUndefined();
+  });
+
+  test('48.03 Active tab is highlighted with .wdkit-tab-active class after click', async ({ page }) => {
+    const tabs = page.locator('.wdkit-share-tab-box');
+    const count = await tabs.count();
+
+    if (count >= 2) {
+      await tabs.nth(1).click({ force: true });
+      await page.waitForTimeout(1000);
+
+      const secondTabCls = await tabs.nth(1).getAttribute('class');
+      expect.soft(secondTabCls,
+        'Clicked tab does not have .wdkit-tab-active class — active state not reflected visually'
+      ).toContain('wdkit-tab-active');
+    }
+  });
+
+  test('48.04 Switching tabs rapidly (5x) does not freeze the Share With Me page', async ({ page }) => {
+    const errors = [];
+    page.on('console', m => { if (m.type() === 'error') errors.push(m.text()); });
+    page.on('pageerror', err => errors.push(`PAGEERROR: ${err.message}`));
+
+    const tabs = page.locator('.wdkit-share-tab-box');
+    const count = await tabs.count();
+
+    if (count < 2) return;
+
+    for (let i = 0; i < 5; i++) {
+      const tab = tabs.nth(i % count);
+      if (await tab.isVisible({ timeout: 500 }).catch(() => false)) {
+        await tab.click({ force: true });
+        await page.waitForTimeout(300);
+      }
+    }
+
+    await page.waitForTimeout(1500);
+    await expect(page.locator('body')).not.toContainText('Fatal error');
+
+    const productErrors = errors.filter(e =>
+      !e.includes('favicon') && !e.includes('net::ERR') && !e.includes('extension')
+    );
+    expect.soft(productErrors, productErrors.join('\n')).toHaveLength(0);
+  });
+
+  test('48.05 Share With Me page renders at 375px without horizontal overflow', async ({ page }) => {
+    await page.setViewportSize({ width: 375, height: 812 });
+    await page.waitForTimeout(800);
+
+    const container = page.locator('.wkit-share-with-me, .wdkit-share-with-me-inner, #wdesignkit-app').first();
+    if ((await container.count()) > 0) {
+      const overflow = await container.evaluate(el => el.scrollWidth > el.clientWidth + 5).catch(() => false);
+      expect.soft(overflow,
+        'Share With Me overflows horizontally at 375px mobile — content is cut off'
+      ).toBe(false);
+    }
+  });
+
+  test('48.06 Coming Soon badge on Code Snippet tab does not block interaction', async ({ page }) => {
+    const codeTab = page.locator('.wdkit-code-snippet-tab').first();
+    const comingSoon = page.locator('.wdkit-coming-soon').first();
+
+    if ((await codeTab.count()) > 0) {
+      await codeTab.click({ force: true });
+      await page.waitForTimeout(1000);
+
+      // Should not crash
+      await expect(page.locator('body')).not.toContainText('Fatal error');
+
+      // Coming soon badge is informational only — page should remain functional
+      const appVisible = await page.locator('#wdesignkit-app').isVisible({ timeout: 3000 }).catch(() => false);
+      expect(appVisible).toBe(true);
+    }
+  });
+
+  test('48.07 Share With Me does not expose other users\' private template data', async ({ page }) => {
+    await page.waitForTimeout(3000);
+    // Verify no "Unauthorized" or "Forbidden" text appears
+    await expect(page.locator('body')).not.toContainText('Unauthorized');
+    await expect(page.locator('body')).not.toContainText('Forbidden');
+
+    // Cards should only show templates explicitly shared with this user — no system error
+    await expect(page.locator('body')).not.toContainText('Fatal error');
+
+    // If API response includes user data, it should not be raw JSON dumped on page
+    const bodyText = await page.locator('body').textContent({ timeout: 5000 }).catch(() => '');
+    // Raw JSON dump detection: { "user_id": ... }
+    expect.soft(bodyText, 'Raw API JSON appears to be dumped directly on the Share With Me page').not.toMatch(/^\s*\{"user_id":/m);
   });
 
 });

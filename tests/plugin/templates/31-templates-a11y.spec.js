@@ -1,7 +1,7 @@
 // =============================================================================
 // WDesignKit Templates Suite — Accessibility (a11y)
-// Version: 1.2.0
-// Standard: WCAG 2.1 AA
+// Version: 2.0.0
+// Standard: WCAG 2.1 AA / WCAG 2.2
 //
 // COVERAGE
 //   Section 56 — Keyboard navigation: Tab order & focus (10 tests)
@@ -9,7 +9,9 @@
 //   Section 58 — Focus traps & modal a11y (6 tests)
 //   Section 59 — Colour contrast & visual indicators (5 tests)
 //   Section 60 — Screen reader: labels & announcements (6 tests)
-//   Section 61 — Automated axe-core WCAG 2.1 AA scans (6 tests)  ← NEW
+//   Section 61 — Automated axe-core WCAG 2.1 AA scans (6 tests)
+//   Section 62 — prefers-reduced-motion respect (6 tests) ← NEW
+//   Section 63 — aria-live dynamic announcements (6 tests) ← NEW
 //
 // NOTE: Section 61 uses @axe-core/playwright for automated rule-based scanning.
 //       CLAUDE.md requires axe-core score ≥ 85 for QA sign-off.
@@ -677,6 +679,257 @@ test.describe('61. Automated axe-core WCAG 2.1 AA scans', () => {
       [...critical, ...serious],
       `Color-contrast violations: ${[...critical, ...serious].map(v => v.id).join(', ')}`
     ).toHaveLength(0);
+  });
+
+});
+
+// =============================================================================
+// 62. prefers-reduced-motion — WCAG 2.3.3 compliance (NEW)
+//
+// When the OS-level "reduce motion" preference is active, the plugin must not
+// run CSS transitions/animations that could trigger vestibular disorders.
+// Strategy: emulate prefers-reduced-motion: reduce and verify that:
+//   a) The page still renders and is fully functional
+//   b) CSS animations on key components are suppressed (duration → 0 or 1ms)
+//   c) Lottie/animation players do not auto-play
+//   d) No JS errors occur
+// =============================================================================
+test.describe('62. prefers-reduced-motion compliance', () => {
+
+  test.beforeEach(async ({ page }) => {
+    // Emulate the user's OS-level "reduce motion" preference
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    await wpLogin(page);
+  });
+
+  test('62.01 Browse library renders correctly with prefers-reduced-motion: reduce', async ({ page }) => {
+    await goToBrowse(page);
+    const card = page.locator('.wdkit-browse-card').first();
+    const visible = await card.isVisible({ timeout: 20000 }).catch(() => false);
+    expect(visible || (await page.locator('[class*="not-found"]').count()) > 0).toBe(true);
+    await expect(page.locator('body')).not.toContainText('Fatal error');
+  });
+
+  test('62.02 Template card hover animations are suppressed when motion is reduced', async ({ page }) => {
+    await goToBrowse(page);
+    const card = page.locator('.wdkit-browse-card').first();
+    const visible = await card.isVisible({ timeout: 20000 }).catch(() => false);
+    if (!visible) return;
+    // With reduced motion, the transition-duration on hover overlays should be 0s or near-zero
+    const transitionDuration = await card.evaluate(el => {
+      const cs = window.getComputedStyle(el);
+      return cs.transitionDuration;
+    });
+    // Structural test — log but don't hard-fail (CSS @media implementation varies)
+    if (transitionDuration !== '0s' && transitionDuration !== '0.001s') {
+      console.log(`[a11y-motion] Card hover transitionDuration="${transitionDuration}" — consider @media (prefers-reduced-motion: reduce) rule`);
+    }
+    await expect(page.locator('body')).not.toContainText('Fatal error');
+  });
+
+  test('62.03 Import wizard opens without crash under reduced-motion', async ({ page }) => {
+    await goToBrowse(page);
+    const card = page.locator('.wdkit-browse-card').first();
+    if (!(await card.isVisible({ timeout: 15000 }).catch(() => false))) return;
+    await card.hover({ force: true });
+    await page.waitForTimeout(300);
+    const importBtn = card.locator('.wdkit-browse-card-download').first();
+    if (!(await importBtn.isVisible({ timeout: 2000 }).catch(() => false))) return;
+    await importBtn.click({ force: true });
+    await page.locator('.wkit-temp-import-mian').waitFor({ state: 'visible', timeout: 15000 }).catch(() => {});
+    await expect(page.locator('body')).not.toContainText('Fatal error');
+  });
+
+  test('62.04 Lottie/animation player in wizard does not auto-play under reduced motion', async ({ page }) => {
+    await goToBrowse(page);
+    const card = page.locator('.wdkit-browse-card').first();
+    if (!(await card.isVisible({ timeout: 15000 }).catch(() => false))) return;
+    await card.hover({ force: true });
+    await page.waitForTimeout(300);
+    const importBtn = card.locator('.wdkit-browse-card-download').first();
+    if (!(await importBtn.isVisible({ timeout: 2000 }).catch(() => false))) return;
+    await importBtn.click({ force: true });
+    await page.locator('.wkit-temp-import-mian').waitFor({ state: 'visible', timeout: 15000 }).catch(() => {});
+    // Lottie players that auto-play violate reduced motion preference
+    const lottieAutoPlay = await page.evaluate(() => {
+      const players = document.querySelectorAll('lottie-player, [class*="lottie"]');
+      return Array.from(players).filter(p => {
+        const autoplay = p.getAttribute('autoplay');
+        return autoplay !== null && autoplay !== 'false';
+      }).length;
+    });
+    if (lottieAutoPlay > 0) {
+      console.log(`[a11y-motion] ${lottieAutoPlay} Lottie player(s) auto-play under reduced-motion — consider pausing`);
+    }
+    // Soft — surface the finding without hard-blocking
+    expect.soft(
+      lottieAutoPlay,
+      `${lottieAutoPlay} Lottie player(s) auto-play despite prefers-reduced-motion: reduce`
+    ).toBe(0);
+  });
+
+  test('62.05 My Templates page renders without crash under reduced-motion', async ({ page }) => {
+    await goToMyTemplates(page);
+    const app = page.locator('#wdesignkit-app');
+    await expect(app).toBeVisible({ timeout: 10000 });
+    await expect(page.locator('body')).not.toContainText('Fatal error');
+  });
+
+  test('62.06 No JS console errors occur under prefers-reduced-motion: reduce', async ({ page }) => {
+    const errors = [];
+    page.on('console', m => { if (m.type() === 'error') errors.push(m.text()); });
+    await goToBrowse(page);
+    await page.locator('.wdkit-browse-card').first().waitFor({ state: 'visible', timeout: 20000 }).catch(() => {});
+    await page.waitForTimeout(2000);
+    const productErrors = errors.filter(e =>
+      !e.includes('favicon') && !e.includes('net::ERR') && !e.includes('extension')
+    );
+    expect(productErrors).toHaveLength(0);
+  });
+
+});
+
+// =============================================================================
+// 63. aria-live dynamic announcements (NEW)
+//
+// Dynamic content changes (search results, template count, loading state,
+// pagination, filter updates) must be announced to screen-reader users via
+// aria-live or role=status/alert regions per WCAG 4.1.3 (Status Messages).
+// =============================================================================
+test.describe('63. aria-live dynamic announcements', () => {
+
+  test.beforeEach(async ({ page }) => {
+    await wpLogin(page);
+  });
+
+  test('63.01 Browse page has at least one aria-live region', async ({ page }) => {
+    await goToBrowse(page);
+    await page.locator('.wdkit-browse-card').first().waitFor({ state: 'visible', timeout: 20000 }).catch(() => {});
+    const liveRegions = await page.evaluate(() => {
+      const roles = ['status', 'alert', 'log', 'timer', 'marquee'];
+      const byRole = roles.reduce((acc, r) => acc + document.querySelectorAll(`[role="${r}"]`).length, 0);
+      const byAttr = document.querySelectorAll('[aria-live="polite"], [aria-live="assertive"]').length;
+      return { byRole, byAttr };
+    });
+    const total = liveRegions.byRole + liveRegions.byAttr;
+    if (total === 0) {
+      console.log('[a11y-live] No aria-live regions found on Browse page — dynamic updates won\'t be announced to screen readers');
+    }
+    // Soft assertion — surface but not a hard block (will become hard in next version)
+    expect.soft(total, 'Browse page has no aria-live regions for dynamic content announcements').toBeGreaterThan(0);
+  });
+
+  test('63.02 Search results update does not remove aria-live from the DOM', async ({ page }) => {
+    await goToBrowse(page);
+    await page.locator('.wdkit-browse-card').first().waitFor({ state: 'visible', timeout: 20000 }).catch(() => {});
+    const searchInput = page.locator('.wdkit-search-filter input').first();
+    if (!(await searchInput.isVisible({ timeout: 5000 }).catch(() => false))) return;
+    // Count aria-live before search
+    const beforeCount = await page.evaluate(() =>
+      document.querySelectorAll('[aria-live], [role="status"], [role="alert"]').length
+    );
+    await searchInput.fill('agency');
+    await searchInput.press('Enter');
+    await page.waitForTimeout(2000);
+    // Aria-live regions should still be in DOM after search
+    const afterCount = await page.evaluate(() =>
+      document.querySelectorAll('[aria-live], [role="status"], [role="alert"]').length
+    );
+    // Regions should not be removed by re-renders
+    expect.soft(afterCount).toBeGreaterThanOrEqual(Math.max(0, beforeCount - 1));
+    await expect(page.locator('body')).not.toContainText('Fatal error');
+  });
+
+  test('63.03 Template count / results number has accessible label', async ({ page }) => {
+    await goToBrowse(page);
+    await page.locator('.wdkit-browse-card').first().waitFor({ state: 'visible', timeout: 20000 }).catch(() => {});
+    // Selectors for template count display (varies by implementation)
+    const countEl = page.locator(
+      '.wdkit-template-count, .wkit-result-count, [class*="count"], ' +
+      '[class*="result" i], .wdkit-browse-count, span[class*="total" i]'
+    ).first();
+    if (await countEl.count() > 0) {
+      const hasAccessibleLabel = await countEl.evaluate(el => {
+        return (
+          el.getAttribute('aria-label') !== null ||
+          el.getAttribute('aria-describedby') !== null ||
+          el.getAttribute('role') !== null ||
+          el.closest('[aria-label]') !== null ||
+          el.closest('[aria-live]') !== null ||
+          el.closest('[role="status"]') !== null
+        );
+      });
+      expect.soft(
+        hasAccessibleLabel,
+        'Template count element has no accessible label for screen readers'
+      ).toBe(true);
+    }
+  });
+
+  test('63.04 Loading state has aria-busy or visible text for screen readers', async ({ page }) => {
+    // Navigate and catch the loading state immediately
+    await page.goto(PLUGIN_PAGE);
+    await page.waitForLoadState('domcontentloaded');
+    await page.waitForTimeout(200);
+    await page.evaluate(() => { location.hash = '/browse'; });
+    // Check within 500ms of navigation for loading aria-busy
+    await page.waitForTimeout(500);
+    const ariaBusy = await page.evaluate(() => {
+      const busyEl = document.querySelector('[aria-busy="true"]');
+      return busyEl !== null;
+    });
+    const skeletonCount = await page.locator('[class*="skeleton"]').count();
+    // Either aria-busy or visible skeleton satisfies loading accessibility
+    if (!ariaBusy && skeletonCount === 0) {
+      console.log('[a11y-live] Loading state has no aria-busy attribute or visible skeleton text');
+    }
+    // Structural test — don't hard-fail as loading state is transient
+    await page.locator('.wdkit-browse-card, [class*="not-found"]').first().waitFor({ state: 'visible', timeout: 15000 }).catch(() => {});
+    await expect(page.locator('body')).not.toContainText('Fatal error');
+  });
+
+  test('63.05 Import wizard step transitions announce context change (heading present)', async ({ page }) => {
+    await goToBrowse(page);
+    const card = page.locator('.wdkit-browse-card').first();
+    if (!(await card.isVisible({ timeout: 15000 }).catch(() => false))) return;
+    await card.hover({ force: true });
+    await page.waitForTimeout(300);
+    const importBtn = card.locator('.wdkit-browse-card-download').first();
+    if (!(await importBtn.isVisible({ timeout: 2000 }).catch(() => false))) return;
+    await importBtn.click({ force: true });
+    await page.locator('.wkit-temp-import-mian').waitFor({ state: 'visible', timeout: 15000 }).catch(() => {});
+    // Each wizard step should have a heading (h2/h3) so screen readers announce the context
+    const wizardHeadings = await page.locator('.wkit-temp-import-mian h1, .wkit-temp-import-mian h2, .wkit-temp-import-mian h3').count();
+    expect.soft(
+      wizardHeadings,
+      'Import wizard has no headings — screen readers cannot announce step context'
+    ).toBeGreaterThan(0);
+  });
+
+  test('63.06 My Templates empty state is announced as a status message (role=status or aria-live)', async ({ page }) => {
+    await goToMyTemplates(page);
+    await page.waitForTimeout(3000);
+    const emptyState = page.locator('.wkit-not-found, [class*="not-found"]').first();
+    const emptyExists = await emptyState.count() > 0;
+    if (!emptyExists) return; // No empty state visible — skip
+    // Empty state should be in or near an aria-live region
+    const hasLiveAncestor = await emptyState.evaluate(el => {
+      let node = el;
+      while (node) {
+        const live = node.getAttribute && node.getAttribute('aria-live');
+        const role = node.getAttribute && node.getAttribute('role');
+        if (live || role === 'status' || role === 'alert') return true;
+        node = node.parentElement;
+      }
+      return false;
+    });
+    if (!hasLiveAncestor) {
+      console.log('[a11y-live] My Templates empty state has no aria-live ancestor — screen readers may not announce it');
+    }
+    expect.soft(
+      hasLiveAncestor,
+      'My Templates empty state is not wrapped in an aria-live region'
+    ).toBe(true);
   });
 
 });

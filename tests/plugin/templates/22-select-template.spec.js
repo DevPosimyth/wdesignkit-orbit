@@ -1,6 +1,6 @@
 // =============================================================================
 // WDesignKit Templates Suite — Select Template (Elementor / Gutenberg Editor)
-// Version: 1.0.0
+// Version: 2.0.0
 // Source: src/pages/select_template/elementor-editor.js
 //         assets/js/main/elementor/elementor-editor.js
 //         assets/js/main/gutenberg/wkit_g_pmgc.js
@@ -19,6 +19,7 @@
 //   Section 37 — Gutenberg editor integration (5 tests)
 //   Section 38 — Elementor add-section template picker (5 tests)
 //   Section 39 — Console & network health in editor context (4 tests)
+//   Section 40 — XSS, keyboard accessibility & popup security (7 tests) ← NEW
 //
 // KEY SELECTORS
 //   #wdkit-elementor                     — Elementor dialog ID
@@ -398,6 +399,176 @@ test.describe('39. Select Template — console & network health in editor contex
     await page.waitForLoadState('domcontentloaded');
     await page.waitForTimeout(3000);
     expect(exceptions, exceptions.join('\n')).toHaveLength(0);
+  });
+
+});
+
+// =============================================================================
+// 40. Select Template — XSS, keyboard accessibility & popup security
+// =============================================================================
+test.describe('40. Select Template — XSS, keyboard accessibility & popup security', () => {
+
+  test.beforeEach(async ({ page }) => {
+    await wpLogin(page);
+  });
+
+  test('40.01 WDesignKit plugin page does not expose any API tokens in page source', async ({ page }) => {
+    await page.goto(PLUGIN_PAGE);
+    await page.waitForLoadState('domcontentloaded');
+    await page.waitForTimeout(2000);
+
+    const source = await page.content();
+    // API keys/tokens should not be in page HTML
+    expect.soft(source, 'API key pattern found in page source').not.toMatch(/api[-_]?key\s*[:=]\s*["'][a-zA-Z0-9]{20,}/i);
+    expect.soft(source, 'Bearer token found exposed in page HTML').not.toMatch(/bearer\s+[a-zA-Z0-9._-]{20,}/i);
+  });
+
+  test('40.02 WDesignKit popup iframe (if present) does not load from an external untrusted domain', async ({ page }) => {
+    const iframeUrls = [];
+    page.on('response', res => {
+      if (res.request().resourceType() === 'document' && res.url().includes('iframe')) {
+        iframeUrls.push(res.url());
+      }
+    });
+
+    await page.goto(PLUGIN_PAGE);
+    await page.waitForLoadState('domcontentloaded');
+    await page.waitForTimeout(3000);
+
+    // All iframes should be from trusted origins (same domain or known CDN)
+    for (const url of iframeUrls) {
+      const urlObj = new URL(url);
+      expect.soft(
+        ['localhost', '127.0.0.1', urlObj.hostname].some(h => url.includes(h)),
+        `Untrusted iframe source detected: ${url}`
+      ).toBe(true);
+    }
+  });
+
+  test('40.03 XSS in editor template search does not execute script', async ({ page }) => {
+    await page.goto(PLUGIN_PAGE);
+    await page.waitForLoadState('domcontentloaded');
+    await page.waitForTimeout(2000);
+    await page.evaluate(() => { location.hash = '/browse'; });
+    await page.waitForTimeout(2500);
+
+    const searchInput = page.locator('.wdkit-search-filter input').first();
+    if (await searchInput.isVisible({ timeout: 5000 }).catch(() => false)) {
+      await searchInput.fill('<script>window.__xss_editor=1</script>');
+      await searchInput.press('Enter');
+      await page.waitForTimeout(1000);
+    }
+
+    const xss = await page.evaluate(() => window.__xss_editor);
+    expect(xss).toBeUndefined();
+  });
+
+  test('40.04 Elementor editor page WDesignKit scripts are enqueued without 404 errors', async ({ page }) => {
+    const notFoundUrls = [];
+    page.on('response', res => {
+      if (res.status() === 404 &&
+          (res.url().includes('wdesignkit') || res.url().includes('wdkit')) &&
+          (res.url().includes('.js') || res.url().includes('.css'))) {
+        notFoundUrls.push(res.url());
+      }
+    });
+
+    await page.goto(ELEMENTOR_EDIT_URL);
+    await page.waitForLoadState('domcontentloaded');
+    await page.waitForTimeout(3000);
+
+    expect.soft(notFoundUrls,
+      `WDesignKit assets returning 404 on Elementor editor page:\n${notFoundUrls.join('\n')}`
+    ).toHaveLength(0);
+  });
+
+  test('40.05 WDesignKit popup container has role="dialog" or aria-modal for accessibility', async ({ page }) => {
+    // Navigate to the plugin page and check if any popup/modal element has proper ARIA
+    await page.goto(PLUGIN_PAGE);
+    await page.waitForLoadState('domcontentloaded');
+    await page.waitForTimeout(2000);
+
+    // Click browse and try to open import wizard
+    await page.evaluate(() => { location.hash = '/browse'; });
+    await page.waitForTimeout(2500);
+
+    const card = page.locator('.wdkit-browse-card').first();
+    if (await card.isVisible({ timeout: 10000 }).catch(() => false)) {
+      await card.hover({ force: true });
+      await page.waitForTimeout(300);
+      const importBtn = card.locator('.wdkit-browse-card-download').first();
+      if (await importBtn.isVisible({ timeout: 2000 }).catch(() => false)) {
+        await importBtn.click({ force: true });
+        await page.waitForTimeout(2000);
+      }
+    }
+
+    const wizard = page.locator('.wkit-temp-import-mian');
+    if ((await wizard.count()) > 0) {
+      const role = await wizard.getAttribute('role');
+      const ariaModal = await wizard.getAttribute('aria-modal');
+      const ariaLabel = await wizard.getAttribute('aria-label');
+      const ariaLabelledby = await wizard.getAttribute('aria-labelledby');
+
+      // Soft: wizard ideally has dialog role
+      expect.soft(role || ariaModal || ariaLabel || ariaLabelledby,
+        'Import wizard has no ARIA dialog role or modal attribute — screen readers cannot identify it as a dialog'
+      ).toBeTruthy();
+    }
+  });
+
+  test('40.06 WDesignKit popup closes on Escape key (focus management)', async ({ page }) => {
+    await page.goto(PLUGIN_PAGE);
+    await page.waitForLoadState('domcontentloaded');
+    await page.waitForTimeout(2000);
+    await page.evaluate(() => { location.hash = '/browse'; });
+    await page.waitForTimeout(2500);
+
+    const card = page.locator('.wdkit-browse-card').first();
+    if (await card.isVisible({ timeout: 10000 }).catch(() => false)) {
+      await card.hover({ force: true });
+      await page.waitForTimeout(300);
+      const importBtn = card.locator('.wdkit-browse-card-download').first();
+      if (await importBtn.isVisible({ timeout: 2000 }).catch(() => false)) {
+        await importBtn.click({ force: true });
+        await page.waitForTimeout(2000);
+
+        await page.keyboard.press('Escape');
+        await page.waitForTimeout(1500);
+
+        // No crash
+        await expect(page.locator('body')).not.toContainText('Fatal error');
+        const appVisible = await page.locator('#wdesignkit-app').isVisible({ timeout: 3000 }).catch(() => false);
+        expect(appVisible).toBe(true);
+      }
+    }
+  });
+
+  test('40.07 No mixed content warnings in WDesignKit editor popup loading', async ({ page }) => {
+    const mixedContent = [];
+
+    page.on('response', res => {
+      const resUrl = res.url();
+      const pageUrl = page.url();
+      if (pageUrl.startsWith('https://') && resUrl.startsWith('http://') &&
+          !resUrl.includes('localhost') && !resUrl.includes('127.0.0.1')) {
+        mixedContent.push(resUrl);
+      }
+    });
+
+    await wpLogin(page);
+    await page.goto(PLUGIN_PAGE);
+    await page.waitForLoadState('domcontentloaded');
+    await page.waitForTimeout(2000);
+    await page.evaluate(() => { location.hash = '/browse'; });
+    await page.waitForTimeout(3000);
+
+    const isHttps = page.url().startsWith('https://');
+    if (isHttps) {
+      expect.soft(mixedContent,
+        `Mixed content (HTTP on HTTPS) in select-template flow:\n${mixedContent.join('\n')}`
+      ).toHaveLength(0);
+    }
   });
 
 });

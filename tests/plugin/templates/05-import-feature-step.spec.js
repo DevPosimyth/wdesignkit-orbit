@@ -1,6 +1,6 @@
 // =============================================================================
 // WDesignKit Templates Suite — Import Feature Step (Step 2)
-// Version: 3.0.0 — Deep inside-flow testing
+// Version: 3.1.0 — Deep inside-flow testing
 //
 // COVERAGE
 //   Section 25 — Feature step full layout (12 tests)
@@ -14,6 +14,7 @@
 //   Section 33 — T&C checkbox — all states and interactions (8 tests)
 //   Section 34 — Next button disabled/enabled/advance state (6 tests)
 //   Section 35 — Back button & no console errors (5 tests)
+//   Section 36 — T&C link integrity + plugin card images + mobile scroll (8 tests) ← NEW
 // =============================================================================
 
 const { test, expect } = require('@playwright/test');
@@ -851,6 +852,143 @@ test.describe('35. Feature step — Back button & console health', () => {
     });
     await page.waitForTimeout(2000);
     expect(failedRequests.length).toBe(0);
+  });
+
+});
+
+// =============================================================================
+// 36. Feature step — T&C link integrity + plugin card images + mobile scroll
+// =============================================================================
+test.describe('36. Feature step — T&C link integrity, plugin images & mobile scroll', () => {
+  test.describe.configure({ mode: 'serial' });
+
+  test.beforeEach(async ({ page }) => {
+    await openFeatureStep(page);
+  });
+
+  test('36.01 T&C backup link opens in a new tab (target="_blank")', async ({ page }) => {
+    const link = page.locator('.wkit-note-backup-link');
+    if ((await link.count()) > 0) {
+      const target = await link.first().getAttribute('target');
+      expect.soft(target,
+        'T&C backup link should open in a new tab (target="_blank") to avoid navigating the user away from the wizard'
+      ).toBe('_blank');
+    }
+  });
+
+  test('36.02 T&C backup link href is an HTTPS URL', async ({ page }) => {
+    const link = page.locator('.wkit-note-backup-link');
+    if ((await link.count()) > 0) {
+      const href = await link.first().getAttribute('href');
+      expect(href).toBeTruthy();
+      // If it's an absolute URL, it should use HTTPS
+      if (href && href.startsWith('http')) {
+        expect(href, 'T&C link should use HTTPS').toMatch(/^https:/);
+      }
+    }
+  });
+
+  test('36.03 T&C backup link has rel="noopener" or rel="noreferrer" (security)', async ({ page }) => {
+    const link = page.locator('.wkit-note-backup-link');
+    if ((await link.count()) > 0) {
+      const rel = await link.first().getAttribute('rel');
+      const target = await link.first().getAttribute('target');
+      if (target === '_blank') {
+        // target="_blank" without noopener is a security vulnerability
+        expect.soft(rel,
+          'target="_blank" link is missing rel="noopener" or rel="noreferrer" — security risk'
+        ).toMatch(/noopener|noreferrer/);
+      }
+    }
+  });
+
+  test('36.04 Plugin card icon images are not broken (naturalWidth > 0)', async ({ page }) => {
+    // Give cards time to load icons
+    await page.waitForTimeout(1500);
+
+    const cardIcons = await page.locator('.wkit-feature-plugin-card img, .wkit-plugin-card-icon img').all();
+
+    const brokenImages = [];
+    for (const img of cardIcons) {
+      const isLoaded = await img.evaluate(el => {
+        return el.complete && el.naturalWidth > 0;
+      }).catch(() => true); // If evaluate fails, skip (dynamic image)
+
+      if (!isLoaded) {
+        const src = await img.getAttribute('src').catch(() => 'unknown');
+        brokenImages.push(src);
+      }
+    }
+
+    expect.soft(brokenImages,
+      `Broken plugin card icon images detected:\n${brokenImages.join('\n')}`
+    ).toHaveLength(0);
+  });
+
+  test('36.05 Plugin card icon <i> elements use valid CSS icon classes', async ({ page }) => {
+    const iconElements = page.locator('.wkit-feature-plugin-card i, .wkit-feature-card-icon');
+    const count = await iconElements.count();
+    expect(count).toBeGreaterThan(0);
+
+    // Verify each icon element has at least one CSS class
+    for (let i = 0; i < Math.min(count, 6); i++) {
+      const cls = await iconElements.nth(i).getAttribute('class');
+      expect.soft(cls,
+        `Plugin card icon at index ${i} has no CSS class — icon may not render`
+      ).toBeTruthy();
+    }
+  });
+
+  test('36.06 Feature step does not overflow horizontally at 375px (mobile viewport)', async ({ page }) => {
+    await page.setViewportSize({ width: 375, height: 812 });
+    await page.waitForTimeout(800);
+
+    const overflow = await page.locator('.wkit-import-temp-feature').evaluate(el => {
+      return el.scrollWidth > el.clientWidth + 5;
+    }).catch(() => false);
+
+    expect.soft(overflow,
+      'Feature step overflows horizontally at 375px — plugin cards may be cut off on mobile'
+    ).toBe(false);
+  });
+
+  test('36.07 Feature step plugin cards are scrollable on mobile without UI breakage', async ({ page }) => {
+    await page.setViewportSize({ width: 375, height: 812 });
+    await page.waitForTimeout(800);
+
+    const cardsContainer = page.locator('.wkit-site-feature-plugins').first();
+    if ((await cardsContainer.count()) > 0) {
+      // Scroll down to reveal all cards
+      await cardsContainer.evaluate(el => { el.scrollTop = el.scrollHeight; });
+      await page.waitForTimeout(500);
+
+      // The page should not crash after scrolling
+      await expect(page.locator('body')).not.toContainText('Fatal error');
+
+      // All 6 cards should still be in DOM
+      const cardCount = await page.locator('.wkit-feature-plugin-card').count();
+      expect(cardCount).toBeGreaterThanOrEqual(6);
+    }
+  });
+
+  test('36.08 Feature step T&C section is fully visible without scroll at desktop (1440px)', async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.waitForTimeout(800);
+
+    const noteSection = page.locator('.wkit-site-feature-note');
+    if ((await noteSection.count()) > 0) {
+      await expect.soft(noteSection.first()).toBeVisible({ timeout: 5000 });
+
+      // T&C note should not be clipped — check it is not overflowing
+      const isClipped = await noteSection.first().evaluate(el => {
+        const rect = el.getBoundingClientRect();
+        return rect.bottom > window.innerHeight + 50; // 50px tolerance
+      });
+
+      expect.soft(isClipped,
+        'T&C checkbox section is not visible in viewport at desktop — user may miss it'
+      ).toBe(false);
+    }
   });
 
 });
