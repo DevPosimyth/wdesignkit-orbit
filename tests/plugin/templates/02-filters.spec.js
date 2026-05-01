@@ -925,10 +925,12 @@ test.describe('§D. Filters — Performance', () => {
 // =============================================================================
 test.describe('§E. Filters — Tap target size', () => {
   test('§E.01 Filter checkboxes tap target is ≥ 44×44px on mobile viewport', async ({ page }) => {
+    // Navigate at default viewport first, then resize — filter panel may not render at 375px
     await wpLogin(page);
-    await page.setViewportSize({ width: 375, height: 812 });
     await goToBrowse(page);
     await page.locator('.wdkit-browse-column').waitFor({ state: 'visible', timeout: 15000 }).catch(() => {});
+    await page.setViewportSize({ width: 375, height: 812 });
+    await page.waitForTimeout(300);
     // Check the label (tappable area) rather than the hidden checkbox input
     const categoryLabel = page.locator('label[for="category_1031"], label[for^="category_"]').first();
     if (await categoryLabel.count() > 0 && await categoryLabel.isVisible()) {

@@ -416,11 +416,13 @@ test.describe('§F. Breadcrumbs — RTL layout', () => {
 // =============================================================================
 test.describe('§G. Breadcrumbs — Tap targets', () => {
   test('§G.01 Breadcrumb cards meet 44×44px minimum tap target on mobile viewport', async ({ page }) => {
-    await page.setViewportSize({ width: 375, height: 812 });
+    // Navigate at default viewport first, then resize to mobile — avoids wizard click failures at 375px
     await wpLogin(page);
     await goToBrowse(page);
     await clickFirstCardImport(page);
     await page.locator('.wkit-temp-import-mian').waitFor({ state: 'visible', timeout: 20000 }).catch(() => {});
+    await page.setViewportSize({ width: 375, height: 812 });
+    await page.waitForTimeout(300);
     const cards = page.locator('.wkit-breadcrumbs-card');
     const count = await cards.count();
     for (let i = 0; i < Math.min(count, 4); i++) {

@@ -485,13 +485,15 @@ test.describe('§F. Back Navigation — RTL layout', () => {
 // =============================================================================
 test.describe('§G. Back Navigation — Tap target', () => {
   test('§G.01 Back button meets 44×44px minimum tap target on mobile viewport', async ({ page }) => {
-    await page.setViewportSize({ width: 375, height: 812 });
+    // Navigate at default viewport first, then resize to mobile — avoids wizard click failures at 375px
     await wpLogin(page);
     await goToBrowse(page);
     await clickFirstCardImport(page);
     await page.locator('.wkit-temp-import-mian').waitFor({ state: 'visible', timeout: 20000 }).catch(() => {});
     await reachFeatureStep(page);
     await page.locator('.wkit-import-temp-feature').waitFor({ state: 'visible', timeout: 15000 }).catch(() => {});
+    await page.setViewportSize({ width: 375, height: 812 });
+    await page.waitForTimeout(300);
     const backBtn = page.locator('button.wkit-site-feature-back, button.wkit-back-btn').first();
     if ((await backBtn.count()) > 0) {
       const box = await backBtn.boundingBox().catch(() => null);

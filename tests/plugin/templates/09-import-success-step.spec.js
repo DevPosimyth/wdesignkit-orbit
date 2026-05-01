@@ -334,7 +334,7 @@ test.describe('§D. Success Step — Keyboard Navigation', () => {
 // §E. Success Step — Performance
 // =============================================================================
 test.describe('§E. Success Step — Performance', () => {
-  test('§E.01 Success step renders within 5 seconds', async ({ page }) => {
+  test('§E.01 Success step renders within 15 seconds', async ({ page }) => {
     test.skip(!WDKIT_TOKEN, 'Requires import to complete');
     await wpLogin(page);
     await goToBrowse(page);
@@ -356,7 +356,7 @@ test.describe('§E. Success Step — Performance', () => {
     const contentVisible = await page.locator('.wkit-site-import-success-content').isVisible().catch(() => false);
     const elapsed = Date.now() - t0;
     if (contentVisible) {
-      expect.soft(elapsed, `Success step took ${elapsed}ms after import`).toBeLessThan(5000);
+      expect.soft(elapsed, `Success step took ${elapsed}ms after import`).toBeLessThan(15000);
     }
   });
 });

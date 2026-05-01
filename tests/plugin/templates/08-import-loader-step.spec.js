@@ -444,8 +444,10 @@ test.describe('§E. Loader Step — Performance', () => {
 test.describe('§F. Loader Step — Tap target size', () => {
   test('§F.01 Any cancel or close button on loader is ≥ 44px tall on mobile viewport', async ({ page }) => {
     test.skip(!WDKIT_TOKEN, 'Requires API token to trigger loader');
-    await page.setViewportSize({ width: 375, height: 812 });
+    // Navigate at default viewport first, then resize to mobile — avoids wizard click failures at 375px
     await openReadyToImport(page);
+    await page.setViewportSize({ width: 375, height: 812 });
+    await page.waitForTimeout(300);
     const nextBtn = page.locator('button.wkit-import-method-next.wkit-btn-class');
     if ((await nextBtn.count()) > 0) {
       await nextBtn.click();

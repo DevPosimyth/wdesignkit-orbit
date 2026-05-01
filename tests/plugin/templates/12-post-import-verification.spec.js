@@ -657,8 +657,10 @@ test.describe('§D. Post-Import — RTL layout', () => {
 test.describe('§E. Post-Import — Tap targets', () => {
   test('§E.01 Primary action buttons in WP Admin pages list meet 44×44px tap target on mobile', async ({ page }) => {
     test.skip(!WDKIT_TOKEN, 'Requires API token for import to complete');
-    await page.setViewportSize({ width: 375, height: 812 });
+    // Navigate at default viewport first, then resize to mobile — avoids wizard click failures at 375px
     await triggerDummyImportAndVerify(page);
+    await page.setViewportSize({ width: 375, height: 812 });
+    await page.waitForTimeout(300);
     await page.goto('/wp-admin/edit.php?post_type=page');
     await page.waitForLoadState('domcontentloaded', { timeout: 20000 });
     // Check the Add New button as it is the primary call-to-action
