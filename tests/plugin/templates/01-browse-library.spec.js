@@ -1,6 +1,6 @@
 // =============================================================================
 // WDesignKit Templates Suite — Browse Library
-// Version: 3.1.0 — Deep inside-flow testing
+// Version: 3.2.0 — Deep inside-flow testing
 //
 // COVERAGE
 //   Section 1  — Browse Templates navigation & sidebar (10 tests)
@@ -72,9 +72,13 @@ test.describe('1. Browse Templates — navigation & sidebar', () => {
   });
 
   test('1.06 Clicking Browse Templates nav link navigates to hash #/browse', async ({ page }) => {
+    // NOTE (v3.2.0): The plugin persists the last selected page_type filter in the URL hash,
+    // so after a previous filter interaction the hash may read "#/browse?page_type=[...]".
+    // The correct invariant is that the hash STARTS WITH "#/browse" — not that it is
+    // exactly "#/browse". A separate test verifies filter reset behaviour.
     await goToBrowseViaNav(page);
     const hash = await page.evaluate(() => location.hash);
-    expect(hash).toBe('#/browse');
+    expect(hash, `Expected hash to start with #/browse but got: ${hash}`).toMatch(/^#\/browse/);
   });
 
   test('1.07 Plugin root #wdesignkit-app is present on the plugin page', async ({ page }) => {
@@ -236,16 +240,30 @@ test.describe('2b. Browse library — search, skeleton, empty state & preview bu
     }
   });
 
-  test('2b.05 Skeleton/loading state appears on initial grid load', async ({ page }) => {
-    // Reload and check skeleton appears before full cards load
-    await wpLogin(page);
-    await page.evaluate(() => { location.hash = '/browse'; });
-    // Check for skeleton within first 5 seconds
-    const skeleton = page.locator('[class*="skeleton" i], [class*="Skeleton"], .wdkit-card-skeleton, .wdkit-skeleton');
-    const skeletonVisible = await skeleton.first().isVisible({ timeout: 5000 }).catch(() => false);
-    // Either skeleton shows OR cards load immediately (both valid)
-    const cardVisible = await page.locator('.wdkit-browse-card').first().isVisible({ timeout: 10000 }).catch(() => false);
-    expect(skeletonVisible || cardVisible).toBe(true);
+  test('2b.05 Browse grid content loads: skeleton or cards visible on initial render', async ({ page }) => {
+    // beforeEach already navigated to the browse page.
+    // We verify the loaded state here — either skeleton was shown (fast disappears)
+    // or cards are visible (load was instant from cache).
+    //
+    // Strategy: check if cards are CURRENTLY visible after beforeEach already ran.
+    // If cards loaded successfully (which beforeEach waits for), this test passes.
+    // If neither skeleton nor cards are present, that is a blank-page product bug.
+    //
+    // NOTE (v3.2.0): The skeleton window is < 500ms in most environments.
+    // A timing-based skeleton test is flaky. We instead verify the end-state:
+    // cards must be visible (skeleton is transient and may have already vanished).
+    const cardVisible = await page.locator('.wdkit-browse-card').first().isVisible({ timeout: 5000 }).catch(() => false);
+    const skeletonVisible = await page.locator(
+      '.wkit-skeleton-card-wrapper, [class*="skeleton" i], [class*="Skeleton"]'
+    ).first().isVisible({ timeout: 1000 }).catch(() => false);
+
+    console.log(`[2b.05] skeleton=${skeletonVisible}, cards=${cardVisible}`);
+
+    // End-state: either cards are visible, or skeleton is visible (mid-load when test ran)
+    expect(
+      cardVisible || skeletonVisible,
+      'Browse grid is blank — neither cards nor skeleton visible after page load'
+    ).toBe(true);
   });
 
   test('2b.06 Empty state message appears when no templates match applied filters', async ({ page }) => {
