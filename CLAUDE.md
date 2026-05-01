@@ -317,3 +317,174 @@ If **any Critical or High bug remains open**, the session is **QA Failed** — d
 * Validate beyond surface-level checks  
 * Ensure **production-grade quality**  
 * Prioritize **clarity, accuracy, and completeness**
+
+---
+
+## **Quick Reference — Skills & Commands**
+
+> Copy-paste ready. Use these directly without looking anything up.
+
+---
+
+### Skills — 6 Core (Mandatory for Every Full Audit)
+
+Run all 6 in parallel. Replace `/path/to/plugin` with the actual plugin path.
+
+```bash
+claude "/orbit-wp-standards Audit /path/to/plugin — WP coding standards, nonces, escaping, caps, i18n. Output full markdown report."
+claude "/security-auditor Security audit /path/to/plugin — PHP source code review, XSS, CSRF, SQLi, WP vuln patterns. Output full markdown report."
+claude "/security-scanning-security-sast SAST scan /path/to/plugin — static analysis, unsafe functions, input handling. Output full markdown report."
+claude "/orbit-wp-performance Analyze /path/to/plugin — WP hooks, N+1 DB calls, transient misuse, blocking assets. Output full markdown report."
+claude "/orbit-wp-database Review /path/to/plugin — \$wpdb usage, autoload bloat, missing indexes, uninstall cleanup. Output full markdown report."
+claude "/accessibility-compliance-accessibility-audit Audit /path/to/plugin admin UI + frontend — WCAG 2.2 AA, keyboard nav, ARIA, contrast. Output full markdown report."
+claude "/vibe-code-auditor Review /path/to/plugin — code quality, AI-generated code risks, dead code, complexity. Output full markdown report."
+```
+
+**Or run all 6 via gauntlet (auto parallel):**
+
+```bash
+bash scripts/gauntlet.sh --plugin /path/to/plugin --mode full
+```
+
+---
+
+### Skills — Add-ons by Plugin Type
+
+Use on top of the 6 core based on what the plugin does:
+
+```bash
+# Elementor addon / UI-heavy
+claude "/antigravity-design-expert Review /path/to/plugin — 44px hit areas, spacing, motion quality, visual polish."
+
+# WooCommerce plugin
+claude "/wordpress-woocommerce-development Audit /path/to/plugin — WC hooks, gateway security, template overrides."
+
+# REST API / headless
+claude "/api-security-testing Audit /path/to/plugin — endpoint auth, input validation, rate limiting, CORS."
+
+# PHP-heavy / complex logic
+claude "/php-pro Review /path/to/plugin — PHP 8.x patterns, typed properties, strict types, modern idioms."
+```
+
+---
+
+### Skill Deduplication — Use These, Not Those
+
+| Task | Use | Do NOT use |
+|---|---|---|
+| WP standards | `/orbit-wp-standards` | ~~`/wordpress-plugin-development`~~ ~~`/wordpress`~~ |
+| Security (code review) | `/security-auditor` + `/security-scanning-security-sast` | ~~`/wordpress-penetration-testing`~~ |
+| Security (live staging) | `/wordpress-penetration-testing` | ~~`/security-auditor`~~ |
+| Performance | `/orbit-wp-performance` | ~~`/performance-engineer`~~ ~~`/performance-optimizer`~~ |
+| Database | `/orbit-wp-database` | ~~`/database-optimizer`~~ ~~`/database-admin`~~ |
+| Code quality | `/vibe-code-auditor` + `/codebase-audit-pre-push` | ~~`/code-review-excellence`~~ ~~`/code-reviewer`~~ |
+| Accessibility | `/accessibility-compliance-accessibility-audit` | ~~`/accessibility`~~ |
+| E2E tests | `/playwright-skill` + `/e2e-testing-patterns` | ~~`/e2e-testing`~~ ~~`/playwright-java`~~ |
+
+---
+
+### Test Commands — Master Runner (All 11 Dimensions)
+
+```bash
+bash scripts/run-full-qa.sh                        # server (default)
+bash scripts/run-full-qa.sh --type=plugin          # plugin
+bash scripts/run-full-qa.sh --type=all             # server + plugin
+bash scripts/run-full-qa.sh --skip-lighthouse      # skip Lighthouse scan
+```
+
+---
+
+### Test Commands — Playwright Pipeline
+
+```bash
+bash scripts/run-all-tests.sh                      # server + plugin + Lighthouse
+bash scripts/run-all-tests.sh --type=server        # server only
+bash scripts/run-all-tests.sh --type=plugin        # plugin only
+bash scripts/run-all-tests.sh --skip-lighthouse    # skip Lighthouse
+npx playwright show-report                         # view last HTML report
+```
+
+---
+
+### Test Commands — Single Dimension
+
+```bash
+bash scripts/qa-ui.sh --type=plugin
+bash scripts/qa-functionality.sh --type=plugin
+bash scripts/qa-responsive.sh --type=plugin
+bash scripts/qa-logic.sh --type=plugin
+bash scripts/qa-security.sh
+bash scripts/lighthouse.sh
+bash scripts/qa-accessibility.sh --type=plugin
+bash scripts/qa-cross-browser.sh --type=plugin
+bash scripts/qa-console.sh --type=plugin
+bash scripts/qa-seo.sh
+bash scripts/qa-code-quality.sh
+```
+
+---
+
+### Test Commands — Templates Suite
+
+```bash
+bash scripts/qa-templates.sh --smoke               # quick smoke (5 specs)
+bash scripts/qa-templates.sh --import              # full import wizard
+bash scripts/qa-templates.sh --user                # my templates + save + share
+bash scripts/qa-templates.sh --a11y                # accessibility only
+bash scripts/qa-templates.sh --security            # security only
+bash scripts/qa-templates.sh --full                # all phases
+bash scripts/qa-templates.sh --full --mobile       # all phases at 375px
+bash scripts/qa-templates.sh --full --workers=6    # parallel workers
+```
+
+---
+
+### Test Commands — Individual Spec Files
+
+```bash
+# Server
+npx playwright test tests/server/auth.spec.js
+npx playwright test tests/server/dashboard.spec.js
+npx playwright test tests/server/widget-builder.spec.js
+npx playwright test tests/server/homepage.spec.js
+
+# Plugin
+npx playwright test tests/plugin/login.spec.js
+npx playwright test tests/plugin/settings.spec.js
+npx playwright test tests/plugin/activation.spec.js
+npx playwright test tests/plugin/admin.spec.js
+npx playwright test tests/plugin/widget-elementor.spec.js
+npx playwright test tests/plugin/widget-gutenberg.spec.js
+npx playwright test tests/plugin/template-import.spec.js
+npx playwright test tests/plugin/widget-import-download.spec.js
+
+# Learning Center
+npx playwright test --project=learning-desktop
+```
+
+---
+
+### Test Commands — Viewport Specific
+
+```bash
+# Server
+npx playwright test tests/server/[spec].spec.js --project=wdk-desktop   # 1440px
+npx playwright test tests/server/[spec].spec.js --project=wdk-tablet    # 768px
+npx playwright test tests/server/[spec].spec.js --project=wdk-mobile    # 375px
+
+# Plugin
+npx playwright test tests/plugin/[spec].spec.js --project=plugin-desktop
+npx playwright test tests/plugin/[spec].spec.js --project=plugin-tablet
+npx playwright test tests/plugin/[spec].spec.js --project=plugin-mobile
+```
+
+---
+
+### Test Commands — Debug & Watch
+
+```bash
+npx playwright test --ui                                          # interactive UI mode
+npx playwright test --headed --slowMo=500                        # watch in browser
+npx playwright test --debug                                       # step through test
+npx playwright show-trace test-results/.../trace.zip             # post-mortem trace
+```
