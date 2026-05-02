@@ -6,6 +6,21 @@
 
 ---
 
+## WDesignKit QA Skills (wdk-*)
+
+Six custom Claude Code skills for WDesignKit Orbit. Installed at `~/.claude/skills/`.
+
+| Skill | Invoke | What It Does |
+|-------|--------|--------------|
+| `wdk-full-qa` | `/wdk-full-qa` | Runs `run-full-qa.sh` — all 11 QA dimensions + 8-criteria release gate |
+| `wdk-plugin-qa` | `/wdk-plugin-qa` | Runs all plugin spec files across all 3 viewports (desktop · tablet · mobile) |
+| `wdk-templates-qa` | `/wdk-templates-qa` | Templates suite — smoke / import / full / mobile (specs 01–53) |
+| `wdk-bug-report` | `/wdk-bug-report` | Writes bugs in correct MD format with severity / area / steps / ClickUp rules |
+| `wdk-pre-test` | `/wdk-pre-test` | Enforces reading `AI-CONTEXT.md` → `PITFALLS.md` → checklist before writing any test |
+| `wdk-release-gate` | `/wdk-release-gate` | Validates all 8 release gate criteria and delivers final QA verdict |
+
+---
+
 ## The Six Core Skills (Always Run)
 
 These are mandatory for every Orbit audit. Run in parallel via the gauntlet.
