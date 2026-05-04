@@ -68,6 +68,84 @@ test.describe('§1. Browse Widget — Navigation & page structure', () => {
     await expect(widgetMenu).toBeAttached({ timeout: 10000 });
   });
 
+  test('1.02c Sidebar submenu link a.wdkit-submenu-link[href="#/widget-browse"] is attached', async ({ page }) => {
+    // navigation-menu.jsx: <Link className="wdkit-submenu-link" to="/widget-browse">
+    // wdkitLogin required so SPA renders the authenticated nav (Widgets menu visible)
+    await wdkitLogin(page);
+    await page.goto(PLUGIN_PAGE);
+    await page.waitForLoadState('domcontentloaded');
+    await page.waitForTimeout(2000);
+    // Expand the Widgets parent menu item if the nav is collapsed
+    const widgetMenu = page.locator('.wkit-menu').filter({ has: page.locator('.wdkit-i-widgets') }).first();
+    if (await widgetMenu.count() > 0) {
+      await widgetMenu.click({ force: true }).catch(() => {});
+      await page.waitForTimeout(500);
+    }
+    const browseLink = page.locator('a.wdkit-submenu-link[href="#/widget-browse"]').first();
+    await expect(browseLink).toBeAttached({ timeout: 8000 });
+  });
+
+  test('1.02d Sidebar submenu link a.wdkit-submenu-link[href="#/widget-listing"] is attached', async ({ page }) => {
+    // navigation-menu.jsx: <Link className="wdkit-submenu-link" to="/widget-listing">
+    await wdkitLogin(page);
+    await page.goto(PLUGIN_PAGE);
+    await page.waitForLoadState('domcontentloaded');
+    await page.waitForTimeout(2000);
+    const widgetMenu = page.locator('.wkit-menu').filter({ has: page.locator('.wdkit-i-widgets') }).first();
+    if (await widgetMenu.count() > 0) {
+      await widgetMenu.click({ force: true }).catch(() => {});
+      await page.waitForTimeout(500);
+    }
+    const listingLink = page.locator('a.wdkit-submenu-link[href="#/widget-listing"]').first();
+    await expect(listingLink).toBeAttached({ timeout: 8000 });
+  });
+
+  test('1.02e Clicking a.wdkit-submenu-link[href="#/widget-browse"] navigates to Browse Widget page', async ({ page }) => {
+    await wdkitLogin(page);
+    await page.goto(PLUGIN_PAGE);
+    await page.waitForLoadState('domcontentloaded');
+    await page.waitForTimeout(2000);
+    const widgetMenu = page.locator('.wkit-menu').filter({ has: page.locator('.wdkit-i-widgets') }).first();
+    if (await widgetMenu.count() > 0) {
+      await widgetMenu.click({ force: true }).catch(() => {});
+      await page.waitForTimeout(500);
+    }
+    const browseLink = page.locator('a.wdkit-submenu-link[href="#/widget-browse"]').first();
+    if (await browseLink.count() > 0) {
+      await browseLink.click({ force: true });
+      await page.waitForTimeout(3000);
+      const hash = await page.evaluate(() => location.hash);
+      expect(hash, `Expected hash to contain /widget-browse, got: ${hash}`).toContain('/widget-browse');
+      // Browse container must render after navigation
+      const browseWrap = await page.locator('.wkit-browse-widget-wrap, .wdkit-browse-card').count();
+      expect(browseWrap, 'Browse Widget page did not load after clicking sidebar link').toBeGreaterThan(0);
+    }
+    await expect(page.locator('body')).not.toContainText('Fatal error');
+  });
+
+  test('1.02f Clicking a.wdkit-submenu-link[href="#/widget-listing"] navigates to My Widgets page', async ({ page }) => {
+    await wdkitLogin(page);
+    await page.goto(PLUGIN_PAGE);
+    await page.waitForLoadState('domcontentloaded');
+    await page.waitForTimeout(2000);
+    const widgetMenu = page.locator('.wkit-menu').filter({ has: page.locator('.wdkit-i-widgets') }).first();
+    if (await widgetMenu.count() > 0) {
+      await widgetMenu.click({ force: true }).catch(() => {});
+      await page.waitForTimeout(500);
+    }
+    const listingLink = page.locator('a.wdkit-submenu-link[href="#/widget-listing"]').first();
+    if (await listingLink.count() > 0) {
+      await listingLink.click({ force: true });
+      await page.waitForTimeout(3500);
+      const hash = await page.evaluate(() => location.hash);
+      expect(hash, `Expected hash to contain /widget-listing, got: ${hash}`).toContain('/widget-listing');
+      // My Widgets main container must render
+      const myWidgetsWrap = await page.locator('.wb-widget-main-container, #wdesignkit-app').count();
+      expect(myWidgetsWrap, 'My Widgets page did not load after clicking sidebar link').toBeGreaterThan(0);
+    }
+    await expect(page.locator('body')).not.toContainText('Fatal error');
+  });
+
   test('1.03 Hash navigation to #/widget-browse updates the URL', async ({ page }) => {
     await goToBrowseWidget(page);
     const hash = await page.evaluate(() => location.hash);
