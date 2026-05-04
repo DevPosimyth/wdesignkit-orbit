@@ -742,15 +742,20 @@ test.describe('§8. My Widget Listing — Empty state & loading skeleton', () =>
     await expect(page.locator('body')).not.toContainText('Fatal error');
   });
 
-  test('8.03 Empty state is shown (not a blank page) when user has no widgets', async ({ page }) => {
-    // Wait for loading to complete
+  test('8.03 Empty state .wkit-content-not-availble with "No Result Found" is shown when user has no widgets', async ({ page }) => {
+    // not-found.jsx: root=.wkit-content-not-availble (intentional typo in source), title=h5.wkit-common-desc text="No Result Found"
     await page.locator('.wkit-primary-btn-skeleton').waitFor({ state: 'detached', timeout: 12000 }).catch(() => {});
     await page.waitForTimeout(1000);
     const cardCount = await page.locator('.wdkit-browse-card').count();
     if (cardCount === 0) {
-      // Empty state must be shown
-      const notFound = await page.locator('[class*="not-found"], [class*="Not_found"], .wb-widget-main-container').count();
-      expect(notFound, 'Empty state not shown when user has no widgets').toBeGreaterThan(0);
+      // Empty state component must be rendered — not a blank panel
+      const notFoundEl = await page.locator('.wkit-content-not-availble').count();
+      expect(notFoundEl, '.wkit-content-not-availble empty state missing when user has no widgets').toBeGreaterThan(0);
+      // "No Result Found" heading must be visible inside it
+      const noResultHeading = page.locator('.wkit-content-not-availble h5.wkit-common-desc');
+      if (await noResultHeading.count() > 0) {
+        await expect(noResultHeading.first()).toContainText('No Result Found');
+      }
     }
     await expect(page.locator('body')).not.toContainText('Fatal error');
   });

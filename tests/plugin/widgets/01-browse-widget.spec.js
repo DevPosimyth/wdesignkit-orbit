@@ -51,13 +51,21 @@ test.describe('§1. Browse Widget — Navigation & page structure', () => {
     expect(await page.locator('#wdesignkit-app').count()).toBeGreaterThan(0);
   });
 
-  test('1.02 Widget Browse menu item is accessible from the sidebar', async ({ page }) => {
+  test('1.02 Widgets sidebar menu item uses .wdkit-i-widgets icon', async ({ page }) => {
     await page.goto(PLUGIN_PAGE);
     await page.waitForLoadState('domcontentloaded');
     await page.waitForTimeout(2000);
-    // Widgets menu is typically under .wkit-menu with a widget-related icon
-    const menuItems = page.locator('.wkit-menu');
-    expect(await menuItems.count()).toBeGreaterThan(0);
+    // navigation-menu.jsx: parent_svg = <i className='wdkit-i-widgets'></i>
+    const widgetIcon = page.locator('.wdkit-i-widgets');
+    await expect(widgetIcon.first()).toBeAttached({ timeout: 10000 });
+  });
+
+  test('1.02b Widgets sidebar menu item .wkit-menu wraps the .wdkit-i-widgets icon', async ({ page }) => {
+    await page.goto(PLUGIN_PAGE);
+    await page.waitForLoadState('domcontentloaded');
+    await page.waitForTimeout(2000);
+    const widgetMenu = page.locator('.wkit-menu').filter({ has: page.locator('.wdkit-i-widgets') }).first();
+    await expect(widgetMenu).toBeAttached({ timeout: 10000 });
   });
 
   test('1.03 Hash navigation to #/widget-browse updates the URL', async ({ page }) => {
@@ -505,23 +513,21 @@ test.describe('§6. Browse Widget — Search bar', () => {
     await page.locator('.wdkit-browse-card').first().waitFor({ state: 'visible', timeout: 20000 }).catch(() => {});
   });
 
-  test('6.01 Search input is present inside .wdkit-search-filter', async ({ page }) => {
-    const searchFilter = await page.locator('.wdkit-search-filter').count();
-    expect(searchFilter).toBeGreaterThan(0);
-    // Search input rendered by SearchBox component
-    const searchInput = page.locator('.wdkit-search-filter input[type="text"], .wdkit-search-filter input[placeholder]').first();
-    const inputCount = await searchInput.count();
-    if (inputCount === 0) {
-      // Some versions render the search differently
-      const altSearch = await page.locator('input[placeholder*="Search" i], input[placeholder*="search" i]').count();
-      expect(altSearch + searchFilter).toBeGreaterThan(0);
-    } else {
-      await expect(searchInput).toBeVisible({ timeout: 5000 });
-    }
+  test('6.01 Search input input.wkit-search-input-b is present inside .wdkit-search-filter .wdkit-search-wrapper-b', async ({ page }) => {
+    // SearchBox.jsx renders: <div className="wdkit-search-filter"><div className="wdkit-search-wrapper-b"><input className="wkit-search-input-b" ...>
+    const searchFilter = page.locator('.wdkit-search-filter');
+    await expect(searchFilter.first()).toBeVisible({ timeout: 10000 });
+    const searchInput = page.locator('input.wkit-search-input-b');
+    await expect(searchInput.first()).toBeVisible({ timeout: 10000 });
+    // The input id should be wkit-search-input-b-browse-widgets for the Browse Widget page
+    const inputId = await searchInput.first().getAttribute('id').catch(() => '');
+    console.log(`[6.01] search input id: ${inputId}`);
+    expect(inputId).toContain('wkit-search-input-b');
   });
 
-  test('6.02 Search input accepts typed text', async ({ page }) => {
-    const searchInput = page.locator('.wdkit-search-filter input[type="text"], input[placeholder*="Search" i]').first();
+  test('6.02 Search input input.wkit-search-input-b accepts typed text', async ({ page }) => {
+    // SearchBox.jsx: <input className="wkit-search-input-b" placeholder="Search..." ...>
+    const searchInput = page.locator('input.wkit-search-input-b').first();
     if (await searchInput.count() > 0) {
       await searchInput.fill('accordion');
       const value = await searchInput.inputValue();
@@ -529,8 +535,8 @@ test.describe('§6. Browse Widget — Search bar', () => {
     }
   });
 
-  test('6.03 Pressing Enter on search input does not crash the page', async ({ page }) => {
-    const searchInput = page.locator('.wdkit-search-filter input[type="text"], input[placeholder*="Search" i]').first();
+  test('6.03 Pressing Enter on input.wkit-search-input-b does not crash the page', async ({ page }) => {
+    const searchInput = page.locator('input.wkit-search-input-b').first();
     if (await searchInput.count() > 0) {
       await searchInput.fill('button');
       await searchInput.press('Enter');
@@ -539,8 +545,8 @@ test.describe('§6. Browse Widget — Search bar', () => {
     }
   });
 
-  test('6.04 Search query updates the URL hash with search param', async ({ page }) => {
-    const searchInput = page.locator('.wdkit-search-filter input[type="text"], input[placeholder*="Search" i]').first();
+  test('6.04 Search query via input.wkit-search-input-b updates the URL hash with search param', async ({ page }) => {
+    const searchInput = page.locator('input.wkit-search-input-b').first();
     if (await searchInput.count() > 0) {
       await searchInput.fill('hero');
       await searchInput.press('Enter');
@@ -551,22 +557,30 @@ test.describe('§6. Browse Widget — Search bar', () => {
     await expect(page.locator('body')).not.toContainText('Fatal error');
   });
 
-  test('6.05 Searching for a non-existent term shows not-found state', async ({ page }) => {
-    const searchInput = page.locator('.wdkit-search-filter input[type="text"], input[placeholder*="Search" i]').first();
+  test('6.05 Searching for a non-existent term shows .wkit-content-not-availble "No Result Found" state', async ({ page }) => {
+    // not-found.jsx: root=.wkit-content-not-availble, title=h5.wkit-common-desc text="No Result Found"
+    const searchInput = page.locator('input.wkit-search-input-b').first();
     if (await searchInput.count() > 0) {
       await searchInput.fill('zzz_no_match_xyz_qwerty_abc');
       await searchInput.press('Enter');
       await page.waitForTimeout(3000);
-      // Either 0 cards or a not-found element
       const cardCount = await page.locator('.wdkit-browse-card').count();
-      const notFound = await page.locator('.wkit-post-not-found, [class*="not-found"], [class*="no-result"]').count();
-      expect(cardCount + notFound).toBeGreaterThanOrEqual(0);
+      const notFoundEl = await page.locator('.wkit-content-not-availble').count();
+      if (cardCount === 0) {
+        // No cards — not-found component should render
+        expect(notFoundEl, '.wkit-content-not-availble missing when 0 results returned').toBeGreaterThan(0);
+        // Also verify the "No Result Found" heading is shown
+        const noResultText = page.locator('.wkit-content-not-availble h5.wkit-common-desc');
+        if (await noResultText.count() > 0) {
+          await expect(noResultText.first()).toContainText('No Result Found');
+        }
+      }
       await expect(page.locator('body')).not.toContainText('Fatal error');
     }
   });
 
-  test('6.06 Clearing search input restores widget grid', async ({ page }) => {
-    const searchInput = page.locator('.wdkit-search-filter input[type="text"], input[placeholder*="Search" i]').first();
+  test('6.06 Clearing input.wkit-search-input-b restores widget grid', async ({ page }) => {
+    const searchInput = page.locator('input.wkit-search-input-b').first();
     if (await searchInput.count() > 0) {
       await searchInput.fill('zzz_xyz_nomatch');
       await searchInput.press('Enter');
@@ -578,8 +592,8 @@ test.describe('§6. Browse Widget — Search bar', () => {
     }
   });
 
-  test('6.07 XSS payload in search input does not execute', async ({ page }) => {
-    const searchInput = page.locator('.wdkit-search-filter input[type="text"], input[placeholder*="Search" i]').first();
+  test('6.07 XSS payload in input.wkit-search-input-b does not execute', async ({ page }) => {
+    const searchInput = page.locator('input.wkit-search-input-b').first();
     if (await searchInput.count() > 0) {
       await searchInput.fill('<script>window.__xss_browse_widget=1</script>');
       await searchInput.press('Enter');
@@ -589,10 +603,10 @@ test.describe('§6. Browse Widget — Search bar', () => {
     }
   });
 
-  test('6.08 Search does not produce console errors', async ({ page }) => {
+  test('6.08 Search via input.wkit-search-input-b does not produce console errors', async ({ page }) => {
     const errors = [];
     page.on('console', m => { if (m.type() === 'error') errors.push(m.text()); });
-    const searchInput = page.locator('.wdkit-search-filter input[type="text"], input[placeholder*="Search" i]').first();
+    const searchInput = page.locator('input.wkit-search-input-b').first();
     if (await searchInput.count() > 0) {
       await searchInput.fill('tabs');
       await searchInput.press('Enter');
@@ -919,8 +933,9 @@ test.describe('§B. Browse Widget — Security', () => {
     await page.locator('.wdkit-browse-card').first().waitFor({ state: 'visible', timeout: 20000 }).catch(() => {});
   });
 
-  test('§B.01 XSS payload in search input does not execute', async ({ page }) => {
-    const searchInput = page.locator('.wdkit-search-filter input, input[placeholder*="Search" i]').first();
+  test('§B.01 XSS payload in input.wkit-search-input-b does not execute', async ({ page }) => {
+    // SearchBox.jsx renders: input.wkit-search-input-b — target the exact class
+    const searchInput = page.locator('input.wkit-search-input-b').first();
     if (await searchInput.count() > 0) {
       await searchInput.fill('<img src=x onerror="window.__xss_b01=1">');
       await searchInput.press('Enter');
@@ -978,11 +993,12 @@ test.describe('§C. Browse Widget — Keyboard navigation', () => {
     await expect(page.locator('body')).not.toContainText('Fatal error');
   });
 
-  test('§C.02 Search input is keyboard-reachable (tabIndex >= 0)', async ({ page }) => {
-    const searchInput = page.locator('.wdkit-search-filter input, input[placeholder*="Search" i]').first();
+  test('§C.02 input.wkit-search-input-b is keyboard-reachable (tabIndex >= 0)', async ({ page }) => {
+    // SearchBox.jsx: input.wkit-search-input-b is the exact rendered class
+    const searchInput = page.locator('input.wkit-search-input-b').first();
     if (await searchInput.count() > 0) {
       const focusable = await searchInput.evaluate(el => !el.disabled && (el.tabIndex >= 0)).catch(() => false);
-      expect.soft(focusable, 'Search input is not keyboard-focusable').toBe(true);
+      expect.soft(focusable, 'input.wkit-search-input-b is not keyboard-focusable').toBe(true);
     }
   });
 
