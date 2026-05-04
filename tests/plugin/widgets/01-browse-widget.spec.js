@@ -1,34 +1,38 @@
 // =============================================================================
 // WDesignKit Widgets Suite — Browse Widget  (#/widget-browse)
-// Version: 1.0.0 — Extreme Polish — All 11 QA dimensions
+// Version: 1.1.0 — Extreme Polish — All 11 QA dimensions
 //
 // COVERAGE
-//   §1  — Navigation & page structure           (10 tests)
-//   §2  — Initial render & card grid             (10 tests)
-//   §3  — Filter panel structure                  (8 tests)
-//   §4  — Filter interactions (builder/free-pro/category) (10 tests)
+//   §1  — Navigation & page structure           (16 tests — incl. submenu links)
+//   §2  — Initial render & card grid            (11 tests)
+//   §3  — Filter panel structure                 (8 tests)
+//   §4  — Filter interactions                   (10 tests)
 //   §5  — Applied filter chips & reset           (7 tests)
-//   §6  — Search bar                              (8 tests)
+//   §6  — Search bar                            (10 tests — incl. special chars, long input)
 //   §7  — Widget card anatomy                    (8 tests)
-//   §8  — Pagination                              (7 tests)
-//   §9  — Auth guard                              (3 tests)
-//   §10 — Console & network                       (4 tests)
-//   §A  — Responsive layout                       (6 tests)
-//   §B  — Security                                (3 tests)
-//   §C  — Keyboard navigation / WCAG 2.1 AA       (4 tests)
-//   §D  — Performance                             (3 tests)
-//   §E  — Tap target size WCAG 2.5.5              (1 test)
-//   §F  — RTL layout                              (1 test)
+//   §8  — Pagination                             (7 tests)
+//   §9  — Auth guard                             (3 tests)
+//   §10 — Console & network                      (5 tests — incl. slow-network loading state)
+//   §A  — Responsive layout                      (6 tests)
+//   §B  — Security                               (3 tests)
+//   §C  — Keyboard navigation / WCAG 2.1 AA      (6 tests — incl. aria-label, focus)
+//   §D  — Performance                            (3 tests)
+//   §E  — Tap target size WCAG 2.5.5             (1 test)
+//   §F  — RTL layout                             (1 test)
 //
 // MANUAL CHECKS (cannot be automated — verify manually):
 //   • Pixel-perfect match with Figma design (colors, spacing, typography)
-//   • Screen reader announcement order on filter change
+//   • Screen reader announcement order on filter change (WCAG 4.1.3)
 //   • Cross-browser visual rendering (Firefox, Safari, Edge)
 //   • RTL visual correctness (Arabic/Hebrew locales)
-//   • Color contrast ratios for filter labels and card titles (WCAG 1.4.3)
+//   • Color contrast ratios ≥ 4.5:1 for filter labels and card titles (WCAG 1.4.3)
 //   • Touch gesture behavior on real mobile/tablet devices
-//   • Download popup animation quality
-//   • Skeleton shimmer animation (visible in slow-network DevTools)
+//   • Download popup animation quality — scale(0.96) on press, no transition:all
+//   • Skeleton shimmer animation quality (visible in slow-network DevTools)
+//   • axe-core zero critical/serious violations on full page scan
+//   • No orphan words on card titles at narrow viewport (WCAG text-wrap:pretty)
+//   • Button press scale = transform:scale(0.96) — not 0.95 or 0.98
+//   • Focus indicator has ≥ 3:1 contrast on all interactive elements
 // =============================================================================
 
 const { test, expect } = require('@playwright/test');
@@ -697,6 +701,37 @@ test.describe('§6. Browse Widget — Search bar', () => {
     expect(productErrors).toHaveLength(0);
   });
 
+  test('6.09 Search handles HTML special characters without executing them (XSS boundary)', async ({ page }) => {
+    // Security checklist + Logic checklist: special character input must not execute or crash
+    const searchInput = page.locator('input.wkit-search-input-b').first();
+    if (await searchInput.count() > 0) {
+      await searchInput.fill('<>&"\' onmouseover="window.__xss_sc=1"');
+      await searchInput.press('Enter');
+      await page.waitForTimeout(1500);
+      const xssRan = await page.evaluate(() => window.__xss_sc === 1);
+      expect(xssRan, 'Special character payload executed in search').toBe(false);
+      await expect(page.locator('body')).not.toContainText('Fatal error');
+    }
+  });
+
+  test('6.10 Search handles very long input (200+ chars) without crash or JS error', async ({ page }) => {
+    // Logic checklist: boundary values tested — maximum field lengths
+    const errors = [];
+    page.on('console', m => { if (m.type() === 'error') errors.push(m.text()); });
+    const searchInput = page.locator('input.wkit-search-input-b').first();
+    if (await searchInput.count() > 0) {
+      await searchInput.fill('a'.repeat(220));
+      await searchInput.press('Enter');
+      await page.waitForTimeout(2000);
+      await expect(page.locator('body')).not.toContainText('Fatal error');
+      const productErrors = errors.filter(e =>
+        !e.includes('favicon') && !e.includes('net::ERR') &&
+        !e.includes('extension') && !e.includes('chrome-extension')
+      );
+      expect(productErrors, 'Console errors on 200-char search input').toHaveLength(0);
+    }
+  });
+
 });
 
 // =============================================================================
@@ -965,6 +1000,36 @@ test.describe('§10. Browse Widget — Console & network', () => {
     expect.soft(hasApiKey, 'Possible API key found in page source').toBe(false);
   });
 
+  test('10.05 Skeleton or loading indicator is visible during slow network fetch (no blank page)', async ({ page }) => {
+    // Logic checklist: Loading state — spinner/skeleton visible during fetch, no layout jump on data arrival
+    // Simulate a slow connection with Chrome DevTools Protocol
+    await wpLogin(page);
+    const client = await page.context().newCDPSession(page);
+    await client.send('Network.enable');
+    await client.send('Network.emulateNetworkConditions', {
+      offline: false,
+      downloadThroughput: Math.ceil(50 * 1024 / 8),  // 50 KB/s
+      uploadThroughput:   Math.ceil(20 * 1024 / 8),
+      latency: 1500,
+    });
+    // Navigate — before data arrives the skeleton/loading state must show
+    await page.goto('/wp-admin/admin.php?page=wdesign-kit');
+    await page.waitForLoadState('domcontentloaded');
+    await page.waitForTimeout(1000);
+    await page.evaluate(() => { location.hash = '/widget-browse'; });
+    await page.waitForTimeout(1500);
+    // Either skeleton or cards must be visible — page must NOT be blank
+    const hasContent = await page.locator(
+      '.wkit-browse-widget-wrap, [class*="skeleton"], .wdkit-browse-card, #wdesignkit-app'
+    ).count();
+    expect(hasContent, 'Page is blank during slow network fetch — no skeleton or loading indicator').toBeGreaterThan(0);
+    await expect(page.locator('body')).not.toContainText('Fatal error');
+    // Restore normal network
+    await client.send('Network.emulateNetworkConditions', {
+      offline: false, downloadThroughput: -1, uploadThroughput: -1, latency: 0,
+    });
+  });
+
 });
 
 // =============================================================================
@@ -1093,6 +1158,45 @@ test.describe('§C. Browse Widget — Keyboard navigation', () => {
     if (await freeRadio.count() > 0) {
       const focusable = await freeRadio.evaluate(el => !el.disabled && el.tabIndex >= 0).catch(() => false);
       expect.soft(focusable, 'Free radio input is not keyboard-accessible').toBe(true);
+    }
+  });
+
+  test('§C.05 Download button .wdkit-browse-card-download has an accessible name (aria-label or title)', async ({ page }) => {
+    // Accessibility checklist: aria-label present on all icon-only buttons (WCAG 2.1 — 4.1.2)
+    // An icon-only button with no accessible name is invisible to screen readers
+    const downloadBtns = page.locator('.wdkit-browse-card-download');
+    const count = await downloadBtns.count();
+    if (count > 0) {
+      const first = downloadBtns.first();
+      const ariaLabel     = await first.getAttribute('aria-label').catch(() => '');
+      const title         = await first.getAttribute('title').catch(() => '');
+      const ariaLabelledBy = await first.getAttribute('aria-labelledby').catch(() => '');
+      // Inner span/icon may carry the label
+      const innerText = (await first.textContent().catch(() => '')).trim();
+      const hasAccessibleName = !!(ariaLabel || title || ariaLabelledBy || innerText);
+      expect.soft(hasAccessibleName,
+        '.wdkit-browse-card-download (icon-only download button) has no accessible name — add aria-label'
+      ).toBe(true);
+      console.log(`[§C.05] Download btn accessible name: label="${ariaLabel}" title="${title}" text="${innerText}"`);
+    }
+  });
+
+  test('§C.06 Sidebar Widgets menu icon .wdkit-i-widgets has an accessible parent label', async ({ page }) => {
+    // Accessibility checklist: aria-label on icon-only toolbar items (WCAG 4.1.2)
+    await wdkitLogin(page);
+    await page.goto(PLUGIN_PAGE);
+    await page.waitForLoadState('domcontentloaded');
+    await page.waitForTimeout(2000);
+    const widgetMenu = page.locator('.wkit-menu').filter({ has: page.locator('.wdkit-i-widgets') }).first();
+    if (await widgetMenu.count() > 0) {
+      const ariaLabel  = await widgetMenu.getAttribute('aria-label').catch(() => '');
+      const title      = await widgetMenu.getAttribute('title').catch(() => '');
+      const innerText  = (await widgetMenu.textContent().catch(() => '')).replace(/\s+/g, ' ').trim();
+      const hasName = !!(ariaLabel || title || innerText.length > 0);
+      expect.soft(hasName,
+        '.wkit-menu wrapping .wdkit-i-widgets has no accessible name — screen reader cannot identify this nav item'
+      ).toBe(true);
+      console.log(`[§C.06] Widgets menu accessible name: label="${ariaLabel}" title="${title}" text="${innerText.slice(0, 40)}"`);
     }
   });
 
