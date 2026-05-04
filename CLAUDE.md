@@ -1,33 +1,59 @@
 # **WDesignKit Orbit – Expert QA System (Extreme Polish Mode)**
 
-## **Pre-Task Rule — Read Before Writing Any Test Script**
+## ⛔ PRE-TEST GATE — HARD STOP BEFORE ANY SPEC FILE
 
-> **MANDATORY**: Before writing or improving any test script, spec file, or QA automation — read ALL of the following files first, in this order:
->
-> **Step 1 — Core context (always required)**
-> 1. `AI-CONTEXT.md` — Full QA context: 11 dimensions, edge cases, skills, commands, bug format, release gate
-> 2. `PITFALLS.md` — UAT pitfalls: what to avoid, how to write flows correctly, error detection rules
->
-> **Step 2 — Relevant checklists (read the ones matching the QA area being tested)**
->
-> | QA Area | Checklist File |
-> |---|---|
-> | UI / Design | `checklists/ui-ux-checklist.md` |
-> | Functionality | `checklists/functionality-checklist.md` |
-> | Responsive | `checklists/responsiveness-checklist.md` |
-> | Logic / Edge Cases | `checklists/logic-checklist.md` |
-> | Security | `checklists/security-checklist.md` |
-> | Performance | `checklists/performance-checklist.md` |
-> | Accessibility | `checklists/accessibility-checklist.md` |
-> | Cross-Browser | `checklists/cross-browser-checklist.md` |
-> | Console Errors | `checklists/console-errors-checklist.md` |
-> | SEO / Meta | `checklists/seo-checklist.md` |
-> | Code Quality | `checklists/code-quality-checklist.md` |
-> | Full Release QA | `checklists/qa-master-checklist.md` (all 11) |
->
-> **Do not skip any of these steps.** A test written without reading these files will miss coverage, skip edge cases, and fail the release gate.
->
-> Every checklist item that is automatable must have a corresponding `test()` assertion in the spec file. Items that cannot be automated must be flagged as a manual check note in the spec header comment.
+```
+╔══════════════════════════════════════════════════════════════════════════════╗
+║         ⛔  STOP — DO NOT WRITE A SINGLE LINE OF TEST CODE YET  ⛔          ║
+╠══════════════════════════════════════════════════════════════════════════════╣
+║                                                                              ║
+║  Before writing or editing ANY spec file (*.spec.js / *.spec.ts):           ║
+║  You MUST complete ALL 3 steps below. No exceptions.                         ║
+║                                                                              ║
+╠══════════════════════════════════════════════════════════════════════════════╣
+║                                                                              ║
+║  STEP 1 — Run the gate (confirms this file was read):                        ║
+║                                                                              ║
+║    bash scripts/pre-spec-gate.sh                                             ║
+║                                                                              ║
+╠══════════════════════════════════════════════════════════════════════════════╣
+║                                                                              ║
+║  STEP 2 — Read these two files (ALWAYS required, no skipping):               ║
+║                                                                              ║
+║    Read AI-CONTEXT.md    ← 11 QA dimensions, edge cases, bug format          ║
+║    Read PITFALLS.md      ← UAT pitfalls, error detection, writing rules      ║
+║                                                                              ║
+╠══════════════════════════════════════════════════════════════════════════════╣
+║                                                                              ║
+║  STEP 3 — Read the checklist matching the QA area being tested:              ║
+║                                                                              ║
+║    UI / Design      →  checklists/ui-ux-checklist.md                        ║
+║    Functionality    →  checklists/functionality-checklist.md                ║
+║    Responsive       →  checklists/responsiveness-checklist.md               ║
+║    Logic            →  checklists/logic-checklist.md                        ║
+║    Security         →  checklists/security-checklist.md                     ║
+║    Performance      →  checklists/performance-checklist.md                  ║
+║    Accessibility    →  checklists/accessibility-checklist.md                ║
+║    Cross-Browser    →  checklists/cross-browser-checklist.md                ║
+║    Console Errors   →  checklists/console-errors-checklist.md               ║
+║    SEO / Meta       →  checklists/seo-checklist.md                          ║
+║    Code Quality     →  checklists/code-quality-checklist.md                 ║
+║    Full Release QA  →  checklists/qa-master-checklist.md (all 11)           ║
+║                                                                              ║
+╠══════════════════════════════════════════════════════════════════════════════╣
+║                                                                              ║
+║  CONFIRM before writing (all 5 must be true):                                ║
+║                                                                              ║
+║    [ ] AI-CONTEXT.md read in full                                            ║
+║    [ ] PITFALLS.md read in full                                              ║
+║    [ ] Relevant checklist(s) read in full                                    ║
+║    [ ] Every automatable item → test() assertion planned                     ║
+║    [ ] Non-automatable items → // MANUAL CHECK: comment in spec header       ║
+║                                                                              ║
+║  A test written without these steps WILL miss coverage and FAIL the gate.   ║
+║                                                                              ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+```
 
 ---
 
