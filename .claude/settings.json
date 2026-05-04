@@ -6,7 +6,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash /Users/devpanchal/wdesignkit-orbit/scripts/pre-spec-gate.sh"
+            "command": "bash scripts/pre-spec-gate.sh"
           }
         ]
       }

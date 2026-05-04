@@ -36,8 +36,8 @@
   },
 
   "environment": {
-    "qaEmail": "tester0107@yopmail.com",
-    "qaPassword": "Tester",
+    "qaEmail": "your-qa-email@example.com",
+    "qaPassword": "your-qa-password",
     "stagingUrl": "",
     "runAgainst": "production"
   },

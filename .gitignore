@@ -1,5 +1,8 @@
 node_modules/
 # reports/ is tracked — QA bug reports live here
+# Playwright run artifacts (timestamped output dirs)
+reports/templates-full-*/
+reports/playwright-html/
 .auth/
 tmp/
 test-results/
@@ -16,3 +19,7 @@ plugins/free/*/
 qa.config.json
 rankready/
 nexterwp/
+# Auto-installed plugin source (mounted by Docker)
+docker/plugins/
+# One-off debug scripts
+dom-scan.js

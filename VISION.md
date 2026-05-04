@@ -142,11 +142,11 @@ Orbit never hardcodes a plugin slug, brand, or path. Every script takes `<plugin
 | Auto-scaffolding | `scaffold-tests.sh` reads plugin + generates config + scenarios + specs | ✅ shipped |
 | CI | GitHub Actions, pre-commit hook, dry-run preflight | ✅ shipped |
 | Reporting | Master HTML index + UAT HTML + skill audit HTML | ✅ shipped |
-| **Evergreen security log** | Living attack-pattern catalog at `docs/21-evergreen-security.md`, 90-day cadence | ✅ shipped |
+| **Evergreen security log** | Living attack-pattern catalog at `docs/evergreen-security.md`, 90-day cadence | ✅ shipped |
 
 ### Ongoing research (what we're watching)
 
-Security is evergreen — Orbit maintains [docs/21-evergreen-security.md](docs/21-evergreen-security.md)
+Security is evergreen — Orbit maintains [docs/evergreen-security.md](docs/evergreen-security.md)
 as a live attack-pattern log. Updated quarterly (next pass: July 2026).
 
 **Areas under active watch (as of April 2026):**
@@ -160,7 +160,7 @@ as a live attack-pattern log. Updated quarterly (next pass: July 2026).
 7. **Script Modules cross-plugin pollution** — WP 6.5+ shared module registry, collision surface.
 8. **Plugin ownership transfer backdoors** — EssentialPlugin April 2026 attack pattern. Static detection for the 3 signature patterns ships in `/orbit-wp-security`. Ownership-transfer detection at registry level is out of scope.
 
-See `docs/21-evergreen-security.md` for the full SHIPPED / RESEARCHING / WATCHING log.
+See `docs/evergreen-security.md` for the full SHIPPED / RESEARCHING / WATCHING log.
 
 ---
 
