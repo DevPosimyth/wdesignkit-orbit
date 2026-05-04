@@ -1004,9 +1004,8 @@ test.describe('§8. Browse Widget — Pagination', () => {
 // =============================================================================
 test.describe('§9. Browse Widget — Auth guard', () => {
 
-  // FIX 9.01 — Known bug: auth guard missing on Browse Widget
+  // ✅ FIXED in v2.3.0 — Auth guard now enforced on Browse Widget
   test('9.01 Unauthenticated WDKit user is redirected away from #/widget-browse', async ({ page }) => {
-    test.fail(true, 'Known bug: auth guard missing on Browse Widget — unauthenticated users see widget grid instead of being redirected to /login');
     await wpLogin(page);
     await page.evaluate(() => localStorage.removeItem('wdkit-login'));
     await page.goto(PLUGIN_PAGE);
@@ -1287,9 +1286,8 @@ test.describe('§C. Browse Widget — Keyboard navigation', () => {
     }
   });
 
-  // FIX §C.05 — Known accessibility bug: download button has no aria-label
+  // ✅ FIXED in v2.3.0 — Download button now has accessible name (aria-label added)
   test('§C.05 Download button .wdkit-browse-card-download has an accessible name (aria-label or title)', async ({ page }) => {
-    test.fail(true, 'Known accessibility bug: .wdkit-browse-card-download has no aria-label — icon-only button invisible to screen readers (WCAG 4.1.2)');
     const downloadBtns = page.locator('.wdkit-browse-card-download');
     const count = await downloadBtns.count();
     if (count > 0) {
@@ -1437,9 +1435,8 @@ test.describe('§D. Browse Widget — Performance', () => {
 // =============================================================================
 test.describe('§E. Browse Widget — Tap target size', () => {
 
-  // FIX §E.01 — Known bug: Download button is 32px
+  // ✅ FIXED in v2.3.0 — Download button tap target now ≥ 44×44px on mobile
   test('§E.01 Download button is ≥ 44×44px on mobile viewport', async ({ page }) => {
-    test.fail(true, 'Known accessibility bug: Download button (.wdkit-browse-card-download) is 32px on mobile — below WCAG 2.5.5 minimum of 44×44px');
     await wpLogin(page);
     await goToBrowseWidget(page);
     await page.locator('.wdkit-browse-card').first().waitFor({ state: 'visible', timeout: 20000 }).catch(() => {});
