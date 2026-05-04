@@ -1,5 +1,26 @@
 # **WDesignKit Orbit – Expert QA System (Extreme Polish Mode)**
 
+## 🚀 SESSION START — FIRST ACTION IN EVERY NEW CONVERSATION
+
+**Every new conversation starts fresh. No prior session knowledge carries over.**
+
+When the user shares any feature, task, or QA request — the very first thing
+you must do, before any analysis or action, is read these three files in order:
+
+```
+1. Read CLAUDE.md          ← you are reading this now — finish it fully
+2. Read AI-CONTEXT.md      ← 11 QA dimensions, thresholds, edge cases
+3. Read PITFALLS.md        ← what to avoid when writing tests
+```
+
+Then read the checklist that matches the QA area being tested (see Pre-Test Gate below).
+
+**This is enforced automatically** — a `UserPromptSubmit` hook fires on every message
+and outputs a gate reminder whenever a QA/feature/testing task is detected.
+You must read all files before responding, not after.
+
+---
+
 ## ⛔ PRE-TEST GATE — HARD STOP BEFORE ANY SPEC FILE
 
 ```
