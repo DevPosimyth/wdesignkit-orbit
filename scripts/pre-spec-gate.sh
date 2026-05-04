@@ -40,8 +40,8 @@ cat <<'GATE'
 ║                                                                              ║
 ║  STEP 1 — Read these two files (ALWAYS required):                            ║
 ║                                                                              ║
-║    cat /Users/devpanchal/wdesignkit-orbit/AI-CONTEXT.md                      ║
-║    cat /Users/devpanchal/wdesignkit-orbit/PITFALLS.md                        ║
+║    cat AI-CONTEXT.md                                                         ║
+║    cat PITFALLS.md                                                           ║
 ║                                                                              ║
 ║  STEP 2 — Read the checklist matching the QA area:                           ║
 ║                                                                              ║
