@@ -178,7 +178,7 @@ Before a release, QA goes beyond the basic test suite. Run the PHP matrix, test 
 bash scripts/gauntlet.sh --plugin ~/plugins/my-plugin
 
 # PHP compatibility matrix
-# (See docs/09-multi-plugin.md for full setup)
+# (See docs/multi-plugin.md for full setup)
 for PORT in 8881 8882 8883 8884; do
   WP_TEST_URL=http://localhost:$PORT bash scripts/gauntlet.sh --plugin ~/plugins/my-plugin --mode quick
 done
@@ -526,4 +526,4 @@ Full matrix and visual review can follow in the next release.
 
 ---
 
-**Next**: [docs/15-ci-cd.md](15-ci-cd.md) — GitHub Actions and automated CI/CD integration.
+**Next**: [docs/ci-cd.md](ci-cd.md) — GitHub Actions and automated CI/CD integration.

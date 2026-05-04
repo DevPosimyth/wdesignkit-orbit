@@ -501,6 +501,6 @@ If you used the symlink method, pulling the repository is all you need — becau
 
 You've finished installation. Here's where to go depending on what you want to do next:
 
-- [docs/02-configuration.md](02-configuration.md) — Set up `qa.config.json` to tell Orbit about your specific plugin (plugin name, test URLs, which steps to skip, etc.)
-- [docs/03-test-environment.md](03-test-environment.md) — Spin up your first WordPress test site with wp-env and verify your plugin runs correctly inside it
-- [docs/04-gauntlet.md](04-gauntlet.md) — Run your first full audit and learn what each of the 11 steps is actually checking
+- [docs/configuration.md](configuration.md) — Set up `qa.config.json` to tell Orbit about your specific plugin (plugin name, test URLs, which steps to skip, etc.)
+- [docs/test-environment.md](test-environment.md) — Spin up your first WordPress test site with wp-env and verify your plugin runs correctly inside it
+- [docs/gauntlet.md](gauntlet.md) — Run your first full audit and learn what each of the 11 steps is actually checking

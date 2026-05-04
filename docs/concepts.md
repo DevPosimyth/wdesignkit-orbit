@@ -564,8 +564,8 @@ That's why Orbit runs all of them together. The gauntlet isn't excessive — it'
 
 **Ready to run your first check?** → [GETTING-STARTED.md](../GETTING-STARTED.md)
 
-**Want to install Orbit?** → [docs/01-installation.md](01-installation.md)
+**Want to install Orbit?** → [docs/installation.md](installation.md)
 
-**Want to understand the 11 steps in detail?** → [docs/04-gauntlet.md](04-gauntlet.md)
+**Want to understand the 11 steps in detail?** → [docs/gauntlet.md](gauntlet.md)
 
-**Want to understand the AI skill reports?** → [docs/05-skills.md](05-skills.md)
+**Want to understand the AI skill reports?** → [docs/skills.md](skills.md)

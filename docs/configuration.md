@@ -546,4 +546,4 @@ Environment variables always override `qa.config.json` values.
 
 ---
 
-**Next**: [docs/03-test-environment.md](03-test-environment.md) — spin up a WordPress test site for your plugin.
+**Next**: [docs/test-environment.md](test-environment.md) — spin up a WordPress test site for your plugin.

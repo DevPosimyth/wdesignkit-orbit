@@ -737,4 +737,4 @@ wp-env mounts your plugin folder into Docker when the container is first created
 
 ---
 
-**Next**: [docs/04-gauntlet.md](04-gauntlet.md) — understand all 11 gauntlet steps in depth.
+**Next**: [docs/gauntlet.md](gauntlet.md) — understand all 11 gauntlet steps in depth.

@@ -804,4 +804,4 @@ Each with: description, file:line, bad code, fixed code."
 
 ---
 
-**Next**: [docs/07-test-templates.md](07-test-templates.md) — complete test templates for every plugin type.
+**Next**: [docs/test-templates.md](test-templates.md) — complete test templates for every plugin type.

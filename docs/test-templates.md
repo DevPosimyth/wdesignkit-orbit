@@ -1337,4 +1337,4 @@ The table shows which test files each project runs and whether it records video.
 
 ---
 
-**Next**: [docs/08-reading-reports.md](08-reading-reports.md) — how to interpret every report type.
+**Next**: [docs/reading-reports.md](reading-reports.md) — how to interpret every report type.

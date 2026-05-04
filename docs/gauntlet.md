@@ -586,7 +586,7 @@ npx playwright test tests/playwright/flows/seo-compare/core.spec.js -g "Discover
 
 4. Fill in the pair tests with the discovered URLs.
 
-Full competitor testing guide: [docs/07-test-templates.md](07-test-templates.md)
+Full competitor testing guide: [docs/test-templates.md](test-templates.md)
 
 ---
 
@@ -729,7 +729,7 @@ wait
 
 ### Skills deep-dive
 
-→ [docs/05-skills.md](05-skills.md) for what each skill finds, real vulnerability examples, and how to run add-on skills for specific plugin types.
+→ [docs/skills.md](skills.md) for what each skill finds, real vulnerability examples, and how to run add-on skills for specific plugin types.
 
 ---
 
@@ -796,8 +796,8 @@ Changes in CI mode:
 - HTML reports still generated (artifact-friendly)
 - Exit codes respected (non-zero fails the CI job)
 
-See [docs/15-ci-cd.md](15-ci-cd.md) for full GitHub Actions integration.
+See [docs/ci-cd.md](ci-cd.md) for full GitHub Actions integration.
 
 ---
 
-**Next**: [docs/05-skills.md](05-skills.md) — deep-dive into all 6 core skills and 5 add-on skills.
+**Next**: [docs/skills.md](skills.md) — deep-dive into all 6 core skills and 5 add-on skills.

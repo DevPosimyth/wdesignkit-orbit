@@ -691,4 +691,4 @@ If you get to release day and find a Critical finding you missed, or a Playwrigh
 
 ---
 
-**Next**: [docs/09-multi-plugin.md](09-multi-plugin.md) — testing multiple plugins at once.
+**Next**: [docs/multi-plugin.md](multi-plugin.md) — testing multiple plugins at once.

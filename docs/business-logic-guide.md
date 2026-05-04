@@ -93,6 +93,6 @@ test('Pro widget shows lock icon for free user', async ({ page }) => {
 
 ## Related
 
-- `docs/20-auto-test-generation.md` — scaffolder that reads WDesignKit code
-- `docs/18-release-checklist.md` — what must pass before tagging
-- `docs/07-test-templates.md` — Playwright templates per plugin type
+- `docs/auto-test-generation.md` — scaffolder that reads WDesignKit code
+- `docs/release-checklist.md` — what must pass before tagging
+- `docs/test-templates.md` — Playwright templates per plugin type

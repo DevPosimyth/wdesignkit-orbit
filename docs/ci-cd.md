@@ -500,7 +500,7 @@ Use this during development to run skill audits on demand.
 
 ## 5. PHP Version Matrix in CI
 
-Test against all supported PHP versions in parallel using a matrix strategy. This is the CI version of the local PHP matrix from `docs/09-multi-plugin.md` — the same concept, but running on GitHub's servers automatically on every tag push and every Monday morning.
+Test against all supported PHP versions in parallel using a matrix strategy. This is the CI version of the local PHP matrix from `docs/multi-plugin.md` — the same concept, but running on GitHub's servers automatically on every tag push and every Monday morning.
 
 The `fail-fast: false` setting is important here. Without it, if PHP 7.4 fails, GitHub Actions would cancel all the other matrix jobs immediately. With `fail-fast: false`, all four PHP versions run to completion — giving you a complete picture of where compatibility breaks.
 

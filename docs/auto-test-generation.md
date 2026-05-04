@@ -135,6 +135,6 @@ Tradeoff: dynamic registration like `foreach ($slugs as $slug) { add_menu_page(.
 
 ## Related
 
-- `docs/19-business-logic-guide.md` — writing WDesignKit-specific scenarios
-- `docs/18-release-checklist.md` — what must pass before tagging
-- `docs/02-configuration.md` — full qa.config.json reference
+- `docs/business-logic-guide.md` — writing WDesignKit-specific scenarios
+- `docs/release-checklist.md` — what must pass before tagging
+- `docs/configuration.md` — full qa.config.json reference

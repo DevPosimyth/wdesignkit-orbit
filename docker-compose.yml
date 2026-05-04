@@ -8,7 +8,6 @@
 #
 # WordPress: http://localhost:8881
 # WP Admin:  http://localhost:8881/wp-admin  (admin / admin@123)
-# phpMyAdmin: http://localhost:8082
 # =============================================================================
 
 services:
@@ -30,6 +29,12 @@ services:
       interval: 10s
       timeout: 5s
       retries: 10
+    deploy:
+      resources:
+        limits:
+          memory: 768m
+        reservations:
+          memory: 256m
     networks:
       - wdkit_network
 
@@ -58,6 +63,12 @@ services:
       - ./docker/uploads.ini:/usr/local/etc/php/conf.d/uploads.ini:ro
       # Mount plugin directly from the zip extraction (updated by setup script)
       - ./docker/plugins:/var/www/html/wp-content/plugins/wdesignkit:ro
+    deploy:
+      resources:
+        limits:
+          memory: 512m
+        reservations:
+          memory: 128m
     networks:
       - wdkit_network
 
@@ -85,24 +96,15 @@ services:
       WP_SITE_URL: http://localhost:8881
       WP_SITE_TITLE: WDesignKit QA
     entrypoint: /bin/sh /setup.sh
+    deploy:
+      resources:
+        limits:
+          memory: 256m
+        reservations:
+          memory: 64m
     networks:
       - wdkit_network
 
-  # ── phpMyAdmin (optional DB UI) ──────────────────────────────────────────────
-  phpmyadmin:
-    image: phpmyadmin:5
-    container_name: wdkit_pma
-    restart: unless-stopped
-    depends_on:
-      - db
-    ports:
-      - "8082:80"
-    environment:
-      PMA_HOST: db
-      PMA_USER: wpuser
-      PMA_PASSWORD: wppassword
-    networks:
-      - wdkit_network
 
 volumes:
   db_data:

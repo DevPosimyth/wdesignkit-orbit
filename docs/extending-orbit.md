@@ -237,7 +237,7 @@ test('converting Elementor widget to Gutenberg preserves button color', async ({
 - [ ] Source cited in top comment (CVE, WP.org, etc.)
 - [ ] No hardcoded WDesignKit references in generic scripts
 - [ ] Added to `gauntlet.sh` with mode gate
-- [ ] Entry in `docs/18-release-checklist.md`
+- [ ] Entry in `docs/release-checklist.md`
 - [ ] Syntax validated (`bash -n`, `node --check`)
 
 ### Rejected
@@ -258,11 +258,11 @@ test('converting Elementor widget to Gutenberg preserves button color', async ({
 
 ## Keep Orbit Honest — 90-Day Cadence
 
-1. Re-read `docs/21-evergreen-security.md`
+1. Re-read `docs/evergreen-security.md`
 2. Check Patchstack / Wordfence / NVD for new vuln categories
 3. Check WP release notes for new APIs — update `check-modern-wp.sh`
 4. Check PHP release notes — update `check-php-compat.sh`
 5. Review 5 GitHub issues on top plugins — is there a pattern Orbit should catch?
-6. Update `docs/17-whats-new.md`
+6. Update `docs/whats-new.md`
 
 Without this, Orbit becomes a 2024 tool pretending to be current.

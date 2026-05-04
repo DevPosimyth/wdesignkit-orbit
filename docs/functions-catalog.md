@@ -130,38 +130,38 @@ Community skills:
 ### Onboarding
 | Doc | For |
 |---|---|
-| `00-concepts.md` | Plain-English explainer for every tool |
-| `01-installation.md` | macOS + Ubuntu install |
+| `concepts.md` | Plain-English explainer for every tool |
+| `installation.md` | macOS + Ubuntu install |
 | `onboarding-by-role.md` | Step-by-step per role |
-| `13-roles.md` | Deep role guide with daily workflows |
+| `roles.md` | Deep role guide with daily workflows |
 
 ### How-tos
 | Doc | For |
 |---|---|
-| `02-configuration.md` | `qa.config.json` full reference |
-| `03-test-environment.md` | wp-env, wp-now, PHP matrix, WP-CLI |
-| `04-gauntlet.md` | All pipeline steps with examples |
-| `05-skills.md` | All skills explained |
-| `07-test-templates.md` | Working Playwright specs per plugin type |
+| `configuration.md` | `qa.config.json` full reference |
+| `test-environment.md` | wp-env, wp-now, PHP matrix, WP-CLI |
+| `gauntlet.md` | All pipeline steps with examples |
+| `skills.md` | All skills explained |
+| `test-templates.md` | Working Playwright specs per plugin type |
 | `writing-tests.md` | Per-surface test recipes |
-| `19-business-logic-guide.md` | WDesignKit-specific logic tests |
-| `20-auto-test-generation.md` | How Orbit reads WDesignKit code |
-| `23-extending-orbit.md` | Add checks, write specs, create skills |
+| `business-logic-guide.md` | WDesignKit-specific logic tests |
+| `auto-test-generation.md` | How Orbit reads WDesignKit code |
+| `extending-orbit.md` | Add checks, write specs, create skills |
 
 ### Reading + Release
 | Doc | For |
 |---|---|
-| `08-reading-reports.md` | How to interpret every report type |
-| `18-release-checklist.md` | Complete pre-tag gate |
-| `17-whats-new.md` | Recent changes log |
+| `reading-reports.md` | How to interpret every report type |
+| `release-checklist.md` | Complete pre-tag gate |
+| `whats-new.md` | Recent changes log |
 
 ### Advanced
 | Doc | For |
 |---|---|
-| `09-multi-plugin.md` | Batch + PHP matrix |
+| `multi-plugin.md` | Batch + PHP matrix |
 | `database-profiling.md` | N+1, slow queries, autoload bloat |
 | `deep-performance.md` | Beyond Lighthouse |
-| `15-ci-cd.md` | CI templates |
+| `ci-cd.md` | CI templates |
 | `common-wp-mistakes.md` | Patterns Orbit catches automatically |
 | `real-world-qa.md` | Edge cases checklists miss |
 | `power-tools.md` | Optional extensions |
@@ -171,11 +171,11 @@ Community skills:
 ### Ongoing
 | Doc | For |
 |---|---|
-| `16-master-audit.md` | Master gap audit + skill mappings |
-| `21-evergreen-security.md` | Living attack-pattern catalog |
-| `22-what-orbit-does.md` | Shareable one-pager |
-| `24-use-cases.md` | 25 real scenarios by role |
-| `25-functions-catalog.md` | This doc |
+| `master-audit.md` | Master gap audit + skill mappings |
+| `evergreen-security.md` | Living attack-pattern catalog |
+| `what-orbit-does.md` | Shareable one-pager |
+| `use-cases.md` | 25 real scenarios by role |
+| `functions-catalog.md` | This doc |
 
 ### Reports
 | Doc | For |
@@ -188,13 +188,13 @@ Community skills:
 
 | If you're… | Start here |
 |---|---|
-| New to WDesignKit Orbit | `00-concepts.md` + `onboarding-by-role.md` |
-| Sharing with someone | `22-what-orbit-does.md` |
-| Shipping a release | `18-release-checklist.md` |
-| Writing tests | `19-business-logic-guide.md` + `23-extending-orbit.md` |
+| New to WDesignKit Orbit | `concepts.md` + `onboarding-by-role.md` |
+| Sharing with someone | `what-orbit-does.md` |
+| Shipping a release | `release-checklist.md` |
+| Writing tests | `business-logic-guide.md` + `extending-orbit.md` |
 | Looking up "what does X do?" | This doc |
-| Debugging a failed check | `08-reading-reports.md` |
-| Tracking security threats | `21-evergreen-security.md` |
+| Debugging a failed check | `reading-reports.md` |
+| Tracking security threats | `evergreen-security.md` |
 
 ---
 
