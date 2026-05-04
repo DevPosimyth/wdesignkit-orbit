@@ -4,6 +4,7 @@
 // =============================================================================
 
 const { expect } = require('@playwright/test');
+const { wdkitLogin } = require('./auth');
 
 const PLUGIN_PAGE = '/wp-admin/admin.php?page=wdesign-kit';
 const SCREENSHOT_DIR = 'reports/bugs/screenshots/template-import';
@@ -42,9 +43,13 @@ async function goToBrowseViaNav(page) {
 async function goToMyTemplates(page) {
   await page.goto(PLUGIN_PAGE);
   await page.waitForLoadState('domcontentloaded');
-  await page.waitForTimeout(2000);
+  await page.waitForTimeout(1500);
+  // Inject WDKit cloud auth from env so the My Templates UI renders (not login screen)
+  await wdkitLogin(page);
   await page.evaluate(() => { location.hash = '/my_uploaded'; });
-  await page.waitForTimeout(3000);
+  await page.waitForTimeout(3500);
+  // Wait for either the authenticated UI (navbar) or the login redirect — whichever comes first
+  await page.waitForSelector('.wkit-navbar, .wkit-login-main, .wkit-myupload-main, #wdesignkit-app', { timeout: 10000 }).catch(() => {});
 }
 
 async function clickFirstCardImport(page) {
