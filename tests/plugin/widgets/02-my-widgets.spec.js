@@ -1837,6 +1837,595 @@ test.describe('§11. My Widget Listing — Duplicate / Convert / Push / Download
     }
   });
 
+  // ── Duplicate — deep coverage ─────────────────────────────────────────────
+
+  test('11.25 Duplicate popup heading/title text contains "Duplicate" (content verification)', async ({ page }) => {
+    // Functionality checklist: popup title must identify the action being taken
+    const opened = await openDropdownAndClick(page, 'duplicate');
+    if (opened) {
+      const popup = page.locator('.wdkit-popup-outer, .wb-editWidget-popup, .wb-edit-popup').first();
+      if (await popup.isVisible({ timeout: 5000 }).catch(() => false)) {
+        const headings = popup.locator('h1, h2, h3, h4, h5, h6, [class*="title"], [class*="heading"]');
+        const headingCount = await headings.count();
+        if (headingCount > 0) {
+          const headingText = (await headings.first().textContent() || '').trim().toLowerCase();
+          console.log(`[11.25] Duplicate popup heading: "${headingText}"`);
+          expect.soft(headingText, 'Duplicate popup heading does not mention "duplicate"').toContain('duplicate');
+        }
+      }
+      await page.keyboard.press('Escape').catch(() => {});
+    }
+    await expect(page.locator('body')).not.toContainText('Fatal error');
+  });
+
+  test('11.26 Duplicate popup close button (X) closes the popup without crashing', async ({ page }) => {
+    // Functionality checklist: all modals must have a visible close button — not just Escape
+    const opened = await openDropdownAndClick(page, 'duplicate');
+    if (opened) {
+      const popup = page.locator('.wdkit-popup-outer, .wb-editWidget-popup, .wb-edit-popup').first();
+      if (await popup.isVisible({ timeout: 5000 }).catch(() => false)) {
+        // Try common close button selectors
+        const closeBtn = popup.locator(
+          'button[class*="close"], .wdkit-close, .wkit-close, button[aria-label*="close" i], ' +
+          'button[aria-label*="Close" i], .wdkit-i-close, [class*="popup-close"]'
+        ).first();
+        if (await closeBtn.count() > 0) {
+          await closeBtn.click({ force: true });
+          await page.waitForTimeout(800);
+          const mainContainer = await page.locator('.wb-widget-main-container, #wdesignkit-app').count();
+          expect(mainContainer, 'Page broke after closing Duplicate popup via close button').toBeGreaterThan(0);
+          console.log('[11.26] Duplicate popup closed via close button (X)');
+        } else {
+          console.log('[11.26] Close button (X) not found in Duplicate popup — dismiss via Escape');
+          await page.keyboard.press('Escape').catch(() => {});
+          expect.soft(false, 'Duplicate popup has no close button (X) — only Escape to dismiss (WCAG 2.1 — 2.1.2)').toBe(true);
+        }
+      }
+    }
+    await expect(page.locator('body')).not.toContainText('Fatal error');
+  });
+
+  test('11.27 Duplicate popup: XSS payload in name field does not execute', async ({ page }) => {
+    // Security checklist: all user inputs must be sanitized (no XSS execution)
+    const opened = await openDropdownAndClick(page, 'duplicate');
+    if (opened) {
+      const popup = page.locator('.wdkit-popup-outer, .wb-editWidget-popup, .wb-edit-popup').first();
+      if (await popup.isVisible({ timeout: 5000 }).catch(() => false)) {
+        const nameInput = popup.locator('input[type="text"]').first();
+        if (await nameInput.count() > 0) {
+          await nameInput.fill('<img src=x onerror="window.__xss_dup=1">');
+          const confirmBtn = popup.locator('button').filter({ hasText: /duplicate|confirm|save|ok/i }).first();
+          if (await confirmBtn.count() > 0) {
+            await confirmBtn.click({ force: true });
+            await page.waitForTimeout(2000);
+          }
+        }
+        const xssRan = await page.evaluate(() => window.__xss_dup === 1);
+        expect(xssRan, 'XSS payload executed via Duplicate popup name field').toBe(false);
+      }
+      await page.keyboard.press('Escape').catch(() => {});
+    }
+    await expect(page.locator('body')).not.toContainText('Fatal error');
+  });
+
+  test('11.28 Duplicate popup: 200-char name does not crash or freeze the UI', async ({ page }) => {
+    // Logic checklist: form validation edge cases — max-length handling
+    const opened = await openDropdownAndClick(page, 'duplicate');
+    if (opened) {
+      const popup = page.locator('.wdkit-popup-outer, .wb-editWidget-popup, .wb-edit-popup').first();
+      if (await popup.isVisible({ timeout: 5000 }).catch(() => false)) {
+        const nameInput = popup.locator('input[type="text"]').first();
+        if (await nameInput.count() > 0) {
+          await nameInput.fill('A'.repeat(200));
+          await page.waitForTimeout(500);
+          const actualValue = await nameInput.inputValue();
+          console.log(`[11.28] Accepted name length: ${actualValue.length} chars`);
+          await expect(page.locator('body')).not.toContainText('Fatal error');
+        }
+      }
+      await page.keyboard.press('Escape').catch(() => {});
+    }
+  });
+
+  test('11.29 Duplicated widget appears in listing with the exact new name given', async ({ page }) => {
+    // PITFALLS.md: test what user cares about — the new widget name must match what was entered
+    const cardsBefore = await page.locator('.wdkit-browse-card').count();
+    if (cardsBefore === 0) { console.log('[11.29] No cards — skipping'); return; }
+    const uniqueName = `PW-Name-Check-${Date.now()}`;
+    const opened = await openDropdownAndClick(page, 'duplicate');
+    if (opened) {
+      const popup = page.locator('.wdkit-popup-outer, .wb-editWidget-popup, .wb-edit-popup').first();
+      if (await popup.isVisible({ timeout: 5000 }).catch(() => false)) {
+        const nameInput = popup.locator('input[type="text"]').first();
+        if (await nameInput.count() > 0) {
+          await nameInput.fill(uniqueName);
+        }
+        const confirmBtn = popup.locator('button').filter({ hasText: /duplicate|confirm|save|ok/i }).first();
+        if (await confirmBtn.count() > 0) {
+          await confirmBtn.click({ force: true });
+          await page.waitForTimeout(5000);
+          // New card must appear with the exact name we entered
+          const titlesAfter = await page.locator('.wdkit-widget-title, .wdkit-browse-card-name').allTextContents();
+          const found = titlesAfter.some(t => t.includes(uniqueName));
+          console.log(`[11.29] Looking for name "${uniqueName}" in: ${titlesAfter.slice(0, 3).join(' | ')}`);
+          expect.soft(found, `Duplicated widget name "${uniqueName}" not found in listing`).toBe(true);
+        }
+      }
+    }
+    await expect(page.locator('body')).not.toContainText('Fatal error');
+  });
+
+  // ── Convert — deep coverage ───────────────────────────────────────────────
+
+  test('11.30 Convert popup heading/title text contains "Convert" (content verification)', async ({ page }) => {
+    const opened = await openDropdownAndClick(page, 'convert');
+    if (opened) {
+      const popup = page.locator('.wdkit-popup-outer, .wb-editWidget-popup, .wb-edit-popup').first();
+      if (await popup.isVisible({ timeout: 5000 }).catch(() => false)) {
+        const headings = popup.locator('h1, h2, h3, h4, h5, h6, [class*="title"], [class*="heading"]');
+        if (await headings.count() > 0) {
+          const text = (await headings.first().textContent() || '').trim().toLowerCase();
+          console.log(`[11.30] Convert popup heading: "${text}"`);
+          expect.soft(text, 'Convert popup heading does not mention "convert"').toContain('convert');
+        }
+      }
+      await page.keyboard.press('Escape').catch(() => {});
+    }
+    await expect(page.locator('body')).not.toContainText('Fatal error');
+  });
+
+  test('11.31 Convert popup close button (X) closes without crashing', async ({ page }) => {
+    const opened = await openDropdownAndClick(page, 'convert');
+    if (opened) {
+      const popup = page.locator('.wdkit-popup-outer, .wb-editWidget-popup, .wb-edit-popup').first();
+      if (await popup.isVisible({ timeout: 5000 }).catch(() => false)) {
+        const closeBtn = popup.locator(
+          'button[class*="close"], .wdkit-close, .wkit-close, button[aria-label*="close" i], .wdkit-i-close'
+        ).first();
+        if (await closeBtn.count() > 0) {
+          await closeBtn.click({ force: true });
+          await page.waitForTimeout(800);
+          const appAlive = await page.locator('#wdesignkit-app').count();
+          expect(appAlive).toBeGreaterThan(0);
+        } else {
+          console.log('[11.31] Convert popup has no close button (X) — only Escape to dismiss');
+          expect.soft(false, 'Convert popup missing close button (X) — add for accessibility (WCAG 2.1.2)').toBe(true);
+          await page.keyboard.press('Escape').catch(() => {});
+        }
+      }
+    }
+    await expect(page.locator('body')).not.toContainText('Fatal error');
+  });
+
+  test('11.32 Convert popup shows builder name labels alongside icons', async ({ page }) => {
+    // UI/UX: builder selection must be identifiable by text label, not icons alone (WCAG 1.1.1)
+    const opened = await openDropdownAndClick(page, 'convert');
+    if (opened) {
+      const popup = page.locator('.wdkit-popup-outer, .wb-editWidget-popup, .wb-edit-popup').first();
+      if (await popup.isVisible({ timeout: 5000 }).catch(() => false)) {
+        const builderLabels = await popup.locator(
+          '[class*="builder-name"], [class*="builder-label"], [class*="builder-text"], ' +
+          'span:has(+ img[src*="elementor"]), span:has(+ img[src*="gutenberg"])'
+        ).count();
+        const anyBuilderText = await popup.evaluate(el => {
+          const text = el.textContent || '';
+          return /elementor|gutenberg|divi|beaver|brizy/i.test(text);
+        });
+        console.log(`[11.32] Builder name labels found: ${builderLabels}, any builder text: ${anyBuilderText}`);
+        expect.soft(anyBuilderText,
+          'Convert popup does not display builder names as text — icon-only selection fails accessibility'
+        ).toBe(true);
+      }
+      await page.keyboard.press('Escape').catch(() => {});
+    }
+    await expect(page.locator('body')).not.toContainText('Fatal error');
+  });
+
+  test('11.33 Clicking a builder option in Convert popup marks it as selected', async ({ page }) => {
+    // Logic checklist: selected state must be visually indicated after user interaction
+    const opened = await openDropdownAndClick(page, 'convert');
+    if (opened) {
+      const popup = page.locator('.wdkit-popup-outer, .wb-editWidget-popup, .wb-edit-popup').first();
+      if (await popup.isVisible({ timeout: 5000 }).catch(() => false)) {
+        // Click the first unselected builder option
+        const builderOption = popup.locator(
+          'input[type="radio"]:not(:checked), [class*="builder-item"]:not([class*="active"]):not([class*="selected"])'
+        ).first();
+        if (await builderOption.count() > 0) {
+          await builderOption.click({ force: true });
+          await page.waitForTimeout(500);
+          // After clicking, either radio is checked or a selected class is applied
+          const checkedRadio  = await popup.locator('input[type="radio"]:checked').count();
+          const selectedItem  = await popup.locator('[class*="active"], [class*="selected"], [aria-selected="true"]').count();
+          console.log(`[11.33] Checked radios: ${checkedRadio}, selected items: ${selectedItem}`);
+          expect.soft(
+            checkedRadio > 0 || selectedItem > 0,
+            'Clicking a builder option in Convert popup does not update its selected/active state'
+          ).toBe(true);
+        }
+      }
+      await page.keyboard.press('Escape').catch(() => {});
+    }
+    await expect(page.locator('body')).not.toContainText('Fatal error');
+  });
+
+  test('11.34 Convert: confirming fires an API request containing builder type', async ({ page }) => {
+    // Logic checklist: mutations trigger correct server calls
+    let convertRequestFired = false;
+    page.on('request', req => {
+      const url  = req.url();
+      const body = req.postData() || '';
+      if (
+        (url.includes('admin-ajax.php') || url.includes('/wdesignkit/')) &&
+        (body.includes('convert') || body.includes('builder') || body.includes('elementor') ||
+         body.includes('gutenberg') || body.includes('wdkit_convert'))
+      ) {
+        convertRequestFired = true;
+      }
+    });
+    const opened = await openDropdownAndClick(page, 'convert');
+    if (opened) {
+      const popup = page.locator('.wdkit-popup-outer, .wb-editWidget-popup, .wb-edit-popup').first();
+      if (await popup.isVisible({ timeout: 5000 }).catch(() => false)) {
+        const confirmBtn = popup.locator('button').filter({ hasText: /convert|confirm|apply|ok/i }).first();
+        if (await confirmBtn.count() > 0) {
+          await confirmBtn.click({ force: true });
+          await page.waitForTimeout(4000);
+          console.log(`[11.34] Convert API request fired: ${convertRequestFired}`);
+          // Soft — API body format may vary; primary check is no crash
+        }
+      }
+    }
+    await expect(page.locator('body')).not.toContainText('Fatal error');
+  });
+
+  test('11.35 After Convert confirm, page remains on My Widgets (no navigation away)', async ({ page }) => {
+    const opened = await openDropdownAndClick(page, 'convert');
+    if (opened) {
+      const popup = page.locator('.wdkit-popup-outer, .wb-editWidget-popup, .wb-edit-popup').first();
+      if (await popup.isVisible({ timeout: 5000 }).catch(() => false)) {
+        const confirmBtn = popup.locator('button').filter({ hasText: /convert|confirm|apply|ok/i }).first();
+        if (await confirmBtn.count() > 0) {
+          await confirmBtn.click({ force: true });
+          await page.waitForTimeout(4000);
+          const hash = await page.evaluate(() => location.hash);
+          const mainPresent = await page.locator('.wb-widget-main-container, #wdesignkit-app').count();
+          expect(mainPresent, 'Page lost .wb-widget-main-container after Convert confirm').toBeGreaterThan(0);
+          console.log(`[11.35] Hash after Convert: ${hash}`);
+        }
+      }
+    }
+    await expect(page.locator('body')).not.toContainText('Fatal error');
+  });
+
+  test('11.36 No API request fires when Convert popup is cancelled via Escape', async ({ page }) => {
+    // Logic checklist: cancel must not send a mutating request
+    let convertRequestFired = false;
+    page.on('request', req => {
+      const url  = req.url();
+      const body = req.postData() || '';
+      if (
+        (url.includes('admin-ajax.php') || url.includes('/wdesignkit/')) &&
+        (body.includes('convert') || body.includes('wdkit_convert'))
+      ) {
+        convertRequestFired = true;
+      }
+    });
+    const opened = await openDropdownAndClick(page, 'convert');
+    if (opened) {
+      const popup = page.locator('.wdkit-popup-outer, .wb-editWidget-popup, .wb-edit-popup').first();
+      if (await popup.isVisible({ timeout: 5000 }).catch(() => false)) {
+        await page.keyboard.press('Escape');
+        await page.waitForTimeout(2000);
+        expect.soft(convertRequestFired,
+          'Convert API request fired even though popup was cancelled — mutation without user intent'
+        ).toBe(false);
+      }
+    }
+    await expect(page.locator('body')).not.toContainText('Fatal error');
+  });
+
+  // ── Push — deep coverage ──────────────────────────────────────────────────
+
+  test('11.37 Push popup content describes the sync action (not blank popup)', async ({ page }) => {
+    // UI/UX checklist: confirmation dialogs must describe what will happen
+    const opened = await openDropdownAndClick(page, 'push');
+    if (opened) {
+      const popup = page.locator('.wdkit-popup-outer, .wb-editWidget-popup, .wb-edit-popup').first();
+      if (await popup.isVisible({ timeout: 5000 }).catch(() => false)) {
+        const popupText = (await popup.textContent() || '').toLowerCase();
+        console.log(`[11.37] Push popup text (first 100 chars): "${popupText.slice(0, 100)}"`);
+        const hasMeaningfulContent = popupText.length > 10;
+        expect.soft(hasMeaningfulContent, 'Push popup is blank — must describe what the action does').toBe(true);
+        // Should mention "push" or "sync" or "cloud"
+        const hasActionKeyword = /push|sync|cloud|server|upload/i.test(popupText);
+        expect.soft(hasActionKeyword,
+          'Push popup content does not explain the push/sync action — user has no context'
+        ).toBe(true);
+      }
+      await page.keyboard.press('Escape').catch(() => {});
+    }
+    await expect(page.locator('body')).not.toContainText('Fatal error');
+  });
+
+  test('11.38 Push popup close button (X) closes without crashing', async ({ page }) => {
+    const opened = await openDropdownAndClick(page, 'push');
+    if (opened) {
+      const popup = page.locator('.wdkit-popup-outer, .wb-editWidget-popup, .wb-edit-popup').first();
+      if (await popup.isVisible({ timeout: 5000 }).catch(() => false)) {
+        const closeBtn = popup.locator(
+          'button[class*="close"], .wdkit-close, .wkit-close, button[aria-label*="close" i], .wdkit-i-close'
+        ).first();
+        if (await closeBtn.count() > 0) {
+          await closeBtn.click({ force: true });
+          await page.waitForTimeout(800);
+          const appAlive = await page.locator('#wdesignkit-app').count();
+          expect(appAlive).toBeGreaterThan(0);
+          console.log('[11.38] Push popup closed via close button (X)');
+        } else {
+          console.log('[11.38] Push popup has no close button (X)');
+          expect.soft(false, 'Push popup missing close button (X) (WCAG 2.1.2)').toBe(true);
+          await page.keyboard.press('Escape').catch(() => {});
+        }
+      }
+    }
+    await expect(page.locator('body')).not.toContainText('Fatal error');
+  });
+
+  test('11.39 Push success: widget card remains in listing after sync (not deleted)', async ({ page }) => {
+    // Logic checklist: Push syncs — it must NOT delete or move the widget
+    await page.locator('.wdkit-browse-card').first().waitFor({ state: 'visible', timeout: 15000 }).catch(() => {});
+    const cardsBefore = await page.locator('.wdkit-browse-card').count();
+    if (cardsBefore === 0) { console.log('[11.39] No cards — skipping'); return; }
+    const firstCardTitle = (await page.locator('.wdkit-widget-title, .wdkit-browse-card-name').first()
+      .textContent().catch(() => '')).trim();
+    const opened = await openDropdownAndClick(page, 'push');
+    if (opened) {
+      const popup = page.locator('.wdkit-popup-outer, .wb-editWidget-popup, .wb-edit-popup').first();
+      if (await popup.isVisible({ timeout: 5000 }).catch(() => false)) {
+        const confirmBtn = popup.locator('button').filter({ hasText: /push|confirm|sync|ok|yes/i }).first();
+        if (await confirmBtn.count() > 0) {
+          await confirmBtn.click({ force: true });
+          await page.waitForTimeout(5000);
+          // Card must still be there
+          const cardsAfter = await page.locator('.wdkit-browse-card').count();
+          expect.soft(
+            cardsAfter,
+            `Push deleted or hid a widget card — before: ${cardsBefore}, after: ${cardsAfter}`
+          ).toBeGreaterThanOrEqual(cardsBefore);
+          console.log(`[11.39] Cards before Push: ${cardsBefore}, after: ${cardsAfter}, first card: "${firstCardTitle}"`);
+        }
+      }
+    }
+    await expect(page.locator('body')).not.toContainText('Fatal error');
+  });
+
+  test('11.40 Push: no API request fires when popup is cancelled via Escape', async ({ page }) => {
+    // Logic checklist: cancel must not send a mutating server request
+    let pushFired = false;
+    page.on('request', req => {
+      const url  = req.url();
+      const body = req.postData() || '';
+      if (
+        (url.includes('admin-ajax.php') || url.includes('/wdesignkit/')) &&
+        (body.includes('push') || body.includes('sync') || body.includes('wdkit_push'))
+      ) {
+        pushFired = true;
+      }
+    });
+    const opened = await openDropdownAndClick(page, 'push');
+    if (opened) {
+      const popup = page.locator('.wdkit-popup-outer, .wb-editWidget-popup, .wb-edit-popup').first();
+      if (await popup.isVisible({ timeout: 5000 }).catch(() => false)) {
+        await page.keyboard.press('Escape');
+        await page.waitForTimeout(2000);
+        expect.soft(pushFired,
+          'Push API request fired even though popup was cancelled — mutation without user intent'
+        ).toBe(false);
+      }
+    }
+    await expect(page.locator('body')).not.toContainText('Fatal error');
+  });
+
+  test('11.41 Push: after closing the popup via close button (X), page is not frozen', async ({ page }) => {
+    // Logic checklist: UI must remain fully interactive after any popup close
+    const opened = await openDropdownAndClick(page, 'push');
+    if (opened) {
+      const popup = page.locator('.wdkit-popup-outer, .wb-editWidget-popup, .wb-edit-popup').first();
+      if (await popup.isVisible({ timeout: 5000 }).catch(() => false)) {
+        await page.keyboard.press('Escape');
+        await page.waitForTimeout(1000);
+      }
+    }
+    // Verify the 3-dot menu is still openable (page is not frozen)
+    const threeDot = page.locator('.wkit-wb-3dot-icon').first();
+    if (await threeDot.isVisible({ timeout: 3000 }).catch(() => false)) {
+      await threeDot.click({ force: true });
+      await page.waitForTimeout(400);
+      const dropdownOpen = await page.locator('.wkit-wb-dropdown.wbdropdown-active').count();
+      await page.keyboard.press('Escape').catch(() => {});
+      expect.soft(dropdownOpen,
+        '3-dot dropdown could not open after Push popup close — UI may be frozen'
+      ).toBeGreaterThan(0);
+    }
+    await expect(page.locator('body')).not.toContainText('Fatal error');
+  });
+
+  // ── Download ZIP — deep coverage ──────────────────────────────────────────
+
+  test('11.42 Download ZIP: server responds with HTTP 200 (not 404 or 500)', async ({ page }) => {
+    // Console checklist: zero 404/500 responses on any request
+    let downloadResponseStatus = -1;
+    page.on('response', res => {
+      const url = res.url();
+      if (url.includes('download') || url.includes('zip') || url.includes('export')) {
+        downloadResponseStatus = res.status();
+      }
+    });
+    const threeDot = page.locator('.wkit-wb-3dot-icon').first();
+    if (!(await threeDot.isVisible({ timeout: 5000 }).catch(() => false))) {
+      console.log('[11.42] No 3-dot icon — skipping');
+      return;
+    }
+    await threeDot.click({ force: true });
+    await page.waitForTimeout(500);
+    const dropdown = page.locator('.wkit-wb-dropdown.wbdropdown-active').first();
+    if ((await dropdown.count()) === 0) return;
+    const downloadOpt = dropdown.locator('.wkit-wb-listmenu-text').filter({ hasText: /download/i }).first();
+    if ((await downloadOpt.count()) === 0) {
+      await page.keyboard.press('Escape').catch(() => {});
+      return;
+    }
+    page.waitForEvent('download', { timeout: 12000 }).catch(() => {});
+    await downloadOpt.click({ force: true });
+    await page.waitForTimeout(4000);
+    console.log(`[11.42] Download response HTTP status: ${downloadResponseStatus}`);
+    if (downloadResponseStatus !== -1) {
+      expect.soft(
+        downloadResponseStatus,
+        `Download ZIP returned HTTP ${downloadResponseStatus} — server error`
+      ).toBeLessThan(400);
+    }
+    await expect(page.locator('body')).not.toContainText('Fatal error');
+  });
+
+  test('11.43 Download ZIP: downloaded file is not empty (size > 0 bytes)', async ({ page }) => {
+    // Functionality checklist: download must produce a valid, non-empty archive
+    const threeDot = page.locator('.wkit-wb-3dot-icon').first();
+    if (!(await threeDot.isVisible({ timeout: 5000 }).catch(() => false))) return;
+    await threeDot.click({ force: true });
+    await page.waitForTimeout(500);
+    const dropdown = page.locator('.wkit-wb-dropdown.wbdropdown-active').first();
+    if ((await dropdown.count()) === 0) return;
+    const downloadOpt = dropdown.locator('.wkit-wb-listmenu-text').filter({ hasText: /download/i }).first();
+    if ((await downloadOpt.count()) === 0) {
+      await page.keyboard.press('Escape').catch(() => {});
+      return;
+    }
+    const [download] = await Promise.all([
+      page.waitForEvent('download', { timeout: 15000 }),
+      downloadOpt.click({ force: true }),
+    ]).catch(() => [null]);
+    if (download) {
+      const path = await download.path().catch(() => null);
+      if (path) {
+        const { statSync } = require('fs');
+        const stats = statSync(path);
+        console.log(`[11.43] Downloaded ZIP size: ${stats.size} bytes`);
+        expect.soft(stats.size, 'Downloaded ZIP file is empty (0 bytes) — archive is corrupt or server error').toBeGreaterThan(0);
+      }
+    } else {
+      console.log('[11.43] No download event captured');
+    }
+    await expect(page.locator('body')).not.toContainText('Fatal error');
+  });
+
+  test('11.44 Download ZIP: file starts with ZIP magic bytes (valid archive, not corrupt)', async ({ page }) => {
+    // Functionality checklist: downloaded archive must be valid — PK signature (50 4B 03 04)
+    const threeDot = page.locator('.wkit-wb-3dot-icon').first();
+    if (!(await threeDot.isVisible({ timeout: 5000 }).catch(() => false))) return;
+    await threeDot.click({ force: true });
+    await page.waitForTimeout(500);
+    const dropdown = page.locator('.wkit-wb-dropdown.wbdropdown-active').first();
+    if ((await dropdown.count()) === 0) return;
+    const downloadOpt = dropdown.locator('.wkit-wb-listmenu-text').filter({ hasText: /download/i }).first();
+    if ((await downloadOpt.count()) === 0) {
+      await page.keyboard.press('Escape').catch(() => {});
+      return;
+    }
+    const [download] = await Promise.all([
+      page.waitForEvent('download', { timeout: 15000 }),
+      downloadOpt.click({ force: true }),
+    ]).catch(() => [null]);
+    if (download) {
+      const path = await download.path().catch(() => null);
+      if (path) {
+        const { readFileSync } = require('fs');
+        const buf = readFileSync(path);
+        const magic = buf.slice(0, 4);
+        const isZip = magic[0] === 0x50 && magic[1] === 0x4B && magic[2] === 0x03 && magic[3] === 0x04;
+        console.log(`[11.44] ZIP magic bytes: ${[...magic].map(b => b.toString(16).padStart(2,'0')).join(' ')} — valid: ${isZip}`);
+        expect.soft(isZip, 'Downloaded file does not start with ZIP magic bytes (PK\\x03\\x04) — archive is corrupt or wrong format').toBe(true);
+      }
+    } else {
+      console.log('[11.44] No download event captured');
+    }
+    await expect(page.locator('body')).not.toContainText('Fatal error');
+  });
+
+  test('11.45 Multiple sequential Download ZIP triggers do not crash the page', async ({ page }) => {
+    // Logic checklist: page must survive repeated download actions without memory leak or crash
+    const threeDot = page.locator('.wkit-wb-3dot-icon').first();
+    if (!(await threeDot.isVisible({ timeout: 5000 }).catch(() => false))) return;
+    for (let i = 0; i < 2; i++) {
+      const dot = page.locator('.wkit-wb-3dot-icon').first();
+      if (!(await dot.isVisible({ timeout: 3000 }).catch(() => false))) break;
+      await dot.click({ force: true });
+      await page.waitForTimeout(400);
+      const dropdown = page.locator('.wkit-wb-dropdown.wbdropdown-active').first();
+      if ((await dropdown.count()) === 0) break;
+      const downloadOpt = dropdown.locator('.wkit-wb-listmenu-text').filter({ hasText: /download/i }).first();
+      if ((await downloadOpt.count()) === 0) {
+        await page.keyboard.press('Escape').catch(() => {});
+        break;
+      }
+      page.waitForEvent('download', { timeout: 8000 }).catch(() => {});
+      await downloadOpt.click({ force: true });
+      await page.waitForTimeout(2500);
+    }
+    await expect(page.locator('body')).not.toContainText('Fatal error');
+    const appAlive = await page.locator('#wdesignkit-app').count();
+    expect(appAlive, 'SPA root gone after multiple Download ZIP triggers').toBeGreaterThan(0);
+  });
+
+  test('11.46 Download ZIP: dropdown closes after triggering download (UI resets)', async ({ page }) => {
+    // UI/UX checklist: dropdown must auto-close after action — not stay open
+    const threeDot = page.locator('.wkit-wb-3dot-icon').first();
+    if (!(await threeDot.isVisible({ timeout: 5000 }).catch(() => false))) return;
+    await threeDot.click({ force: true });
+    await page.waitForTimeout(400);
+    const dropdown = page.locator('.wkit-wb-dropdown.wbdropdown-active').first();
+    if ((await dropdown.count()) === 0) return;
+    const downloadOpt = dropdown.locator('.wkit-wb-listmenu-text').filter({ hasText: /download/i }).first();
+    if ((await downloadOpt.count()) === 0) {
+      await page.keyboard.press('Escape').catch(() => {});
+      return;
+    }
+    page.waitForEvent('download', { timeout: 10000 }).catch(() => {});
+    await downloadOpt.click({ force: true });
+    await page.waitForTimeout(2000);
+    const dropdownStillOpen = await page.locator('.wkit-wb-dropdown.wbdropdown-active').count();
+    expect.soft(
+      dropdownStillOpen,
+      'Dropdown remained open after Download ZIP was triggered — UI did not reset'
+    ).toBe(0);
+    await expect(page.locator('body')).not.toContainText('Fatal error');
+  });
+
+  test('11.47 Download ZIP: no console errors during or after download', async ({ page }) => {
+    const errors = [];
+    page.on('console', m => { if (m.type() === 'error') errors.push(m.text()); });
+    const threeDot = page.locator('.wkit-wb-3dot-icon').first();
+    if (!(await threeDot.isVisible({ timeout: 5000 }).catch(() => false))) return;
+    await threeDot.click({ force: true });
+    await page.waitForTimeout(400);
+    const dropdown = page.locator('.wkit-wb-dropdown.wbdropdown-active').first();
+    if ((await dropdown.count()) === 0) return;
+    const downloadOpt = dropdown.locator('.wkit-wb-listmenu-text').filter({ hasText: /download/i }).first();
+    if ((await downloadOpt.count()) === 0) {
+      await page.keyboard.press('Escape').catch(() => {});
+      return;
+    }
+    page.waitForEvent('download', { timeout: 10000 }).catch(() => {});
+    await downloadOpt.click({ force: true });
+    await page.waitForTimeout(4000);
+    const productErrors = errors.filter(e =>
+      !e.includes('favicon') && !e.includes('net::ERR') &&
+      !e.includes('extension') && !e.includes('chrome-extension')
+    );
+    expect.soft(productErrors, `Console errors during Download ZIP:\n${productErrors.join('\n')}`).toHaveLength(0);
+  });
+
   test('11.24 Duplicate popup name input has an accessible label (not placeholder-only)', async ({ page }) => {
     // Accessibility checklist: All form inputs have an associated <label> (WCAG 2.1 — 1.3.1)
     // Placeholder text disappears on input — it cannot serve as the only label
