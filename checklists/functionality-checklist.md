@@ -62,6 +62,38 @@
 
 ---
 
+## API-Layer Negative Testing (Mandatory for every form or API-backed feature)
+
+> Do not rely on UI validation alone. Send these directly to the API endpoint.
+
+- [ ] Empty string sent for every required field — API returns 4xx, not 200
+- [ ] Whitespace-only value sent for every required field — API rejects, not silently trims
+- [ ] Null / missing key sent for every required field — API returns 4xx
+- [ ] Max-length exceeded — API enforces length limit, does not truncate silently
+- [ ] HTML tags injected (`<script>alert(1)</script>`) — API rejects or escapes, does not store raw
+- [ ] Special characters (`../../../`, `'`, `"`, `\0`, `%00`) — no path traversal, no injection
+- [ ] Integer fields sent with string values — API validates type
+- [ ] Numeric ID fields sent with another user's ID — API verifies ownership (IDOR check)
+- [ ] Unauthenticated request sent to every protected endpoint — returns 401 or 403, not 200
+
+---
+
+## Generated File / Output Validation (Mandatory for any download or export feature)
+
+> "Download succeeded" (HTTP 200) is not a pass. Open the file and validate its contents.
+
+- [ ] Downloaded file is not empty (size > 0 bytes)
+- [ ] File contents match the inputs supplied by the user — no default/fallback values substituted silently
+- [ ] No developer names, internal emails, or hardcoded fallback values appear in the output
+- [ ] No injected HTML or script tags appear in the output file (even if the input contained them)
+- [ ] File is valid and parseable — ZIP extracts, PHP parses, JSON is valid, etc.
+- [ ] Plugin header (if applicable): Name, Slug, Version, Author, Author URI all match user input exactly
+- [ ] WordPress hook names, class names, and function names in the output match the widget slug/name
+- [ ] `Author URI` in plugin header is a valid URL — `javascript:` protocol rejected
+- [ ] Download works correctly in Chrome, Firefox, and Safari (blob URL / anchor click behavior)
+
+---
+
 ## Notifications & Feedback
 
 - [ ] Toast/snackbar notifications fire at the correct moments

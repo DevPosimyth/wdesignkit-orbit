@@ -44,6 +44,20 @@
 
 ---
 
+## File Download & Export — Mandatory Multi-Browser Check
+
+> Programmatic downloads (blob URL + anchor click) behave differently across browsers.
+> If the feature generates or downloads any file, run ALL three checks below.
+
+- [ ] Chrome: file downloads correctly via `<a href="blob:...">` anchor click
+- [ ] Firefox: file downloads correctly — Firefox handles blob URLs differently from Chrome
+- [ ] Safari (macOS + iOS): file downloads correctly — Safari does not support programmatic blob anchor clicks in the same way; verify the download triggers and the file is valid
+- [ ] Downloaded filename matches the expected name (not "download" or a random hash)
+- [ ] Downloaded file is not empty or corrupted in any browser
+- [ ] No console errors in any browser during the download action
+
+---
+
 ## Safari-Specific (Most Common Issues)
 
 - [ ] `position: sticky` works correctly on iOS Safari

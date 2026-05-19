@@ -146,6 +146,55 @@ Each plugin setup must:
 
 ---
 
+## API & Security Testing Pitfalls
+
+### 9. Treating HTTP 200 as a pass
+
+**Wrong**: API returned 200 → feature works → pass.
+**Right**: HTTP 200 only means the server responded. Open the response body. Open the generated file. Check:
+- Does the body contain the values the user submitted, or silent fallbacks?
+- Is the generated file valid, non-empty, and free of injected content?
+- Does the plugin header contain the user's name or a hardcoded developer name?
+
+A download that returns 200 with a corrupt ZIP, an empty file, or a hardcoded "Devang Vachheta" as author is a bug — not a pass.
+
+### 10. Testing only via UI — not testing the API layer
+
+**Wrong**: Fill the form, click download, file appears → pass.
+**Right**: UI validation can be bypassed. Always test the underlying API endpoint directly:
+
+```bash
+# Send empty required field directly to the API
+curl -X POST https://app.wdesignkit.com/api/v2/plugin/download/get \
+  -H "Authorization: Bearer $TOKEN" \
+  -d '{"pluginName": "", "slug": "my-widget"}'
+# Expected: 4xx — Actual if buggy: 200 with empty pluginName in file
+```
+
+If the API accepts what the UI rejects, the bug is real — the UI is just masking it.
+
+### 11. Not re-running reproduction steps on security bugs
+
+**Wrong**: Developer says "fixed, it's session-bound" → mark QA Passed.
+**Right**: Never accept a developer comment on a security bug without re-running the exact reproduction steps yourself. Common wrong justifications seen in practice:
+- "It's session-bound" — tested: another user's widget ID returned 200 (IDOR confirmed)
+- "Plugin header is plain text" — tested: WordPress renders Author URI as a clickable `<a href>` link, `javascript:` executes
+- "aria-label doesn't impact functionality" — wrong: it's a WCAG 2.1 requirement for screen readers
+
+Re-run the steps. Trust the test, not the comment.
+
+### 12. Marking cross-browser pass without testing file downloads in Safari
+
+**Wrong**: Download works in Chrome → cross-browser pass.
+**Right**: File downloads (blob URL + programmatic anchor click) behave differently across browsers. A feature that works in Chrome can silently fail in Safari on both macOS and iOS. Always test:
+- Chrome ✓
+- Firefox ✓ (handles blob URLs differently)
+- Safari ✓ (macOS + iOS — most likely to fail)
+
+If you cannot open Safari, mark it as `// MANUAL CHECK: verify download in Safari` in the spec header.
+
+---
+
 ## When to Update Checks
 
 UAT specs become stale. Update a flow when:

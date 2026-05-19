@@ -70,6 +70,10 @@ reports/bugs/          ← Bug reports go here — [feature-name].md
 | Form validation | Empty required, max-length, invalid formats, mismatched fields |
 | Update/migration | Settings preserved after version upgrade |
 | RTL layout | No overflow, correct direction (Arabic / Hebrew) |
+| File download | Test in Chrome + Firefox + Safari — blob URL / anchor click behavior differs; verify file is not empty and filename is correct |
+| Generated file content | HTTP 200 is not a pass — open the file, read it, confirm contents match user input with no hardcoded fallbacks or injected code |
+| API negative path | Every required field tested with empty, whitespace, HTML tags, and path traversal values sent directly to the API (not just via UI) |
+| IDOR | Any endpoint with an ID parameter — send a different user's valid ID and confirm 403 response |
 
 ---
 

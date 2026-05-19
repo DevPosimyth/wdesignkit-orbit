@@ -89,9 +89,16 @@
 
 ## Automated Testing
 
-- [ ] `axe-core` reports zero critical or serious violations
+> ⛔ GATE: axe-core run is MANDATORY before marking any new UI feature as QA Passed.
+> "I didn't run axe-core" is not a valid reason to skip. It takes under 60 seconds.
+
+- [ ] `axe-core` run completed — zero critical or serious violations (score ≥ 85 required)
 - [ ] Playwright accessibility scan passes on all key page templates
 - [ ] Color contrast checker run on all text/background combinations
+- [ ] `aria-label` present on all icon-only buttons (no visible text = must have aria-label)
+- [ ] `role="dialog"` + `aria-modal="true"` set on every modal/popup
+- [ ] Every `<input>` has a matching `<label for="...">` or `aria-label` — placeholder alone fails
+- [ ] Focus returns to the trigger element after modal closes
 
 ---
 
