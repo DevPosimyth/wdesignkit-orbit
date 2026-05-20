@@ -63,9 +63,16 @@ Every word written must follow these rules:
 
 ### Popup / Modal
 ```
-Title:    Action-oriented, 2–4 words — "Download as Plugin", "Delete Widget", "Import Template"
-Subtitle: One clear sentence — what this does and what happens next. Max 15 words.
-          Example: "Fill in your plugin details. We'll package your widget and download it instantly."
+Title:    Action-oriented, 3–5 words — be specific about the output, not just the action.
+          "Download as WordPress Plugin", "Delete Widget", "Import Template"
+          ✅ "Download as WordPress Plugin" — names the exact output format (WordPress Plugin)
+          ❌ "Download as Plugin" — too vague, doesn't specify WordPress
+
+Subtitle: One sentence — specific outcome + where or how it's used. Max 15 words.
+          Lead with what the user gets, end with how they use it.
+          Example: "Get your widget as a plugin ZIP file and upload it directly from your WordPress dashboard."
+          ✅ Names the file format (ZIP), names the destination (WordPress dashboard)
+          ❌ "We'll package your widget and download it instantly." — vague output, no destination context
 ```
 
 ### Form Labels
