@@ -21,10 +21,15 @@ If any cannot be confirmed from context → ask before writing.
 
 ## Brand Voice
 
+- Warm, modern, and professional — not corporate, not robotic
 - Speak directly: "you", "your", "you'll", "it's", "we've"
 - Active voice: "Download your plugin" not "The plugin will be downloaded"
-- Short sentences — under 20 words
+- Short sentences — under 20 words; descriptions in 1–2 lines max
 - Specific over vague: name the file type, tool, destination, version number
+- Focus on user benefit, not technical complexity
+- Action-oriented words: Build · Manage · Connect · Automate — applied naturally, not as filler
+- User-friendly WordPress terminology — no heavy jargon
+- Helpful, productivity-driven tone across all surfaces — tooltips, toasts, headings, buttons, descriptions
 
 **Banned words — zero exceptions:**
 Simply · Just · Easily · Quickly · Seamlessly · Robust · Comprehensive · Leverage · Utilize · Accelerate · Boost · Streamline · Optimize · Empower · Revolutionize
