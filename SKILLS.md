@@ -47,6 +47,7 @@ Run these on top of the core 6 based on what the plugin does.
 | WooCommerce plugin | `/wordpress-woocommerce-development` | WC hooks, gateway security, template overrides, cart/checkout safety |
 | REST API / headless | `/api-security-testing` | Endpoint auth, input validation, rate limiting, CORS |
 | Complex PHP / OOP | `/php-pro` | PHP 8.x patterns, typed properties, modern idioms, strict types |
+| **SproutOS MCP plugin** | `/sproutos-copywriting` | SproutOS copywriting audit — PHP i18n strings, JS localisation, punctuation, jargon, duplicate messages, HTML tag mismatches, admin UI consistency, readme.txt copy compliance |
 
 ---
 

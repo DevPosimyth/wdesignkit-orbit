@@ -183,6 +183,27 @@ Your responsibility is to:
 
 ## **Bug Reporting**
 
+### ⚠️ Mandatory Report Format — Read Before Every New Report
+
+Every bug report **must** follow the standard visual format. Read this file before creating any report:
+
+```
+reports/templates/bug-report-template.md
+```
+
+**Format summary (enforced on every report):**
+- **Cover:** Gradient header (`#5202FD → #3600AF → #040483`) with div-based metadata cards — **never `<table>/<td>` in the cover** (renderers inject white backgrounds onto table cells)
+- **Metadata cards:** Each card uses `background:rgba(0,0,0,.28)` so white text is always visible
+- **Stat cards:** P1 red `#fef2f2`, P2 amber `#fffbeb`, P3 blue `#f0f9ff` — explicit background on every `<td>`
+- **Bug cards:** Colored border/bg per severity (P1 red, P2 amber, P3 blue) with severity pill
+- **5 fields per bug:** 🔍 Issue · 📋 Steps to Reproduce · ❌ Current Output · ✅ Expected Output · 🛠️ Solution
+- **`<br>` spacer** between every field
+- **Bullet points** (`-`) for all Solution fields — never prose
+- **`---` separator** after every bug's Solution
+- **Footer bar:** Dark pill row with TOTAL / P1 / P2 / P3 counts + auditor credit line
+
+---
+
 ### **Step 1 — Always write bugs to an MD file first**
 
 Save every bug report to:

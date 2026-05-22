@@ -86,6 +86,16 @@ module.exports = defineConfig({
     },
 
     {
+      name: 'wdk-firefox',
+      testMatch: 'tests/server/**/*.spec.js',
+      use: {
+        ...devices['Desktop Firefox'],
+        baseURL: process.env.WDK_URL || 'https://wdesignkit.com',
+        viewport: { width: 1440, height: 900 },
+      },
+    },
+
+    {
       name: 'wdk-mobile',
       testMatch: 'tests/server/**/*.spec.js',
       use: {

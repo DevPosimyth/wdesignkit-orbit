@@ -1,0 +1,1518 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>SproutOS — Copywriting & Content Audit</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap');
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --sprout:     #5202FD;
+    --sprout-dk:  #3600AF;
+    --wdk:        #040483;
+    --p1:         #dc2626;
+    --p1-bg:      #fef2f2;
+    --p1-border:  #fca5a5;
+    --p1-label:   #991b1b;
+    --p2:         #d97706;
+    --p2-bg:      #fffbeb;
+    --p2-border:  #fcd34d;
+    --p2-label:   #92400e;
+    --p3:         #0284c7;
+    --p3-bg:      #f0f9ff;
+    --p3-border:  #7dd3fc;
+    --p3-label:   #075985;
+    --gray-50:    #f9fafb;
+    --gray-100:   #f3f4f6;
+    --gray-200:   #e5e7eb;
+    --gray-400:   #9ca3af;
+    --gray-500:   #6b7280;
+    --gray-700:   #374151;
+    --gray-900:   #111827;
+    --white:      #ffffff;
+  }
+
+  html { font-size: 10pt; }
+
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    color: var(--gray-900);
+    background: var(--white);
+    line-height: 1.6;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  /* ── COVER PAGE ──────────────────────────────────────────── */
+  .cover {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    page-break-after: always;
+    break-after: page;
+    padding: 0;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .cover-top {
+    background: linear-gradient(135deg, #5202FD 0%, #3600AF 45%, #040483 100%);
+    padding: 60px 64px 80px;
+    position: relative;
+    flex: 1;
+  }
+
+  .cover-top::after {
+    content: '';
+    position: absolute;
+    bottom: -40px;
+    left: 0;
+    right: 0;
+    height: 80px;
+    background: linear-gradient(135deg, #5202FD 0%, #3600AF 45%, #040483 100%);
+    clip-path: ellipse(100% 100% at 50% 0%);
+  }
+
+  .cover-logo-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 80px;
+  }
+
+  .cover-brand-pill {
+    background: rgba(255,255,255,0.15);
+    border: 1px solid rgba(255,255,255,0.25);
+    color: #fff;
+    padding: 5px 14px;
+    border-radius: 100px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: .8px;
+    text-transform: uppercase;
+  }
+
+  .cover-brand-pill.wdk {
+    background: rgba(4,4,131,0.4);
+    border-color: rgba(255,255,255,0.2);
+  }
+
+  .cover-divider {
+    width: 1px;
+    height: 18px;
+    background: rgba(255,255,255,0.3);
+  }
+
+  .cover-title {
+    color: #ffffff;
+    font-size: 40px;
+    font-weight: 800;
+    line-height: 1.15;
+    letter-spacing: -.5px;
+    margin-bottom: 16px;
+    max-width: 520px;
+  }
+
+  .cover-subtitle {
+    color: rgba(184,169,255,0.9);
+    font-size: 16px;
+    font-weight: 400;
+    margin-bottom: 60px;
+  }
+
+  .cover-meta-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0;
+    max-width: 520px;
+  }
+
+  .cover-meta-item {
+    border-top: 1px solid rgba(255,255,255,0.2);
+    padding: 14px 0 0;
+  }
+
+  .cover-meta-label {
+    color: rgba(184,169,255,0.7);
+    font-size: 9px;
+    font-weight: 600;
+    letter-spacing: 1.2px;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+  }
+
+  .cover-meta-value {
+    color: #ffffff;
+    font-size: 13px;
+    font-weight: 600;
+  }
+
+  .cover-stats {
+    background: var(--white);
+    padding: 48px 64px;
+  }
+
+  .cover-stats-title {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--gray-400);
+    margin-bottom: 24px;
+  }
+
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 20px;
+  }
+
+  .stat-card {
+    border-radius: 10px;
+    padding: 20px 22px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .stat-card.total  { background: var(--gray-900); }
+  .stat-card.p1     { background: var(--p1-bg); border: 1.5px solid var(--p1-border); }
+  .stat-card.p2     { background: var(--p2-bg); border: 1.5px solid var(--p2-border); }
+  .stat-card.p3     { background: var(--p3-bg); border: 1.5px solid var(--p3-border); }
+
+  .stat-count {
+    font-size: 36px;
+    font-weight: 800;
+    line-height: 1;
+    margin-bottom: 6px;
+  }
+
+  .stat-card.total .stat-count  { color: #ffffff; }
+  .stat-card.p1    .stat-count  { color: var(--p1); }
+  .stat-card.p2    .stat-count  { color: var(--p2); }
+  .stat-card.p3    .stat-count  { color: var(--p3); }
+
+  .stat-label {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: .5px;
+    text-transform: uppercase;
+    margin-bottom: 2px;
+  }
+
+  .stat-card.total .stat-label  { color: rgba(255,255,255,0.7); }
+  .stat-card.p1    .stat-label  { color: var(--p1-label); }
+  .stat-card.p2    .stat-label  { color: var(--p2-label); }
+  .stat-card.p3    .stat-label  { color: var(--p3-label); }
+
+  .stat-desc {
+    font-size: 10px;
+    font-weight: 400;
+  }
+
+  .stat-card.total .stat-desc   { color: rgba(255,255,255,0.45); }
+  .stat-card.p1    .stat-desc   { color: #f87171; }
+  .stat-card.p2    .stat-desc   { color: #fbbf24; }
+  .stat-card.p3    .stat-desc   { color: #38bdf8; }
+
+  /* ── REPORT BODY ─────────────────────────────────────────── */
+  .report {
+    padding: 48px 64px;
+    max-width: 860px;
+    margin: 0 auto;
+  }
+
+  /* ── PAGE HEADER (print) ─────────────────────────────────── */
+  @page {
+    margin: 12mm 14mm;
+    size: A4;
+  }
+
+  .page-header-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 2px solid var(--sprout);
+    padding-bottom: 12px;
+    margin-bottom: 40px;
+  }
+
+  .page-header-left {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--sprout);
+    letter-spacing: .3px;
+  }
+
+  .page-header-right {
+    font-size: 10px;
+    color: var(--gray-400);
+  }
+
+  /* ── SECTION HEADERS ─────────────────────────────────────── */
+  .section-header {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin: 48px 0 28px;
+    padding-bottom: 14px;
+    border-bottom: 1.5px solid var(--gray-200);
+  }
+
+  .section-header:first-child {
+    margin-top: 0;
+  }
+
+  .section-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 800;
+    letter-spacing: .5px;
+    flex-shrink: 0;
+  }
+
+  .section-badge.p1 { background: var(--p1); color: #fff; }
+  .section-badge.p2 { background: var(--p2); color: #fff; }
+  .section-badge.p3 { background: var(--p3); color: #fff; }
+
+  .section-title-group {}
+
+  .section-title {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--gray-900);
+    line-height: 1.2;
+  }
+
+  .section-desc {
+    font-size: 11px;
+    color: var(--gray-500);
+    margin-top: 2px;
+  }
+
+  .section-count {
+    margin-left: auto;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--gray-400);
+    white-space: nowrap;
+  }
+
+  /* ── BUG CARDS ───────────────────────────────────────────── */
+  .bug-card {
+    border-radius: 10px;
+    border: 1.5px solid var(--gray-200);
+    background: var(--white);
+    margin-bottom: 20px;
+    overflow: hidden;
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+
+  .bug-card-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--gray-100);
+  }
+
+  .bug-card.p1 .bug-card-header { background: var(--p1-bg); border-bottom-color: var(--p1-border); }
+  .bug-card.p2 .bug-card-header { background: var(--p2-bg); border-bottom-color: var(--p2-border); }
+  .bug-card.p3 .bug-card-header { background: var(--p3-bg); border-bottom-color: var(--p3-border); }
+
+  .bug-severity-pill {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 3px 10px;
+    border-radius: 100px;
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    white-space: nowrap;
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+
+  .bug-card.p1 .bug-severity-pill { background: var(--p1); color: #fff; }
+  .bug-card.p2 .bug-severity-pill { background: var(--p2); color: #fff; }
+  .bug-card.p3 .bug-severity-pill { background: var(--p3); color: #fff; }
+
+  .bug-title-group { flex: 1; min-width: 0; }
+
+  .bug-title {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--gray-900);
+    line-height: 1.35;
+    margin-bottom: 5px;
+  }
+
+  .bug-meta-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .bug-file {
+    font-family: 'JetBrains Mono', 'Courier New', monospace;
+    font-size: 10px;
+    font-weight: 500;
+    color: var(--sprout);
+    background: rgba(82,2,253,0.06);
+    padding: 2px 7px;
+    border-radius: 4px;
+  }
+
+  .bug-area {
+    font-size: 10px;
+    color: var(--gray-400);
+    font-weight: 500;
+  }
+
+  .bug-body {
+    padding: 16px 20px;
+  }
+
+  .bug-desc {
+    font-size: 11.5px;
+    color: var(--gray-700);
+    line-height: 1.65;
+    margin-bottom: 14px;
+  }
+
+  /* Affected table */
+  .affected-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 14px;
+    font-size: 10.5px;
+  }
+
+  .affected-table th {
+    background: var(--gray-50);
+    color: var(--gray-500);
+    font-weight: 700;
+    font-size: 9px;
+    letter-spacing: .8px;
+    text-transform: uppercase;
+    padding: 7px 12px;
+    text-align: left;
+    border-bottom: 1px solid var(--gray-200);
+  }
+
+  .affected-table td {
+    padding: 7px 12px;
+    border-bottom: 1px solid var(--gray-100);
+    color: var(--gray-700);
+  }
+
+  .affected-table tr:last-child td { border-bottom: none; }
+
+  .affected-table code {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    background: var(--gray-100);
+    padding: 1px 5px;
+    border-radius: 3px;
+    color: var(--sprout-dk);
+  }
+
+  /* Code blocks */
+  .code-block {
+    border-radius: 7px;
+    overflow: hidden;
+    margin-top: 0;
+    font-size: 10.5px;
+  }
+
+  .code-block-label {
+    padding: 6px 14px;
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+
+  .code-block.current .code-block-label  {
+    background: #450a0a;
+    color: #fca5a5;
+  }
+
+  .code-block.fixed .code-block-label {
+    background: #052e16;
+    color: #86efac;
+  }
+
+  .code-block.pattern .code-block-label {
+    background: #1e1b4b;
+    color: #a5b4fc;
+  }
+
+  .code-block pre {
+    padding: 12px 14px;
+    overflow-x: auto;
+    margin: 0;
+    line-height: 1.55;
+    font-family: 'JetBrains Mono', 'Courier New', monospace;
+    font-size: 10.5px;
+  }
+
+  .code-block.current pre  { background: #1c0606; color: #fca5a5; }
+  .code-block.fixed   pre  { background: #021207; color: #86efac; }
+  .code-block.pattern pre  { background: #0d0a2e; color: #c4b5fd; }
+
+  .diff-remove { color: #f87171; }
+  .diff-add    { color: #4ade80; }
+  .diff-neutral{ color: #9ca3af; }
+
+  .code-pair {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-top: 2px;
+  }
+
+  /* Note block */
+  .note {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    background: #f8f7ff;
+    border: 1px solid #e0d9ff;
+    border-left: 3px solid var(--sprout);
+    border-radius: 6px;
+    padding: 10px 14px;
+    margin-top: 12px;
+    font-size: 10.5px;
+    color: var(--sprout-dk);
+    line-height: 1.55;
+  }
+
+  .note strong { font-weight: 700; }
+
+  /* ── SCOPE TABLE ─────────────────────────────────────────── */
+  .scope-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 40px;
+    font-size: 10.5px;
+  }
+
+  .scope-table th {
+    background: var(--gray-900);
+    color: rgba(255,255,255,.7);
+    font-weight: 700;
+    font-size: 9px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    padding: 10px 16px;
+    text-align: left;
+  }
+
+  .scope-table td {
+    padding: 9px 16px;
+    border-bottom: 1px solid var(--gray-100);
+    color: var(--gray-700);
+  }
+
+  .scope-table tr:nth-child(even) td { background: var(--gray-50); }
+
+  .scope-table code {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    background: rgba(82,2,253,0.07);
+    color: var(--sprout-dk);
+    padding: 1px 5px;
+    border-radius: 3px;
+  }
+
+  .severity-dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    margin-right: 6px;
+    vertical-align: middle;
+    flex-shrink: 0;
+  }
+
+  .dot-p1 { background: var(--p1); }
+  .dot-p2 { background: var(--p2); }
+  .dot-p3 { background: var(--p3); }
+</style>
+</head>
+<body>
+
+<!-- ════════════════════════════════════════════════════════
+     COVER PAGE
+════════════════════════════════════════════════════════ -->
+<div class="cover">
+
+  <div class="cover-top">
+    <div class="cover-logo-row">
+      <span class="cover-brand-pill">SproutOS</span>
+      <div class="cover-divider"></div>
+      <span class="cover-brand-pill wdk">WDesignKit Orbit</span>
+    </div>
+
+    <h1 class="cover-title">Copywriting &amp; Content Audit</h1>
+    <p class="cover-subtitle">SproutOS v0.1.0 — UI text, admin copy, readme, and i18n strings</p>
+
+    <div class="cover-meta-grid">
+      <div class="cover-meta-item">
+        <div class="cover-meta-label">Plugin</div>
+        <div class="cover-meta-value">SproutOS v0.1.0</div>
+      </div>
+      <div class="cover-meta-item">
+        <div class="cover-meta-label">Date</div>
+        <div class="cover-meta-value">2026-05-21</div>
+      </div>
+      <div class="cover-meta-item">
+        <div class="cover-meta-label">Auditor</div>
+        <div class="cover-meta-value">Dev Panchal</div>
+      </div>
+      <div class="cover-meta-item" style="margin-top:20px">
+        <div class="cover-meta-label">Role</div>
+        <div class="cover-meta-value">QA Expert</div>
+      </div>
+      <div class="cover-meta-item" style="margin-top:20px">
+        <div class="cover-meta-label">Team</div>
+        <div class="cover-meta-value">SproutOS</div>
+      </div>
+      <div class="cover-meta-item" style="margin-top:20px">
+        <div class="cover-meta-label">Status</div>
+        <div class="cover-meta-value">All Open</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="cover-stats">
+    <div class="cover-stats-title">Findings Summary</div>
+    <div class="stats-grid">
+      <div class="stat-card total">
+        <div class="stat-count">35</div>
+        <div class="stat-label">Total Issues</div>
+        <div class="stat-desc">6 files audited</div>
+      </div>
+      <div class="stat-card p1">
+        <div class="stat-count">2</div>
+        <div class="stat-label">P1 · Critical</div>
+        <div class="stat-desc">Render broken</div>
+      </div>
+      <div class="stat-card p2">
+        <div class="stat-count">16</div>
+        <div class="stat-label">P2 · High</div>
+        <div class="stat-desc">Trust &amp; i18n impact</div>
+      </div>
+      <div class="stat-card p3">
+        <div class="stat-count">17</div>
+        <div class="stat-label">P3 · Polish</div>
+        <div class="stat-desc">Consistency &amp; quality</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ════════════════════════════════════════════════════════
+     FILES AUDITED
+════════════════════════════════════════════════════════ -->
+<div class="report">
+
+  <div class="page-header-bar">
+    <span class="page-header-left">SproutOS — Copywriting Audit</span>
+    <span class="page-header-right">Dev Panchal · QA Expert · 2026-05-21</span>
+  </div>
+
+  <table class="scope-table">
+    <thead>
+      <tr>
+        <th>File</th>
+        <th>Lines</th>
+        <th style="text-align:center">P1</th>
+        <th style="text-align:center">P2</th>
+        <th style="text-align:center">P3</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><code>sprout-core/admin-pages.php</code></td>
+        <td>5,110</td>
+        <td style="text-align:center;color:var(--p1);font-weight:700">2</td>
+        <td style="text-align:center;color:var(--p2);font-weight:700">7</td>
+        <td style="text-align:center;color:var(--p3);font-weight:700">8</td>
+      </tr>
+      <tr>
+        <td><code>sprout-core/memory/admin/memory-page.php</code></td>
+        <td>~900</td>
+        <td style="text-align:center;color:var(--gray-300)">—</td>
+        <td style="text-align:center;color:var(--p2);font-weight:700">6</td>
+        <td style="text-align:center;color:var(--p3);font-weight:700">5</td>
+      </tr>
+      <tr>
+        <td><code>sprout-core/admin-safety-tab.php</code></td>
+        <td>~200</td>
+        <td style="text-align:center;color:var(--gray-300)">—</td>
+        <td style="text-align:center;color:var(--p2);font-weight:700">2</td>
+        <td style="text-align:center;color:var(--gray-300)">—</td>
+      </tr>
+      <tr>
+        <td><code>readme.txt</code></td>
+        <td>~175</td>
+        <td style="text-align:center;color:var(--gray-300)">—</td>
+        <td style="text-align:center;color:var(--p2);font-weight:700">1</td>
+        <td style="text-align:center;color:var(--p3);font-weight:700">2</td>
+      </tr>
+      <tr>
+        <td><code>sprout-os.php</code></td>
+        <td>—</td>
+        <td style="text-align:center;color:var(--gray-300)">—</td>
+        <td style="text-align:center;color:var(--gray-300)">—</td>
+        <td style="text-align:center;color:var(--p3);font-weight:700">1</td>
+      </tr>
+      <tr>
+        <td><code>abilities_register/class-abilities-register.php</code></td>
+        <td>—</td>
+        <td style="text-align:center;color:var(--gray-300)">—</td>
+        <td style="text-align:center;color:var(--gray-300)">—</td>
+        <td style="text-align:center;color:var(--p3);font-weight:700">1</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <!-- ── P1 SECTION ─────────────────────────────────── -->
+  <div class="section-header">
+    <div class="section-badge p1">P1</div>
+    <div class="section-title-group">
+      <div class="section-title">Critical — Broken Rendering</div>
+      <div class="section-desc">HTML tag mismatches that cause browser-inconsistent visual output. Must be fixed before release.</div>
+    </div>
+    <div class="section-count">2 issues</div>
+  </div>
+
+  <!-- Bug 1 -->
+  <div class="bug-card p1">
+    <div class="bug-card-header">
+      <span class="bug-severity-pill">P1</span>
+      <div class="bug-title-group">
+        <div class="bug-title">HTML tag mismatch — "AI Abilities are OFF" banner</div>
+        <div class="bug-meta-row">
+          <span class="bug-file">admin-pages.php : 2394</span>
+          <span class="bug-area">Code Quality / Copywriting</span>
+        </div>
+      </div>
+    </div>
+    <div class="bug-body">
+      <p class="bug-desc">A <code>&lt;strong&gt;</code> tag opens but closes as <code>&lt;/span&gt;</code>. The browser auto-corrects at parse time but the bold/span nesting is undefined and browser-dependent. The text "AI Abilities are OFF." may not appear bold across all environments.</p>
+      <div class="code-pair">
+        <div class="code-block current">
+          <div class="code-block-label">Current</div>
+          <pre><span class="diff-remove">&lt;strong&gt;AI Abilities are OFF.&lt;/span&gt;</span></pre>
+        </div>
+        <div class="code-block fixed">
+          <div class="code-block-label">Fix</div>
+          <pre><span class="diff-add">&lt;strong&gt;AI Abilities are OFF.&lt;/strong&gt;</span></pre>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bug 2 -->
+  <div class="bug-card p1">
+    <div class="bug-card-header">
+      <span class="bug-severity-pill">P1</span>
+      <div class="bug-title-group">
+        <div class="bug-title">HTML tag mismatch — two modal headings</div>
+        <div class="bug-meta-row">
+          <span class="bug-file">admin-pages.php : 4714, 4718</span>
+          <span class="bug-area">Code Quality / Copywriting</span>
+        </div>
+      </div>
+    </div>
+    <div class="bug-body">
+      <p class="bug-desc">Two <code>&lt;h4&gt;</code> heading tags close as <code>&lt;/p&gt;</code>. This breaks the heading hierarchy in the DOM and causes inconsistent rendering across browsers. Affected strings: <strong>Request Body</strong> (line 4714) and <strong>Response Data</strong> (line 4718).</p>
+      <div class="code-pair">
+        <div class="code-block current">
+          <div class="code-block-label">Current</div>
+          <pre><span class="diff-remove">&lt;h4&gt;Request Body&lt;/p&gt;
+&lt;h4&gt;Response Data&lt;/p&gt;</span></pre>
+        </div>
+        <div class="code-block fixed">
+          <div class="code-block-label">Fix</div>
+          <pre><span class="diff-add">&lt;h4&gt;Request Body&lt;/h4&gt;
+&lt;h4&gt;Response Data&lt;/h4&gt;</span></pre>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── P2 SECTION ─────────────────────────────────── -->
+  <div class="section-header">
+    <div class="section-badge p2">P2</div>
+    <div class="section-title-group">
+      <div class="section-title">High Impact</div>
+      <div class="section-desc">Issues that affect translation readiness, message clarity, or user trust directly.</div>
+    </div>
+    <div class="section-count">16 issues</div>
+  </div>
+
+  <!-- Bug 3 -->
+  <div class="bug-card p2">
+    <div class="bug-card-header">
+      <span class="bug-severity-pill">P2</span>
+      <div class="bug-title-group">
+        <div class="bug-title">Hardcoded JS strings bypass the translation system — admin-pages.php</div>
+        <div class="bug-meta-row">
+          <span class="bug-file">admin-pages.php — 11 occurrences</span>
+          <span class="bug-area">Copywriting / i18n</span>
+        </div>
+      </div>
+    </div>
+    <div class="bug-body">
+      <p class="bug-desc">Multiple UI feedback strings are hardcoded in inline JavaScript. They are never passed through <code>wp_json_encode( __() )</code> and are invisible to any translation tool. Any site on a non-English locale will always see raw English text in these feedback states.</p>
+      <table class="affected-table">
+        <thead><tr><th>Line</th><th>Hardcoded String</th></tr></thead>
+        <tbody>
+          <tr><td>1027</td><td><code>'Error'</code></td></tr>
+          <tr><td>1029</td><td><code>'Network error. Please try again.'</code></td></tr>
+          <tr><td>2038</td><td><code>'Copied!'</code></td></tr>
+          <tr><td>2042</td><td><code>'Error copying'</code></td></tr>
+          <tr><td>3210</td><td><code>'Loading...'</code></td></tr>
+          <tr><td>4297</td><td><code>'Failed to load details.'</code></td></tr>
+          <tr><td>4305</td><td><code>'Failed to purge logs.'</code></td></tr>
+          <tr><td>4306</td><td><code>'Logs purged.'</code></td></tr>
+          <tr><td>4787</td><td><code>'Loading...'</code></td></tr>
+          <tr><td>4819</td><td><code>'Failed to load details.'</code></td></tr>
+          <tr><td>5097</td><td><code>'Error'</code></td></tr>
+        </tbody>
+      </table>
+      <div class="code-block pattern">
+        <div class="code-block-label">Fix Pattern — apply to every string above</div>
+        <pre><span class="diff-add">var errorMsg = &lt;?php echo wp_json_encode( __( 'Error', 'sproutos' ) ); ?&gt;;</span></pre>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bug 4 -->
+  <div class="bug-card p2">
+    <div class="bug-card-header">
+      <span class="bug-severity-pill">P2</span>
+      <div class="bug-title-group">
+        <div class="bug-title">Hardcoded JS strings bypass the translation system — admin-safety-tab.php</div>
+        <div class="bug-meta-row">
+          <span class="bug-file">admin-safety-tab.php : 158, 171</span>
+          <span class="bug-area">Copywriting / i18n</span>
+        </div>
+      </div>
+    </div>
+    <div class="bug-body">
+      <p class="bug-desc">Three feedback strings are hardcoded in inline script — outside any localisation wrapper.</p>
+      <div class="code-block current">
+        <div class="code-block-label">Current</div>
+        <pre><span class="diff-remove">flash(status, 'Saved', true);
+flash(status, 'Failed to save', false);
+flash(status, 'Saved (refresh your MCP client to see new tool list)', true);</span></pre>
+      </div>
+      <div class="code-block fixed" style="margin-top:8px">
+        <div class="code-block-label">Fix</div>
+        <pre><span class="diff-add">var savedMsg        = &lt;?php echo wp_json_encode( __( 'Saved', 'sproutos' ) ); ?&gt;;
+var failedMsg       = &lt;?php echo wp_json_encode( __( 'Failed to save', 'sproutos' ) ); ?&gt;;
+var savedRefreshMsg = &lt;?php echo wp_json_encode( __( 'Saved. Refresh your MCP client to see the updated tool list.', 'sproutos' ) ); ?&gt;;</span></pre>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bug 5 -->
+  <div class="bug-card p2">
+    <div class="bug-card-header">
+      <span class="bug-severity-pill">P2</span>
+      <div class="bug-title-group">
+        <div class="bug-title">npm install modal HTML strings not in <code>__()</code></div>
+        <div class="bug-meta-row">
+          <span class="bug-file">admin-pages.php : 3145, 3151</span>
+          <span class="bug-area">Copywriting / i18n</span>
+        </div>
+      </div>
+    </div>
+    <div class="bug-body">
+      <p class="bug-desc">The older npm install guide modal has OS labels as raw HTML, not wrapped in <code>__()</code>. The newer duplicate modal (lines ~4900–5050) already localises these correctly. The older modal is still rendered.</p>
+      <div class="code-pair">
+        <div class="code-block current">
+          <div class="code-block-label">Current (not localised)</div>
+          <pre><span class="diff-remove">&lt;strong&gt;Ubuntu / Debian:&lt;/strong&gt;
+&lt;strong&gt;Fedora / RHEL:&lt;/strong&gt;</span></pre>
+        </div>
+        <div class="code-block fixed">
+          <div class="code-block-label">Fix</div>
+          <pre><span class="diff-add">&lt;?php esc_html_e( 'Ubuntu / Debian:', 'sproutos' ); ?&gt;
+&lt;?php esc_html_e( 'Fedora / RHEL / CentOS:', 'sproutos' ); ?&gt;</span></pre>
+        </div>
+      </div>
+      <div class="note"><strong>Preferred fix:</strong> Remove the older modal entirely — duplicate modals are a structural issue.</div>
+    </div>
+  </div>
+
+  <!-- Bug 6 -->
+  <div class="bug-card p2">
+    <div class="bug-card-header">
+      <span class="bug-severity-pill">P2</span>
+      <div class="bug-title-group">
+        <div class="bug-title">"Fedora / RHEL" vs "Fedora / RHEL / CentOS" — inconsistent OS label</div>
+        <div class="bug-meta-row">
+          <span class="bug-file">admin-pages.php : 3151, ~5018</span>
+          <span class="bug-area">Copywriting / Consistency</span>
+        </div>
+      </div>
+    </div>
+    <div class="bug-body">
+      <p class="bug-desc">Two modals in the same file label the same OS group differently. CentOS users won't find applicable instructions in the older modal.</p>
+      <div class="code-pair">
+        <div class="code-block current">
+          <div class="code-block-label">Older modal — line 3151</div>
+          <pre><span class="diff-remove">Fedora / RHEL:</span></pre>
+        </div>
+        <div class="code-block fixed">
+          <div class="code-block-label">Standardise to</div>
+          <pre><span class="diff-add">Fedora / RHEL / CentOS:</span></pre>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bug 7 -->
+  <div class="bug-card p2">
+    <div class="bug-card-header">
+      <span class="bug-severity-pill">P2</span>
+      <div class="bug-title-group">
+        <div class="bug-title">Duplicate message in "AI Abilities are OFF" banner</div>
+        <div class="bug-meta-row">
+          <span class="bug-file">admin-pages.php : 2394–2396</span>
+          <span class="bug-area">Copywriting / Clarity</span>
+        </div>
+      </div>
+    </div>
+    <div class="bug-body">
+      <p class="bug-desc">"AI Abilities are OFF." is immediately followed by "Tools are not exposed to MCP clients until you enable them in Settings." Both sentences communicate the same thing — the second adds no new information.</p>
+      <div class="code-block current">
+        <div class="code-block-label">Current</div>
+        <pre><span class="diff-remove">AI Abilities are OFF.
+Tools are not exposed to MCP clients until you enable them in Settings.</span></pre>
+      </div>
+      <div class="code-block fixed" style="margin-top:8px">
+        <div class="code-block-label">Fix</div>
+        <pre><span class="diff-add">AI abilities are off. Enable them in Settings to expose tools to connected MCP clients.</span></pre>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bug 8 -->
+  <div class="bug-card p2">
+    <div class="bug-card-header">
+      <span class="bug-severity-pill">P2</span>
+      <div class="bug-title-group">
+        <div class="bug-title">AI Memory disabled-state message uses developer language</div>
+        <div class="bug-meta-row">
+          <span class="bug-file">memory-page.php : 362</span>
+          <span class="bug-area">Copywriting / Clarity</span>
+        </div>
+      </div>
+    </div>
+    <div class="bug-body">
+      <p class="bug-desc">"No context is prepended to the agent system prompt" is engineer copy. A typical site owner has no frame of reference for what system prompt prepending means.</p>
+      <div class="code-block current">
+        <div class="code-block-label">Current</div>
+        <pre><span class="diff-remove">The AI Memory abilities are not exposed to connected agents
+and no context is prepended to the agent system prompt.</span></pre>
+      </div>
+      <div class="code-block fixed" style="margin-top:8px">
+        <div class="code-block-label">Fix</div>
+        <pre><span class="diff-add">AI Memory is off. No memories are shared with connected AI agents.
+Enable it in Settings to start storing and using context.</span></pre>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bug 9 -->
+  <div class="bug-card p2">
+    <div class="bug-card-header">
+      <span class="bug-severity-pill">P2</span>
+      <div class="bug-title-group">
+        <div class="bug-title">"Confidence threshold" jargon in pending memory review</div>
+        <div class="bug-meta-row">
+          <span class="bug-file">memory-page.php : 521</span>
+          <span class="bug-area">Copywriting / Clarity</span>
+        </div>
+      </div>
+    </div>
+    <div class="bug-body">
+      <p class="bug-desc">"Confidence threshold" is a machine-learning term. It is invisible to a typical WordPress site owner who simply needs to know the AI saved something automatically.</p>
+      <div class="code-pair">
+        <div class="code-block current">
+          <div class="code-block-label">Current</div>
+          <pre><span class="diff-remove">The AI auto-saved these at or above
+the confidence threshold. Approve
+to keep them active...</span></pre>
+        </div>
+        <div class="code-block fixed">
+          <div class="code-block-label">Fix</div>
+          <pre><span class="diff-add">The AI saved these automatically
+based on relevance. Review and
+approve the ones you want to keep.</span></pre>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bug 10 -->
+  <div class="bug-card p2">
+    <div class="bug-card-header">
+      <span class="bug-severity-pill">P2</span>
+      <div class="bug-title-group">
+        <div class="bug-title">"Discipline contract" — unexplained internal jargon in UI</div>
+        <div class="bug-meta-row">
+          <span class="bug-file">memory-page.php : 642</span>
+          <span class="bug-area">Copywriting / Clarity</span>
+        </div>
+      </div>
+    </div>
+    <div class="bug-body">
+      <p class="bug-desc">"Discipline contract" is an internal system concept that is never defined or explained in the UI. A first-time user has no idea what it refers to.</p>
+      <div class="code-pair">
+        <div class="code-block current">
+          <div class="code-block-label">Current</div>
+          <pre><span class="diff-remove">Memories appear here as the AI saves
+them under the discipline contract —
+or as you add them yourself.</span></pre>
+        </div>
+        <div class="code-block fixed">
+          <div class="code-block-label">Fix</div>
+          <pre><span class="diff-add">Memories appear here as the AI
+saves them, or as you add them
+manually.</span></pre>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bug 11 -->
+  <div class="bug-card p2">
+    <div class="bug-card-header">
+      <span class="bug-severity-pill">P2</span>
+      <div class="bug-title-group">
+        <div class="bug-title">Form hint renders raw Markdown in a plain HTML field</div>
+        <div class="bug-meta-row">
+          <span class="bug-file">memory-page.php : 875</span>
+          <span class="bug-area">Copywriting / Formatting</span>
+        </div>
+      </div>
+    </div>
+    <div class="bug-body">
+      <p class="bug-desc"><code>**Why:**</code> and <code>**How to apply:**</code> are Markdown syntax inside a plain HTML tag. Markdown does not render here — the asterisks appear as literal characters in the browser.</p>
+      <div class="code-pair">
+        <div class="code-block current">
+          <div class="code-block-label">Current</div>
+          <pre><span class="diff-remove">Rules-type must include **Why:**
+and **How to apply:**.</span></pre>
+        </div>
+        <div class="code-block fixed">
+          <div class="code-block-label">Fix</div>
+          <pre><span class="diff-add">Rules-type memories must include a
+&lt;strong&gt;Why&lt;/strong&gt; and
+&lt;strong&gt;How to apply&lt;/strong&gt; section.</span></pre>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bug 12 -->
+  <div class="bug-card p2">
+    <div class="bug-card-header">
+      <span class="bug-severity-pill">P2</span>
+      <div class="bug-title-group">
+        <div class="bug-title">Placeholder example references "Bricks" — not a universal tool</div>
+        <div class="bug-meta-row">
+          <span class="bug-file">memory-page.php : 804</span>
+          <span class="bug-area">Copywriting / Clarity</span>
+        </div>
+      </div>
+    </div>
+    <div class="bug-body">
+      <p class="bug-desc">Bricks Builder is a specific paid page builder. Sites not running it will find this placeholder example confusing and irrelevant. Placeholder examples should be generic and universally applicable.</p>
+      <div class="code-pair">
+        <div class="code-block current">
+          <div class="code-block-label">Current</div>
+          <pre><span class="diff-remove">e.g. "Always use Bricks for new pages"</span></pre>
+        </div>
+        <div class="code-block fixed">
+          <div class="code-block-label">Fix</div>
+          <pre><span class="diff-add">e.g. "Always use HTTPS links in new content"</span></pre>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bug 13 -->
+  <div class="bug-card p2">
+    <div class="bug-card-header">
+      <span class="bug-severity-pill">P2</span>
+      <div class="bug-title-group">
+        <div class="bug-title">Capabilities Profile descriptions use technical jargon</div>
+        <div class="bug-meta-row">
+          <span class="bug-file">admin-safety-tab.php : 34–48</span>
+          <span class="bug-area">Copywriting / Clarity</span>
+        </div>
+      </div>
+    </div>
+    <div class="bug-body">
+      <p class="bug-desc">"Token-metered deployments", "bridge hops", and raw KB figures are developer shorthand — not site-owner language. A user choosing a profile setting needs to understand the practical impact, not the technical mechanics.</p>
+      <div class="code-block current">
+        <div class="code-block-label">Current</div>
+        <pre><span class="diff-remove">Ultra-minimal: 3 bridge tools only (~3 KB). Every operation goes through
+discover→inspect→dispatch. Best for token-metered deployments.
+
+Full: Every applicable tool exposed directly (~50-140 KB).
+Largest upfront cost; no bridge hops.</span></pre>
+      </div>
+      <div class="code-block fixed" style="margin-top:8px">
+        <div class="code-block-label">Fix</div>
+        <pre><span class="diff-add">Ultra-minimal: Exposes only 3 core tools. The AI requests
+additional tools as needed. Best for minimising AI session cost.
+
+Full: Exposes all available tools upfront.
+No additional requests needed mid-session.</span></pre>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bug 14 -->
+  <div class="bug-card p2">
+    <div class="bug-card-header">
+      <span class="bug-severity-pill">P2</span>
+      <div class="bug-title-group">
+        <div class="bug-title">Memory body placeholder uses "seeds ship zero tokens"</div>
+        <div class="bug-meta-row">
+          <span class="bug-file">memory-page.php : 876</span>
+          <span class="bug-area">Copywriting / Clarity</span>
+        </div>
+      </div>
+    </div>
+    <div class="bug-body">
+      <p class="bug-desc">"Empty seeds ship zero tokens" is internal developer shorthand with no meaning to a standard WordPress user. The entire sentence is unnecessarily opaque.</p>
+      <div class="code-block current">
+        <div class="code-block-label">Current</div>
+        <pre><span class="diff-remove">The full memory body. Empty seeds ship zero tokens — fill this in
+only when you have a rule, context, profile detail, or reference
+worth keeping.</span></pre>
+      </div>
+      <div class="code-block fixed" style="margin-top:8px">
+        <div class="code-block-label">Fix</div>
+        <pre><span class="diff-add">The full memory content. Only add memories that are genuinely
+useful — rules, context, profile details, or references you want
+the AI to apply consistently.</span></pre>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bug 15 -->
+  <div class="bug-card p2">
+    <div class="bug-card-header">
+      <span class="bug-severity-pill">P2</span>
+      <div class="bug-title-group">
+        <div class="bug-title">readme.txt — Missing required <code>Plugin URI:</code> field</div>
+        <div class="bug-meta-row">
+          <span class="bug-file">readme.txt — header block</span>
+          <span class="bug-area">Copywriting / readme</span>
+        </div>
+      </div>
+    </div>
+    <div class="bug-body">
+      <p class="bug-desc">WordPress.org requires a <code>Plugin URI:</code> field in <code>readme.txt</code>. It is missing entirely. Without it, the plugin listing page on WordPress.org will not have a home page link.</p>
+      <div class="code-block fixed">
+        <div class="code-block-label">Fix — add below Contributors:</div>
+        <pre><span class="diff-add">Plugin URI: https://sproutos.ai</span></pre>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bug 16 -->
+  <div class="bug-card p2">
+    <div class="bug-card-header">
+      <span class="bug-severity-pill">P2</span>
+      <div class="bug-title-group">
+        <div class="bug-title">readme.txt — FAQ "What is MCP?" doesn't answer the question</div>
+        <div class="bug-meta-row">
+          <span class="bug-file">readme.txt : 94–97</span>
+          <span class="bug-area">Copywriting / readme</span>
+        </div>
+      </div>
+    </div>
+    <div class="bug-body">
+      <p class="bug-desc">The answer sidesteps the definition entirely. The second sentence is unrelated to the question asked. A user asking "What is MCP?" receives no useful explanation of what the protocol actually does.</p>
+      <div class="code-block current">
+        <div class="code-block-label">Current</div>
+        <pre><span class="diff-remove">MCP stands for Model Context Protocol. SproutOS supports
+modern AI-connected workflows, but the plugin is also designed
+around practical WordPress management, controls, and automation
+features.</span></pre>
+      </div>
+      <div class="code-block fixed" style="margin-top:8px">
+        <div class="code-block-label">Fix</div>
+        <pre><span class="diff-add">MCP stands for Model Context Protocol — an open standard that
+lets AI clients (like Claude Desktop or Cursor) connect directly
+to external tools and services. SproutOS uses MCP so your AI
+client can read, create, and manage WordPress content from within
+its chat interface.</span></pre>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── P3 SECTION ─────────────────────────────────── -->
+  <div class="section-header">
+    <div class="section-badge p3">P3</div>
+    <div class="section-title-group">
+      <div class="section-title">Polish &amp; Consistency</div>
+      <div class="section-desc">These issues reduce professionalism and copy quality but do not break functionality.</div>
+    </div>
+    <div class="section-count">17 issues</div>
+  </div>
+
+  <!-- Bug 17 — grouped em dashes -->
+  <div class="bug-card p3">
+    <div class="bug-card-header">
+      <span class="bug-severity-pill">P3</span>
+      <div class="bug-title-group">
+        <div class="bug-title">Em dash consistency — 6 locations using hyphen</div>
+        <div class="bug-meta-row">
+          <span class="bug-file">admin-pages.php — multiple lines</span>
+          <span class="bug-area">Copywriting / Punctuation</span>
+        </div>
+      </div>
+    </div>
+    <div class="bug-body">
+      <p class="bug-desc">All six locations use a plain hyphen (<code> - </code>) where an em dash (<code> — </code>) is correct. This is consistent but consistently wrong throughout the file.</p>
+      <table class="affected-table">
+        <thead><tr><th>Location</th><th>Line(s)</th></tr></thead>
+        <tbody>
+          <tr><td>Safe Mode status messages</td><td>1464–1465</td></tr>
+          <tr><td>Settings section headings</td><td>1810, 1915</td></tr>
+          <tr><td>Plugin stack description</td><td>1820</td></tr>
+          <tr><td>Password field label</td><td>2443</td></tr>
+          <tr><td>All troubleshooting tips</td><td>~2904–2930</td></tr>
+          <tr><td>All four ability badge tooltips</td><td>3296–3351</td></tr>
+        </tbody>
+      </table>
+      <div class="code-block current">
+        <div class="code-block-label">Current (examples)</div>
+        <pre><span class="diff-remove">Safe Mode enabled - only read-only abilities are active.
+Server Instructions - Data Shared with AI
+"Connection failed" - Verify your server can reach external ports.
+May perform destructive changes to your environment - enable with care</span></pre>
+      </div>
+      <div class="code-block fixed" style="margin-top:8px">
+        <div class="code-block-label">Fix — replace all  -  with  —  in these locations</div>
+        <pre><span class="diff-add">Safe Mode enabled — only read-only abilities are active.
+Server Instructions — Data Shared with AI
+"Connection failed" — Verify your server can reach external ports.
+May perform destructive changes to your environment — enable with care</span></pre>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bug 18 -->
+  <div class="bug-card p3">
+    <div class="bug-card-header">
+      <span class="bug-severity-pill">P3</span>
+      <div class="bug-title-group">
+        <div class="bug-title">Double space before pipe separators in analytics bar</div>
+        <div class="bug-meta-row">
+          <span class="bug-file">admin-pages.php : 1724</span>
+          <span class="bug-area">Copywriting / Formatting</span>
+        </div>
+      </div>
+    </div>
+    <div class="bug-body">
+      <p class="bug-desc">Two spaces appear before and after each pipe character separator.</p>
+      <div class="code-pair">
+        <div class="code-block current">
+          <div class="code-block-label">Current</div>
+          <pre><span class="diff-remove">Storing %1$s entries (%2$s)  |  Retention: %3$s days  |  Level: %4$s</span></pre>
+        </div>
+        <div class="code-block fixed">
+          <div class="code-block-label">Fix</div>
+          <pre><span class="diff-add">Storing %1$s entries (%2$s) | Retention: %3$s days | Level: %4$s</span></pre>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bug 19 -->
+  <div class="bug-card p3">
+    <div class="bug-card-header">
+      <span class="bug-severity-pill">P3</span>
+      <div class="bug-title-group">
+        <div class="bug-title">AI Memory tab subtitle written for engineers, not site owners</div>
+        <div class="bug-meta-row">
+          <span class="bug-file">admin-pages.php : 466</span>
+          <span class="bug-area">Copywriting / Clarity</span>
+        </div>
+      </div>
+    </div>
+    <div class="bug-body">
+      <p class="bug-desc">"Fetch on demand" and "anchored to the conversation that produced it" are engineering concepts. They have no value to a site owner reading a tab label.</p>
+      <div class="code-block current">
+        <div class="code-block-label">Current</div>
+        <pre><span class="diff-remove">Persistent, audited memory for AI agents — what they always apply,
+what they fetch on demand, what stays anchored to the conversation
+that produced it.</span></pre>
+      </div>
+      <div class="code-block fixed" style="margin-top:8px">
+        <div class="code-block-label">Fix</div>
+        <pre><span class="diff-add">Store rules, context, and preferences that AI agents apply across sessions.</span></pre>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bug 20 -->
+  <div class="bug-card p3">
+    <div class="bug-card-header">
+      <span class="bug-severity-pill">P3</span>
+      <div class="bug-title-group">
+        <div class="bug-title">Sandbox tab description is too vague</div>
+        <div class="bug-meta-row">
+          <span class="bug-file">admin-pages.php : 463</span>
+          <span class="bug-area">Copywriting / Clarity</span>
+        </div>
+      </div>
+    </div>
+    <div class="bug-body">
+      <p class="bug-desc">"Manage custom ability files in the sandbox directory" tells the user nothing about what the Sandbox feature actually does or why they would use it.</p>
+      <div class="code-pair">
+        <div class="code-block current">
+          <div class="code-block-label">Current</div>
+          <pre><span class="diff-remove">Manage custom ability files in
+the sandbox directory.</span></pre>
+        </div>
+        <div class="code-block fixed">
+          <div class="code-block-label">Fix</div>
+          <pre><span class="diff-add">Create and manage custom PHP abilities
+that extend what AI agents can do
+on your site.</span></pre>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bug 21 -->
+  <div class="bug-card p3">
+    <div class="bug-card-header">
+      <span class="bug-severity-pill">P3</span>
+      <div class="bug-title-group">
+        <div class="bug-title">"turned off" vs "disabled" — on/off state inconsistency</div>
+        <div class="bug-meta-row">
+          <span class="bug-file">memory-page.php : 360</span>
+          <span class="bug-area">Copywriting / Consistency</span>
+        </div>
+      </div>
+    </div>
+    <div class="bug-body">
+      <p class="bug-desc">All other on/off state labels across the plugin use "disabled" / "enabled". This heading is the only exception — making the UI feel inconsistent.</p>
+      <div class="code-pair">
+        <div class="code-block current">
+          <div class="code-block-label">Current</div>
+          <pre><span class="diff-remove">AI Memory is turned off</span></pre>
+        </div>
+        <div class="code-block fixed">
+          <div class="code-block-label">Fix</div>
+          <pre><span class="diff-add">AI Memory is disabled</span></pre>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bug 22 -->
+  <div class="bug-card p3">
+    <div class="bug-card-header">
+      <span class="bug-severity-pill">P3</span>
+      <div class="bug-title-group">
+        <div class="bug-title">"Hook" used as copywriting term — ambiguous on a WordPress admin page</div>
+        <div class="bug-meta-row">
+          <span class="bug-file">memory-page.php : 809</span>
+          <span class="bug-area">Copywriting / Clarity</span>
+        </div>
+      </div>
+    </div>
+    <div class="bug-body">
+      <p class="bug-desc">On a WordPress admin page, "hook" reads as a technical WP API term (actions/filters). This field is simply asking for a one-line summary — using "hook" creates unnecessary ambiguity.</p>
+      <div class="code-pair">
+        <div class="code-block current">
+          <div class="code-block-label">Current</div>
+          <pre><span class="diff-remove">One-line hook (10–300 chars).
+Shown in the list — be specific.</span></pre>
+        </div>
+        <div class="code-block fixed">
+          <div class="code-block-label">Fix</div>
+          <pre><span class="diff-add">One-line summary (10–300 chars).
+Shown in the memory list — be specific.</span></pre>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bug 23 -->
+  <div class="bug-card p3">
+    <div class="bug-card-header">
+      <span class="bug-severity-pill">P3</span>
+      <div class="bug-title-group">
+        <div class="bug-title">Datetime placeholder missing seconds</div>
+        <div class="bug-meta-row">
+          <span class="bug-file">memory-page.php : 887</span>
+          <span class="bug-area">Copywriting / Formatting</span>
+        </div>
+      </div>
+    </div>
+    <div class="bug-body">
+      <p class="bug-desc">The expires-at format is shown as <code>YYYY-MM-DD HH:MM</code> which omits seconds. If the underlying field stores seconds, this format instruction will confuse users about what precision is accepted.</p>
+      <div class="code-pair">
+        <div class="code-block current">
+          <div class="code-block-label">Current</div>
+          <pre><span class="diff-remove">YYYY-MM-DD HH:MM. Past values
+mark the memory stale.</span></pre>
+        </div>
+        <div class="code-block fixed">
+          <div class="code-block-label">Fix</div>
+          <pre><span class="diff-add">YYYY-MM-DD HH:MM:SS. Past values
+mark the memory stale.</span></pre>
+        </div>
+      </div>
+      <div class="note"><strong>Note:</strong> Confirm what precision the field actually accepts and document accordingly.</div>
+    </div>
+  </div>
+
+  <!-- Bug 24 -->
+  <div class="bug-card p3">
+    <div class="bug-card-header">
+      <span class="bug-severity-pill">P3</span>
+      <div class="bug-title-group">
+        <div class="bug-title">"← Back to list" uses <code>&amp;larr;</code> instead of SVG icon</div>
+        <div class="bug-meta-row">
+          <span class="bug-file">memory-page.php : 765</span>
+          <span class="bug-area">Copywriting / Visual Consistency</span>
+        </div>
+      </div>
+    </div>
+    <div class="bug-body">
+      <p class="bug-desc"><code>&amp;larr;</code> (←) renders differently across fonts and operating systems. Every other navigation arrow in this admin panel uses an inline SVG icon — this one stands out as visually inconsistent.</p>
+      <div class="note"><strong>Fix:</strong> Replace <code>&amp;larr;</code> with the same inline SVG arrow used elsewhere in the admin, or apply the consistent CSS back-navigation class.</div>
+    </div>
+  </div>
+
+  <!-- Bug 25 -->
+  <div class="bug-card p3">
+    <div class="bug-card-header">
+      <span class="bug-severity-pill">P3</span>
+      <div class="bug-title-group">
+        <div class="bug-title">Abilities category descriptions — inconsistent pattern</div>
+        <div class="bug-meta-row">
+          <span class="bug-file">class-abilities-register.php</span>
+          <span class="bug-area">Copywriting / Consistency</span>
+        </div>
+      </div>
+    </div>
+    <div class="bug-body">
+      <p class="bug-desc">Three categories use three different sentence structures. The Users entry lists internal API verbs (list, get, create) — not language a site owner would use.</p>
+      <table class="affected-table">
+        <thead><tr><th>Category</th><th>Current Description</th></tr></thead>
+        <tbody>
+          <tr><td>Bricks</td><td><code>Bricks Builder specific abilities.</code></td></tr>
+          <tr><td>Elementor</td><td><code>Elementor-specific intelligence abilities.</code></td></tr>
+          <tr><td>Users</td><td><code>User lifecycle abilities (list, get, create, update, delete).</code></td></tr>
+        </tbody>
+      </table>
+      <div class="code-block fixed">
+        <div class="code-block-label">Fix — standardise all to one pattern</div>
+        <pre><span class="diff-add">Bricks Builder–specific abilities.
+Elementor-specific abilities.
+User management abilities — list, view, create, update, and delete users.</span></pre>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bug 26 -->
+  <div class="bug-card p3">
+    <div class="bug-card-header">
+      <span class="bug-severity-pill">P3</span>
+      <div class="bug-title-group">
+        <div class="bug-title">Short description differs between plugin header and readme</div>
+        <div class="bug-meta-row">
+          <span class="bug-file">sprout-os.php vs readme.txt</span>
+          <span class="bug-area">Copywriting / Consistency</span>
+        </div>
+      </div>
+    </div>
+    <div class="bug-body">
+      <p class="bug-desc">WordPress.org may use either file. Both must match. Currently they describe the same plugin differently, which creates an inconsistent impression across the plugin directory.</p>
+      <table class="affected-table">
+        <thead><tr><th>File</th><th>Current Description</th></tr></thead>
+        <tbody>
+          <tr><td><code>sprout-os.php</code></td><td>"AI-powered WordPress workflow tools with admin controls, analytics, notifications, and safer advanced site management."</td></tr>
+          <tr><td><code>readme.txt</code></td><td>"Connect WordPress with AI-powered site tools, admin controls, automation features, analytics, and optional webhook integrations."</td></tr>
+        </tbody>
+      </table>
+      <div class="code-block fixed">
+        <div class="code-block-label">Fix — use in both files</div>
+        <pre><span class="diff-add">AI-powered WordPress workflow tools with admin controls, automation
+features, analytics, and webhook notifications.</span></pre>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bug 27 -->
+  <div class="bug-card p3">
+    <div class="bug-card-header">
+      <span class="bug-severity-pill">P3</span>
+      <div class="bug-title-group">
+        <div class="bug-title">Changelog uses 3 different entry formats across 4 versions</div>
+        <div class="bug-meta-row">
+          <span class="bug-file">readme.txt : 127–171</span>
+          <span class="bug-area">Copywriting / Consistency</span>
+        </div>
+      </div>
+    </div>
+    <div class="bug-body">
+      <p class="bug-desc">Each plugin version uses a different changelog bullet style — making the history log look unprofessional and hard to scan.</p>
+      <table class="affected-table">
+        <thead><tr><th>Version</th><th>Format Used</th></tr></thead>
+        <tbody>
+          <tr><td>v0.1.0</td><td><code>* Add :</code> with space before colon</td></tr>
+          <tr><td>v0.0.3</td><td>Same style + inconsistent blank lines</td></tr>
+          <tr><td>v0.0.2</td><td>Plain <code>*</code> bullets, no category prefix</td></tr>
+          <tr><td>v0.0.1</td><td><code>*</code> bullets with "Added" as verb prefix</td></tr>
+        </tbody>
+      </table>
+      <div class="code-block fixed">
+        <div class="code-block-label">Fix — standardise all versions</div>
+        <pre><span class="diff-add">* Add: Description
+* Improvement: Description
+* Fix: Description</span></pre>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+</body>
+</html>

@@ -1,0 +1,18 @@
+{
+  "bugs": [
+    {
+      "severity": "P0",
+      "area": "Functionality",
+      "title": "Test script fatal error: page.waitForURL: Timeout 20000ms exceeded.\n=========================== logs ===========================\nwaiting for navigation until \"load\"\n============================================================",
+      "steps": [
+        "Running automated QA script"
+      ],
+      "current": "page.waitForURL: Timeout 20000ms exceeded.\n=========================== logs ===========================\nwaiting for navigation until \"load\"\n============================================================",
+      "expected": "Script should complete without fatal errors",
+      "solution": "page.waitForURL: Timeout 20000ms exceeded.\n=========================== logs ===========================\nwaiting for navigation until \"load\"\n============================================================\n    at wpLogin (/Users/devpanchal/wdesignkit-orbit/scripts/test-stacked-hover-images.js:49:14)\n    at async main (/Users/devpanchal/wdesignkit-orbit/scripts/test-stacked-hover-images.js:845:5)"
+    }
+  ],
+  "passed": [],
+  "totalBugs": 1,
+  "totalPassed": 0
+}

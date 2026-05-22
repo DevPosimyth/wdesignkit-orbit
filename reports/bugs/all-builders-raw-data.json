@@ -1,0 +1,1014 @@
+{
+  "Core-Gutenberg": {
+    "url": "https://wdesignkit.com/admin/widgets/widget-builder/12422",
+    "pageTitle": "WDesignKit: All-in-One Tool for WordPress Agencies and Designers",
+    "h1Count": 0,
+    "h1Elements": [],
+    "consoleErrors": [
+      "[JavaScript Error: \"Loading script from “https://wdesignkit.com/_next/static/chunks/worker-css.js” with importScripts() was blocked because of a disallowed MIME type (“text/plain”).\" {file: \"https://wdesignkit.com/admin/widgets/widget-builder/12422\" line: 0}]",
+      "[JavaScript Error: \"Loading script from “https://wdesignkit.com/_next/static/chunks/worker-javascript.js” with importScripts() was blocked because of a disallowed MIME type (“text/plain”).\" {file: \"https://wdesignkit.com/admin/widgets/widget-builder/12422\" line: 0}]",
+      "[JavaScript Error: \"Loading script from “https://wdesignkit.com/_next/static/chunks/worker-html.js” with importScripts() was blocked because of a disallowed MIME type (“text/plain”).\" {file: \"https://wdesignkit.com/admin/widgets/widget-builder/12422\" line: 0}]",
+      "[JavaScript Error: \"Loading script from “https://wdesignkit.com/_next/static/chunks/worker-javascript.js” with importScripts() was blocked because of a disallowed MIME type (“text/plain”).\" {file: \"https://wdesignkit.com/admin/widgets/widget-builder/12421\" line: 0}]",
+      "[JavaScript Error: \"Loading script from “https://wdesignkit.com/_next/static/chunks/worker-css.js” with importScripts() was blocked because of a disallowed MIME type (“text/plain”).\" {file: \"https://wdesignkit.com/admin/widgets/widget-builder/12421\" line: 0}]",
+      "[JavaScript Error: \"Loading script from “https://wdesignkit.com/_next/static/chunks/worker-html.js” with importScripts() was blocked because of a disallowed MIME type (“text/plain”).\" {file: \"https://wdesignkit.com/admin/widgets/widget-builder/12421\" line: 0}]",
+      "[JavaScript Error: \"Loading script from “https://wdesignkit.com/_next/static/chunks/worker-html.js” with importScripts() was blocked because of a disallowed MIME type (“text/plain”).\" {file: \"https://wdesignkit.com/admin/widgets/widget-builder/12416\" line: 0}]",
+      "[JavaScript Error: \"Loading script from “https://wdesignkit.com/_next/static/chunks/worker-javascript.js” with importScripts() was blocked because of a disallowed MIME type (“text/plain”).\" {file: \"https://wdesignkit.com/admin/widgets/widget-builder/12416\" line: 0}]",
+      "[JavaScript Error: \"Loading script from “https://wdesignkit.com/_next/static/chunks/worker-css.js” with importScripts() was blocked because of a disallowed MIME type (“text/plain”).\" {file: \"https://wdesignkit.com/admin/widgets/widget-builder/12416\" line: 0}]",
+      "[JavaScript Error: \"Loading script from “https://wdesignkit.com/_next/static/chunks/worker-css.js” with importScripts() was blocked because of a disallowed MIME type (“text/plain”).\" {file: \"https://wdesignkit.com/admin/widgets/widget-builder/12415\" line: 0}]",
+      "[JavaScript Error: \"Loading script from “https://wdesignkit.com/_next/static/chunks/worker-javascript.js” with importScripts() was blocked because of a disallowed MIME type (“text/plain”).\" {file: \"https://wdesignkit.com/admin/widgets/widget-builder/12415\" line: 0}]",
+      "[JavaScript Error: \"Loading script from “https://wdesignkit.com/_next/static/chunks/worker-html.js” with importScripts() was blocked because of a disallowed MIME type (“text/plain”).\" {file: \"https://wdesignkit.com/admin/widgets/widget-builder/12415\" line: 0}]"
+    ],
+    "networkErrors": [
+      "404 https://wdesignkit.com/_next/static/chunks/worker-css.js",
+      "404 https://wdesignkit.com/_next/static/chunks/worker-javascript.js",
+      "404 https://wdesignkit.com/_next/static/chunks/worker-html.js"
+    ],
+    "workerRequests": [
+      {
+        "url": "https://wdesignkit.com/_next/static/chunks/worker-css.js",
+        "status": 404,
+        "contentType": "text/plain; charset=utf-8"
+      },
+      {
+        "url": "https://wdesignkit.com/_next/static/chunks/worker-javascript.js",
+        "status": 404,
+        "contentType": "text/plain; charset=utf-8"
+      },
+      {
+        "url": "https://wdesignkit.com/_next/static/chunks/worker-html.js",
+        "status": 404,
+        "contentType": "text/plain; charset=utf-8"
+      },
+      {
+        "url": "https://wdesignkit.com/_next/static/chunks/worker-javascript.js",
+        "status": 404,
+        "contentType": "text/plain; charset=utf-8"
+      },
+      {
+        "url": "https://wdesignkit.com/_next/static/chunks/worker-css.js",
+        "status": 404,
+        "contentType": "text/plain; charset=utf-8"
+      },
+      {
+        "url": "https://wdesignkit.com/_next/static/chunks/worker-html.js",
+        "status": 404,
+        "contentType": "text/plain; charset=utf-8"
+      },
+      {
+        "url": "https://wdesignkit.com/_next/static/chunks/worker-html.js",
+        "status": 404,
+        "contentType": "text/plain; charset=utf-8"
+      },
+      {
+        "url": "https://wdesignkit.com/_next/static/chunks/worker-javascript.js",
+        "status": 404,
+        "contentType": "text/plain; charset=utf-8"
+      },
+      {
+        "url": "https://wdesignkit.com/_next/static/chunks/worker-css.js",
+        "status": 404,
+        "contentType": "text/plain; charset=utf-8"
+      },
+      {
+        "url": "https://wdesignkit.com/_next/static/chunks/worker-css.js",
+        "status": 404,
+        "contentType": "text/plain; charset=utf-8"
+      },
+      {
+        "url": "https://wdesignkit.com/_next/static/chunks/worker-javascript.js",
+        "status": 404,
+        "contentType": "text/plain; charset=utf-8"
+      },
+      {
+        "url": "https://wdesignkit.com/_next/static/chunks/worker-html.js",
+        "status": 404,
+        "contentType": "text/plain; charset=utf-8"
+      }
+    ],
+    "duplicateAPIs": [],
+    "toolbar": {
+      "widgetTitle": "NOT FOUND",
+      "backButton": null,
+      "headerButtons": [],
+      "pushButton": {
+        "tag": "BUTTON",
+        "text": "Push",
+        "ariaLabel": "MISSING",
+        "disabled": false
+      },
+      "saveButton": {
+        "tag": "BUTTON",
+        "text": "Save",
+        "ariaLabel": "MISSING",
+        "disabled": true,
+        "className": "wkit-wb-publish-btn wdkit-disable"
+      },
+      "profileImage": null
+    },
+    "editorAudit": {
+      "acePresent": true,
+      "aceTheme": "cobalt",
+      "editorTabsPresent": false,
+      "editorTabs": [
+        {
+          "text": "HTML",
+          "tag": "BUTTON",
+          "role": "NONE"
+        },
+        {
+          "text": "CSS",
+          "tag": "DIV",
+          "role": "NONE"
+        }
+      ],
+      "searchInput": {
+        "tag": "INPUT",
+        "placeholder": "Search"
+      },
+      "statusBar": "NOT FOUND",
+      "editorContentPreview": ""
+    },
+    "panelAudit": {
+      "panelTabs": [
+        {
+          "label": "Controls",
+          "tag": "DIV",
+          "role": "NONE",
+          "tabindex": "NONE"
+        },
+        {
+          "label": "Preview",
+          "tag": "SPAN",
+          "role": "NONE",
+          "tabindex": "NONE"
+        }
+      ],
+      "addControlBtn": null,
+      "groupControlsFound": true,
+      "groupControlsEmpty": false,
+      "addSectionBtn": {
+        "tag": "DIV",
+        "text": "Core widget\nPreview\nCode\nPublish\nPush\nSave\nHTML\nCSS\nJAVASCRIPT\n0\nVariable\n1\n• 0 Characters\n• 1 Line\nLayout\nStyle\nAdd Section\nControls\nEdit\nData Controls\nText\nNumber\nToggle\nColor\nDateTime\nSelect\nGroup Controls\nUnit Controls\nUI Controls\n Watch Video Tutorials\nBuild with AI",
+        "role": "NONE"
+      },
+      "sectionCount": 0,
+      "sectionNames": [],
+      "variablesTabFound": false
+    },
+    "previewAudit": {
+      "previewIframe": false,
+      "previewDiv": null,
+      "deviceToggles": []
+    },
+    "publishAudit": {
+      "publishBtn": {
+        "tag": "DIV",
+        "text": "Core widget\nPreview\nCode\nPublish\nPush\nSa",
+        "role": "NONE",
+        "ariaLabel": "MISSING"
+      },
+      "statusPill": "Draft"
+    },
+    "aiAudit": {
+      "buildWithAIBtn": {
+        "tag": "DIV",
+        "text": "Core widget\nPreview\nCode\nPublish\nPush\nSave\nHTML\nCS",
+        "role": "NONE",
+        "ariaLabel": "MISSING"
+      },
+      "aiPanelPresent": true
+    },
+    "aiPanelAudit": null,
+    "tabSwitchAudit": {
+      "worked": false,
+      "reason": "elementHandle.click: Timeout 30000ms exceeded.\nCall log:\n  - attempting click action\n    2 × waiting for element to be visible, enabled and stable\n      - element is visible, enabled and stable\n      - scrolling into view if needed\n      - done scrolling\n      - <div class=\"ai-chatbox-overlay\">…</div> intercepts pointer events\n    - retrying click action\n    - waiting 20ms\n    2 × waiting for element to be visible, enabled and stable\n      - element is visible, enabled and stable\n      - scrolling into view if needed\n      - done scrolling\n      - <div class=\"ai-chatbox-overlay\">…</div> intercepts pointer events\n    - retrying click action\n      - waiting 100ms\n    58 × waiting for element to be visible, enabled and stable\n       - element is visible, enabled and stable\n       - scrolling into view if needed\n       - done scrolling\n       - <div class=\"ai-chatbox-overlay\">…</div> intercepts pointer events\n     - retrying click action\n       - waiting 500ms\n"
+    },
+    "varTabAudit": {
+      "found": false
+    },
+    "publishDropAudit": {
+      "error": "elementHandle.click: Timeout 30000ms exceeded.\nCall log:\n  - attempting click action\n    2 × waiting for element to be visible, enabled and stable\n      - element is visible, enabled and stable\n      - scrolling into view if needed\n      - done scrolling\n      - <div class=\"ai-chatbox-overlay\">…</div> intercepts pointer events\n    - retrying click action\n    - waiting 20ms\n    2 × waiting for element to be visible, enabled and stable\n      - element is visible, enabled and stable\n      - scrolling into view if needed\n      - done scrolling\n      - <div class=\"ai-chatbox-overlay\">…</div> intercepts pointer events\n    - retrying click action\n      - waiting 100ms\n    57 × waiting for element to be visible, enabled and stable\n       - element is visible, enabled and stable\n       - scrolling into view if needed\n       - done scrolling\n       - <div class=\"ai-chatbox-overlay\">…</div> intercepts pointer events\n     - retrying click action\n       - waiting 500ms\n"
+    },
+    "addSectionAudit": {
+      "error": "elementHandle.click: Timeout 30000ms exceeded.\nCall log:\n  - attempting click action\n    2 × waiting for element to be visible, enabled and stable\n      - element is visible, enabled and stable\n      - scrolling into view if needed\n      - done scrolling\n      - <div class=\"ai-chatbox-overlay\">…</div> intercepts pointer events\n    - retrying click action\n    - waiting 20ms\n    2 × waiting for element to be visible, enabled and stable\n      - element is visible, enabled and stable\n      - scrolling into view if needed\n      - done scrolling\n      - <div class=\"ai-chatbox-overlay\">…</div> intercepts pointer events\n    - retrying click action\n      - waiting 100ms\n    58 × waiting for element to be visible, enabled and stable\n       - element is visible, enabled and stable\n       - scrolling into view if needed\n       - done scrolling\n       - <div class=\"ai-chatbox-overlay\">…</div> intercepts pointer events\n     - retrying click action\n       - waiting 500ms\n"
+    },
+    "a11yAudit": {
+      "interactiveSpansCount": 32,
+      "interactiveSpansSample": [
+        {
+          "text": "Preview",
+          "className": "flex items-center gap-2 px-2 py-1 cursor-pointer transition-",
+          "role": "MISSING",
+          "tabindex": "MISSING",
+          "ariaLabel": "MISSING"
+        },
+        {
+          "text": "Code",
+          "className": "flex items-center gap-2 px-2 py-1 cursor-pointer transition-",
+          "role": "MISSING",
+          "tabindex": "MISSING",
+          "ariaLabel": "MISSING"
+        },
+        {
+          "text": "Publish",
+          "className": "output",
+          "role": "MISSING",
+          "tabindex": "MISSING",
+          "ariaLabel": "MISSING"
+        },
+        {
+          "text": "Draft",
+          "className": "",
+          "role": "MISSING",
+          "tabindex": "MISSING",
+          "ariaLabel": "MISSING"
+        },
+        {
+          "text": "Publish",
+          "className": "",
+          "role": "MISSING",
+          "tabindex": "MISSING",
+          "ariaLabel": "MISSING"
+        },
+        {
+          "text": "Push",
+          "className": "",
+          "role": "MISSING",
+          "tabindex": "MISSING",
+          "ariaLabel": "MISSING"
+        },
+        {
+          "text": "HTML",
+          "className": "wkit-wb-editor-btns-label",
+          "role": "MISSING",
+          "tabindex": "MISSING",
+          "ariaLabel": "MISSING"
+        },
+        {
+          "text": "CSS",
+          "className": "wkit-wb-editor-btns-label",
+          "role": "MISSING",
+          "tabindex": "MISSING",
+          "ariaLabel": "MISSING"
+        }
+      ],
+      "imgsNoAltCount": 5,
+      "imgsNoAltSample": [
+        {
+          "src": "https://api.wdesignkit.com/images/website/widget-builder/wb-svg/elementor.webp",
+          "context": "wkit-wb-plus-icon wkit-elementor-icon"
+        },
+        {
+          "src": "https://api.wdesignkit.com/images/website/widget-builder/wb-svg/gutenberg.webp",
+          "context": "wkit-wb-plus-icon wkit-gutenberg-icon"
+        },
+        {
+          "src": "https://api.wdesignkit.com/images/website/widget-builder/wb-svg/gutenberg-core.w",
+          "context": "wkit-wb-plus-icon wkit-gutenberg-core-icon"
+        },
+        {
+          "src": "https://api.wdesignkit.com/images/website/widget-builder/wb-svg/bricks.webp",
+          "context": "wkit-wb-plus-icon wkit-bricks-icon"
+        },
+        {
+          "src": "https://api.wdesignkit.com/images/website/widget-builder/wb-svg/error_info.webp",
+          "context": "wkit-wb-loopError-icon"
+        }
+      ],
+      "unnamedBtnsCount": 0,
+      "unnamedBtnsSample": []
+    }
+  },
+  "Bricks": {
+    "url": "https://wdesignkit.com/admin/widgets/widget-builder/12421",
+    "pageTitle": "WDesignKit: All-in-One Tool for WordPress Agencies and Designers",
+    "h1Count": 0,
+    "h1Elements": [],
+    "consoleErrors": [
+      "[JavaScript Error: \"Loading script from “https://wdesignkit.com/_next/static/chunks/worker-javascript.js” with importScripts() was blocked because of a disallowed MIME type (“text/plain”).\" {file: \"https://wdesignkit.com/admin/widgets/widget-builder/12421\" line: 0}]",
+      "[JavaScript Error: \"Loading script from “https://wdesignkit.com/_next/static/chunks/worker-css.js” with importScripts() was blocked because of a disallowed MIME type (“text/plain”).\" {file: \"https://wdesignkit.com/admin/widgets/widget-builder/12421\" line: 0}]",
+      "[JavaScript Error: \"Loading script from “https://wdesignkit.com/_next/static/chunks/worker-html.js” with importScripts() was blocked because of a disallowed MIME type (“text/plain”).\" {file: \"https://wdesignkit.com/admin/widgets/widget-builder/12421\" line: 0}]",
+      "[JavaScript Error: \"Loading script from “https://wdesignkit.com/_next/static/chunks/worker-html.js” with importScripts() was blocked because of a disallowed MIME type (“text/plain”).\" {file: \"https://wdesignkit.com/admin/widgets/widget-builder/12416\" line: 0}]",
+      "[JavaScript Error: \"Loading script from “https://wdesignkit.com/_next/static/chunks/worker-javascript.js” with importScripts() was blocked because of a disallowed MIME type (“text/plain”).\" {file: \"https://wdesignkit.com/admin/widgets/widget-builder/12416\" line: 0}]",
+      "[JavaScript Error: \"Loading script from “https://wdesignkit.com/_next/static/chunks/worker-css.js” with importScripts() was blocked because of a disallowed MIME type (“text/plain”).\" {file: \"https://wdesignkit.com/admin/widgets/widget-builder/12416\" line: 0}]",
+      "[JavaScript Error: \"Loading script from “https://wdesignkit.com/_next/static/chunks/worker-css.js” with importScripts() was blocked because of a disallowed MIME type (“text/plain”).\" {file: \"https://wdesignkit.com/admin/widgets/widget-builder/12415\" line: 0}]",
+      "[JavaScript Error: \"Loading script from “https://wdesignkit.com/_next/static/chunks/worker-javascript.js” with importScripts() was blocked because of a disallowed MIME type (“text/plain”).\" {file: \"https://wdesignkit.com/admin/widgets/widget-builder/12415\" line: 0}]",
+      "[JavaScript Error: \"Loading script from “https://wdesignkit.com/_next/static/chunks/worker-html.js” with importScripts() was blocked because of a disallowed MIME type (“text/plain”).\" {file: \"https://wdesignkit.com/admin/widgets/widget-builder/12415\" line: 0}]"
+    ],
+    "networkErrors": [
+      "404 https://wdesignkit.com/_next/static/chunks/worker-javascript.js",
+      "404 https://wdesignkit.com/_next/static/chunks/worker-css.js",
+      "404 https://wdesignkit.com/_next/static/chunks/worker-html.js"
+    ],
+    "workerRequests": [
+      {
+        "url": "https://wdesignkit.com/_next/static/chunks/worker-javascript.js",
+        "status": 404,
+        "contentType": "text/plain; charset=utf-8"
+      },
+      {
+        "url": "https://wdesignkit.com/_next/static/chunks/worker-css.js",
+        "status": 404,
+        "contentType": "text/plain; charset=utf-8"
+      },
+      {
+        "url": "https://wdesignkit.com/_next/static/chunks/worker-html.js",
+        "status": 404,
+        "contentType": "text/plain; charset=utf-8"
+      },
+      {
+        "url": "https://wdesignkit.com/_next/static/chunks/worker-html.js",
+        "status": 404,
+        "contentType": "text/plain; charset=utf-8"
+      },
+      {
+        "url": "https://wdesignkit.com/_next/static/chunks/worker-javascript.js",
+        "status": 404,
+        "contentType": "text/plain; charset=utf-8"
+      },
+      {
+        "url": "https://wdesignkit.com/_next/static/chunks/worker-css.js",
+        "status": 404,
+        "contentType": "text/plain; charset=utf-8"
+      },
+      {
+        "url": "https://wdesignkit.com/_next/static/chunks/worker-css.js",
+        "status": 404,
+        "contentType": "text/plain; charset=utf-8"
+      },
+      {
+        "url": "https://wdesignkit.com/_next/static/chunks/worker-javascript.js",
+        "status": 404,
+        "contentType": "text/plain; charset=utf-8"
+      },
+      {
+        "url": "https://wdesignkit.com/_next/static/chunks/worker-html.js",
+        "status": 404,
+        "contentType": "text/plain; charset=utf-8"
+      }
+    ],
+    "duplicateAPIs": [],
+    "toolbar": {
+      "widgetTitle": "NOT FOUND",
+      "backButton": null,
+      "headerButtons": [],
+      "pushButton": {
+        "tag": "BUTTON",
+        "text": "Push",
+        "ariaLabel": "MISSING",
+        "disabled": false
+      },
+      "saveButton": {
+        "tag": "BUTTON",
+        "text": "Save",
+        "ariaLabel": "MISSING",
+        "disabled": true,
+        "className": "wkit-wb-publish-btn wdkit-disable"
+      },
+      "profileImage": null
+    },
+    "editorAudit": {
+      "acePresent": true,
+      "aceTheme": "cobalt",
+      "editorTabsPresent": false,
+      "editorTabs": [
+        {
+          "text": "HTML",
+          "tag": "BUTTON",
+          "role": "NONE"
+        },
+        {
+          "text": "CSS",
+          "tag": "DIV",
+          "role": "NONE"
+        }
+      ],
+      "searchInput": {
+        "tag": "INPUT",
+        "placeholder": "Search"
+      },
+      "statusBar": "NOT FOUND",
+      "editorContentPreview": ""
+    },
+    "panelAudit": {
+      "panelTabs": [
+        {
+          "label": "Controls",
+          "tag": "DIV",
+          "role": "NONE",
+          "tabindex": "NONE"
+        },
+        {
+          "label": "Preview",
+          "tag": "SPAN",
+          "role": "NONE",
+          "tabindex": "NONE"
+        }
+      ],
+      "addControlBtn": null,
+      "groupControlsFound": true,
+      "groupControlsEmpty": false,
+      "addSectionBtn": {
+        "tag": "DIV",
+        "text": "Bricks widget\nPreview\nCode\nPublish\nPush\nSave\nHTML\nCSS\nJAVASCRIPT\n0\nVariable\n1\n• 0 Characters\n• 1 Line\nLayout\nStyle\nAdd Section\nControls\nEdit\nData Controls\nText\nNumber\nTextarea\nWYSIWYG\nCheckbox\nDropDown\nMultiSelect\nAlign\nColor\nGradientColor\nDateTime\nGallery\nRepeater\nDynamic Controls\nMultivalue Controls\nUnit Controls\nUI Controls\nGroup Controls\n Watch Video Tutorials\nBuild with AI",
+        "role": "NONE"
+      },
+      "sectionCount": 0,
+      "sectionNames": [],
+      "variablesTabFound": false
+    },
+    "previewAudit": {
+      "previewIframe": false,
+      "previewDiv": null,
+      "deviceToggles": []
+    },
+    "publishAudit": {
+      "publishBtn": {
+        "tag": "DIV",
+        "text": "Bricks widget\nPreview\nCode\nPublish\nPush\n",
+        "role": "NONE",
+        "ariaLabel": "MISSING"
+      },
+      "statusPill": "Draft"
+    },
+    "aiAudit": {
+      "buildWithAIBtn": {
+        "tag": "DIV",
+        "text": "Bricks widget\nPreview\nCode\nPublish\nPush\nSave\nHTML\n",
+        "role": "NONE",
+        "ariaLabel": "MISSING"
+      },
+      "aiPanelPresent": true
+    },
+    "aiPanelAudit": null,
+    "tabSwitchAudit": {
+      "worked": false,
+      "reason": "elementHandle.click: Timeout 30000ms exceeded.\nCall log:\n  - attempting click action\n    2 × waiting for element to be visible, enabled and stable\n      - element is visible, enabled and stable\n      - scrolling into view if needed\n      - done scrolling\n      - <div class=\"ai-chatbox-overlay\">…</div> intercepts pointer events\n    - retrying click action\n    - waiting 20ms\n    2 × waiting for element to be visible, enabled and stable\n      - element is visible, enabled and stable\n      - scrolling into view if needed\n      - done scrolling\n      - <div class=\"ai-chatbox-overlay\">…</div> intercepts pointer events\n    - retrying click action\n      - waiting 100ms\n    57 × waiting for element to be visible, enabled and stable\n       - element is visible, enabled and stable\n       - scrolling into view if needed\n       - done scrolling\n       - <div class=\"ai-chatbox-overlay\">…</div> intercepts pointer events\n     - retrying click action\n       - waiting 500ms\n"
+    },
+    "varTabAudit": {
+      "found": false
+    },
+    "publishDropAudit": {
+      "error": "elementHandle.click: Timeout 30000ms exceeded.\nCall log:\n  - attempting click action\n    2 × waiting for element to be visible, enabled and stable\n      - element is visible, enabled and stable\n      - scrolling into view if needed\n      - done scrolling\n      - <div class=\"ai-chatbox-overlay\">…</div> intercepts pointer events\n    - retrying click action\n    - waiting 20ms\n    2 × waiting for element to be visible, enabled and stable\n      - element is visible, enabled and stable\n      - scrolling into view if needed\n      - done scrolling\n      - <div class=\"ai-chatbox-overlay\">…</div> intercepts pointer events\n    - retrying click action\n      - waiting 100ms\n    57 × waiting for element to be visible, enabled and stable\n       - element is visible, enabled and stable\n       - scrolling into view if needed\n       - done scrolling\n       - <div class=\"ai-chatbox-overlay\">…</div> intercepts pointer events\n     - retrying click action\n       - waiting 500ms\n"
+    },
+    "addSectionAudit": {
+      "error": "elementHandle.click: Timeout 30000ms exceeded.\nCall log:\n  - attempting click action\n    2 × waiting for element to be visible, enabled and stable\n      - element is visible, enabled and stable\n      - scrolling into view if needed\n      - done scrolling\n      - <div class=\"ai-chatbox-overlay\">…</div> intercepts pointer events\n    - retrying click action\n    - waiting 20ms\n    2 × waiting for element to be visible, enabled and stable\n      - element is visible, enabled and stable\n      - scrolling into view if needed\n      - done scrolling\n      - <div class=\"ai-chatbox-overlay\">…</div> intercepts pointer events\n    - retrying click action\n      - waiting 100ms\n    58 × waiting for element to be visible, enabled and stable\n       - element is visible, enabled and stable\n       - scrolling into view if needed\n       - done scrolling\n       - <div class=\"ai-chatbox-overlay\">…</div> intercepts pointer events\n     - retrying click action\n       - waiting 500ms\n"
+    },
+    "a11yAudit": {
+      "interactiveSpansCount": 53,
+      "interactiveSpansSample": [
+        {
+          "text": "Preview",
+          "className": "flex items-center gap-2 px-2 py-1 cursor-pointer transition-",
+          "role": "MISSING",
+          "tabindex": "MISSING",
+          "ariaLabel": "MISSING"
+        },
+        {
+          "text": "Code",
+          "className": "flex items-center gap-2 px-2 py-1 cursor-pointer transition-",
+          "role": "MISSING",
+          "tabindex": "MISSING",
+          "ariaLabel": "MISSING"
+        },
+        {
+          "text": "Publish",
+          "className": "output",
+          "role": "MISSING",
+          "tabindex": "MISSING",
+          "ariaLabel": "MISSING"
+        },
+        {
+          "text": "Draft",
+          "className": "",
+          "role": "MISSING",
+          "tabindex": "MISSING",
+          "ariaLabel": "MISSING"
+        },
+        {
+          "text": "Publish",
+          "className": "",
+          "role": "MISSING",
+          "tabindex": "MISSING",
+          "ariaLabel": "MISSING"
+        },
+        {
+          "text": "Push",
+          "className": "",
+          "role": "MISSING",
+          "tabindex": "MISSING",
+          "ariaLabel": "MISSING"
+        },
+        {
+          "text": "HTML",
+          "className": "wkit-wb-editor-btns-label",
+          "role": "MISSING",
+          "tabindex": "MISSING",
+          "ariaLabel": "MISSING"
+        },
+        {
+          "text": "CSS",
+          "className": "wkit-wb-editor-btns-label",
+          "role": "MISSING",
+          "tabindex": "MISSING",
+          "ariaLabel": "MISSING"
+        }
+      ],
+      "imgsNoAltCount": 5,
+      "imgsNoAltSample": [
+        {
+          "src": "https://api.wdesignkit.com/images/website/widget-builder/wb-svg/elementor.webp",
+          "context": "wkit-wb-plus-icon wkit-elementor-icon"
+        },
+        {
+          "src": "https://api.wdesignkit.com/images/website/widget-builder/wb-svg/gutenberg.webp",
+          "context": "wkit-wb-plus-icon wkit-gutenberg-icon"
+        },
+        {
+          "src": "https://api.wdesignkit.com/images/website/widget-builder/wb-svg/gutenberg-core.w",
+          "context": "wkit-wb-plus-icon wkit-gutenberg-core-icon"
+        },
+        {
+          "src": "https://api.wdesignkit.com/images/website/widget-builder/wb-svg/bricks.webp",
+          "context": "wkit-wb-plus-icon wkit-bricks-icon"
+        },
+        {
+          "src": "https://api.wdesignkit.com/images/website/widget-builder/wb-svg/error_info.webp",
+          "context": "wkit-wb-loopError-icon"
+        }
+      ],
+      "unnamedBtnsCount": 0,
+      "unnamedBtnsSample": []
+    }
+  },
+  "Push-Core": {
+    "url": "https://wdesignkit.com/admin/widgets/widget-builder/12416",
+    "pageTitle": "WDesignKit: All-in-One Tool for WordPress Agencies and Designers",
+    "h1Count": 0,
+    "h1Elements": [],
+    "consoleErrors": [
+      "[JavaScript Error: \"Loading script from “https://wdesignkit.com/_next/static/chunks/worker-html.js” with importScripts() was blocked because of a disallowed MIME type (“text/plain”).\" {file: \"https://wdesignkit.com/admin/widgets/widget-builder/12416\" line: 0}]",
+      "[JavaScript Error: \"Loading script from “https://wdesignkit.com/_next/static/chunks/worker-javascript.js” with importScripts() was blocked because of a disallowed MIME type (“text/plain”).\" {file: \"https://wdesignkit.com/admin/widgets/widget-builder/12416\" line: 0}]",
+      "[JavaScript Error: \"Loading script from “https://wdesignkit.com/_next/static/chunks/worker-css.js” with importScripts() was blocked because of a disallowed MIME type (“text/plain”).\" {file: \"https://wdesignkit.com/admin/widgets/widget-builder/12416\" line: 0}]",
+      "[JavaScript Error: \"Loading script from “https://wdesignkit.com/_next/static/chunks/worker-css.js” with importScripts() was blocked because of a disallowed MIME type (“text/plain”).\" {file: \"https://wdesignkit.com/admin/widgets/widget-builder/12415\" line: 0}]",
+      "[JavaScript Error: \"Loading script from “https://wdesignkit.com/_next/static/chunks/worker-javascript.js” with importScripts() was blocked because of a disallowed MIME type (“text/plain”).\" {file: \"https://wdesignkit.com/admin/widgets/widget-builder/12415\" line: 0}]",
+      "[JavaScript Error: \"Loading script from “https://wdesignkit.com/_next/static/chunks/worker-html.js” with importScripts() was blocked because of a disallowed MIME type (“text/plain”).\" {file: \"https://wdesignkit.com/admin/widgets/widget-builder/12415\" line: 0}]"
+    ],
+    "networkErrors": [
+      "404 https://wdesignkit.com/_next/static/chunks/worker-html.js",
+      "404 https://wdesignkit.com/_next/static/chunks/worker-javascript.js",
+      "404 https://wdesignkit.com/_next/static/chunks/worker-css.js"
+    ],
+    "workerRequests": [
+      {
+        "url": "https://wdesignkit.com/_next/static/chunks/worker-html.js",
+        "status": 404,
+        "contentType": "text/plain; charset=utf-8"
+      },
+      {
+        "url": "https://wdesignkit.com/_next/static/chunks/worker-javascript.js",
+        "status": 404,
+        "contentType": "text/plain; charset=utf-8"
+      },
+      {
+        "url": "https://wdesignkit.com/_next/static/chunks/worker-css.js",
+        "status": 404,
+        "contentType": "text/plain; charset=utf-8"
+      },
+      {
+        "url": "https://wdesignkit.com/_next/static/chunks/worker-css.js",
+        "status": 404,
+        "contentType": "text/plain; charset=utf-8"
+      },
+      {
+        "url": "https://wdesignkit.com/_next/static/chunks/worker-javascript.js",
+        "status": 404,
+        "contentType": "text/plain; charset=utf-8"
+      },
+      {
+        "url": "https://wdesignkit.com/_next/static/chunks/worker-html.js",
+        "status": 404,
+        "contentType": "text/plain; charset=utf-8"
+      }
+    ],
+    "duplicateAPIs": [],
+    "toolbar": {
+      "widgetTitle": "NOT FOUND",
+      "backButton": null,
+      "headerButtons": [],
+      "pushButton": {
+        "tag": "SPAN",
+        "text": "Push Core",
+        "ariaLabel": "MISSING",
+        "disabled": false
+      },
+      "saveButton": {
+        "tag": "BUTTON",
+        "text": "Save",
+        "ariaLabel": "MISSING",
+        "disabled": true,
+        "className": "wkit-wb-publish-btn wdkit-disable"
+      },
+      "profileImage": null
+    },
+    "editorAudit": {
+      "acePresent": true,
+      "aceTheme": "cobalt",
+      "editorTabsPresent": false,
+      "editorTabs": [
+        {
+          "text": "HTML",
+          "tag": "BUTTON",
+          "role": "NONE"
+        },
+        {
+          "text": "CSS",
+          "tag": "DIV",
+          "role": "NONE"
+        }
+      ],
+      "searchInput": {
+        "tag": "INPUT",
+        "placeholder": "Search"
+      },
+      "statusBar": "NOT FOUND",
+      "editorContentPreview": ""
+    },
+    "panelAudit": {
+      "panelTabs": [
+        {
+          "label": "Controls",
+          "tag": "DIV",
+          "role": "NONE",
+          "tabindex": "NONE"
+        },
+        {
+          "label": "Preview",
+          "tag": "SPAN",
+          "role": "NONE",
+          "tabindex": "NONE"
+        }
+      ],
+      "addControlBtn": null,
+      "groupControlsFound": true,
+      "groupControlsEmpty": false,
+      "addSectionBtn": {
+        "tag": "DIV",
+        "text": "Push Core\nPreview\nCode\nPublish\nPush\nSave\nHTML\nCSS\nJAVASCRIPT\n0\nVariable\n1\n• 0 Characters\n• 1 Line\nLayout\nStyle\nAdd Section\nControls\nEdit\nData Controls\nText\nNumber\nToggle\nColor\nDateTime\nSelect\nGroup Controls\nUnit Controls\nUI Controls\n Watch Video Tutorials\nBuild with AI",
+        "role": "NONE"
+      },
+      "sectionCount": 0,
+      "sectionNames": [],
+      "variablesTabFound": false
+    },
+    "previewAudit": {
+      "previewIframe": false,
+      "previewDiv": null,
+      "deviceToggles": []
+    },
+    "publishAudit": {
+      "publishBtn": {
+        "tag": "DIV",
+        "text": "Push Core\nPreview\nCode\nPublish\nPush\nSave",
+        "role": "NONE",
+        "ariaLabel": "MISSING"
+      },
+      "statusPill": "Draft"
+    },
+    "aiAudit": {
+      "buildWithAIBtn": {
+        "tag": "DIV",
+        "text": "Push Core\nPreview\nCode\nPublish\nPush\nSave\nHTML\nCSS\n",
+        "role": "NONE",
+        "ariaLabel": "MISSING"
+      },
+      "aiPanelPresent": true
+    },
+    "aiPanelAudit": null,
+    "tabSwitchAudit": {
+      "worked": false,
+      "reason": "elementHandle.click: Timeout 30000ms exceeded.\nCall log:\n  - attempting click action\n    2 × waiting for element to be visible, enabled and stable\n      - element is visible, enabled and stable\n      - scrolling into view if needed\n      - done scrolling\n      - <div class=\"ai-chatbox-overlay\">…</div> intercepts pointer events\n    - retrying click action\n    - waiting 20ms\n    2 × waiting for element to be visible, enabled and stable\n      - element is visible, enabled and stable\n      - scrolling into view if needed\n      - done scrolling\n      - <div class=\"ai-chatbox-overlay\">…</div> intercepts pointer events\n    - retrying click action\n      - waiting 100ms\n    58 × waiting for element to be visible, enabled and stable\n       - element is visible, enabled and stable\n       - scrolling into view if needed\n       - done scrolling\n       - <div class=\"ai-chatbox-overlay\">…</div> intercepts pointer events\n     - retrying click action\n       - waiting 500ms\n"
+    },
+    "varTabAudit": {
+      "found": false
+    },
+    "publishDropAudit": {
+      "error": "elementHandle.click: Timeout 30000ms exceeded.\nCall log:\n  - attempting click action\n    2 × waiting for element to be visible, enabled and stable\n      - element is visible, enabled and stable\n      - scrolling into view if needed\n      - done scrolling\n      - <div class=\"ai-chatbox-overlay\">…</div> intercepts pointer events\n    - retrying click action\n    - waiting 20ms\n    2 × waiting for element to be visible, enabled and stable\n      - element is visible, enabled and stable\n      - scrolling into view if needed\n      - done scrolling\n      - <div class=\"ai-chatbox-overlay\">…</div> intercepts pointer events\n    - retrying click action\n      - waiting 100ms\n    58 × waiting for element to be visible, enabled and stable\n       - element is visible, enabled and stable\n       - scrolling into view if needed\n       - done scrolling\n       - <div class=\"ai-chatbox-overlay\">…</div> intercepts pointer events\n     - retrying click action\n       - waiting 500ms\n"
+    },
+    "addSectionAudit": {
+      "error": "elementHandle.click: Timeout 30000ms exceeded.\nCall log:\n  - attempting click action\n    2 × waiting for element to be visible, enabled and stable\n      - element is visible, enabled and stable\n      - scrolling into view if needed\n      - done scrolling\n      - <div class=\"ai-chatbox-overlay\">…</div> intercepts pointer events\n    - retrying click action\n    - waiting 20ms\n    2 × waiting for element to be visible, enabled and stable\n      - element is visible, enabled and stable\n      - scrolling into view if needed\n      - done scrolling\n      - <div class=\"ai-chatbox-overlay\">…</div> intercepts pointer events\n    - retrying click action\n      - waiting 100ms\n    57 × waiting for element to be visible, enabled and stable\n       - element is visible, enabled and stable\n       - scrolling into view if needed\n       - done scrolling\n       - <div class=\"ai-chatbox-overlay\">…</div> intercepts pointer events\n     - retrying click action\n       - waiting 500ms\n"
+    },
+    "a11yAudit": {
+      "interactiveSpansCount": 32,
+      "interactiveSpansSample": [
+        {
+          "text": "Preview",
+          "className": "flex items-center gap-2 px-2 py-1 cursor-pointer transition-",
+          "role": "MISSING",
+          "tabindex": "MISSING",
+          "ariaLabel": "MISSING"
+        },
+        {
+          "text": "Code",
+          "className": "flex items-center gap-2 px-2 py-1 cursor-pointer transition-",
+          "role": "MISSING",
+          "tabindex": "MISSING",
+          "ariaLabel": "MISSING"
+        },
+        {
+          "text": "Publish",
+          "className": "output",
+          "role": "MISSING",
+          "tabindex": "MISSING",
+          "ariaLabel": "MISSING"
+        },
+        {
+          "text": "Draft",
+          "className": "",
+          "role": "MISSING",
+          "tabindex": "MISSING",
+          "ariaLabel": "MISSING"
+        },
+        {
+          "text": "Publish",
+          "className": "",
+          "role": "MISSING",
+          "tabindex": "MISSING",
+          "ariaLabel": "MISSING"
+        },
+        {
+          "text": "Push",
+          "className": "",
+          "role": "MISSING",
+          "tabindex": "MISSING",
+          "ariaLabel": "MISSING"
+        },
+        {
+          "text": "HTML",
+          "className": "wkit-wb-editor-btns-label",
+          "role": "MISSING",
+          "tabindex": "MISSING",
+          "ariaLabel": "MISSING"
+        },
+        {
+          "text": "CSS",
+          "className": "wkit-wb-editor-btns-label",
+          "role": "MISSING",
+          "tabindex": "MISSING",
+          "ariaLabel": "MISSING"
+        }
+      ],
+      "imgsNoAltCount": 5,
+      "imgsNoAltSample": [
+        {
+          "src": "https://api.wdesignkit.com/images/website/widget-builder/wb-svg/elementor.webp",
+          "context": "wkit-wb-plus-icon wkit-elementor-icon"
+        },
+        {
+          "src": "https://api.wdesignkit.com/images/website/widget-builder/wb-svg/gutenberg.webp",
+          "context": "wkit-wb-plus-icon wkit-gutenberg-icon"
+        },
+        {
+          "src": "https://api.wdesignkit.com/images/website/widget-builder/wb-svg/gutenberg-core.w",
+          "context": "wkit-wb-plus-icon wkit-gutenberg-core-icon"
+        },
+        {
+          "src": "https://api.wdesignkit.com/images/website/widget-builder/wb-svg/bricks.webp",
+          "context": "wkit-wb-plus-icon wkit-bricks-icon"
+        },
+        {
+          "src": "https://api.wdesignkit.com/images/website/widget-builder/wb-svg/error_info.webp",
+          "context": "wkit-wb-loopError-icon"
+        }
+      ],
+      "unnamedBtnsCount": 0,
+      "unnamedBtnsSample": []
+    }
+  },
+  "Push-Elementor": {
+    "url": "https://wdesignkit.com/admin/widgets/widget-builder/12415",
+    "pageTitle": "WDesignKit: All-in-One Tool for WordPress Agencies and Designers",
+    "h1Count": 0,
+    "h1Elements": [],
+    "consoleErrors": [
+      "[JavaScript Error: \"Loading script from “https://wdesignkit.com/_next/static/chunks/worker-css.js” with importScripts() was blocked because of a disallowed MIME type (“text/plain”).\" {file: \"https://wdesignkit.com/admin/widgets/widget-builder/12415\" line: 0}]",
+      "[JavaScript Error: \"Loading script from “https://wdesignkit.com/_next/static/chunks/worker-javascript.js” with importScripts() was blocked because of a disallowed MIME type (“text/plain”).\" {file: \"https://wdesignkit.com/admin/widgets/widget-builder/12415\" line: 0}]",
+      "[JavaScript Error: \"Loading script from “https://wdesignkit.com/_next/static/chunks/worker-html.js” with importScripts() was blocked because of a disallowed MIME type (“text/plain”).\" {file: \"https://wdesignkit.com/admin/widgets/widget-builder/12415\" line: 0}]"
+    ],
+    "networkErrors": [
+      "404 https://wdesignkit.com/_next/static/chunks/worker-css.js",
+      "404 https://wdesignkit.com/_next/static/chunks/worker-javascript.js",
+      "404 https://wdesignkit.com/_next/static/chunks/worker-html.js"
+    ],
+    "workerRequests": [
+      {
+        "url": "https://wdesignkit.com/_next/static/chunks/worker-css.js",
+        "status": 404,
+        "contentType": "text/plain; charset=utf-8"
+      },
+      {
+        "url": "https://wdesignkit.com/_next/static/chunks/worker-javascript.js",
+        "status": 404,
+        "contentType": "text/plain; charset=utf-8"
+      },
+      {
+        "url": "https://wdesignkit.com/_next/static/chunks/worker-html.js",
+        "status": 404,
+        "contentType": "text/plain; charset=utf-8"
+      }
+    ],
+    "duplicateAPIs": [],
+    "toolbar": {
+      "widgetTitle": "NOT FOUND",
+      "backButton": null,
+      "headerButtons": [],
+      "pushButton": {
+        "tag": "SPAN",
+        "text": "Push Elementor",
+        "ariaLabel": "MISSING",
+        "disabled": false
+      },
+      "saveButton": {
+        "tag": "BUTTON",
+        "text": "Save",
+        "ariaLabel": "MISSING",
+        "disabled": true,
+        "className": "wkit-wb-publish-btn wdkit-disable"
+      },
+      "profileImage": null
+    },
+    "editorAudit": {
+      "acePresent": true,
+      "aceTheme": "cobalt",
+      "editorTabsPresent": false,
+      "editorTabs": [
+        {
+          "text": "HTML",
+          "tag": "BUTTON",
+          "role": "NONE"
+        },
+        {
+          "text": "CSS",
+          "tag": "DIV",
+          "role": "NONE"
+        }
+      ],
+      "searchInput": {
+        "tag": "INPUT",
+        "placeholder": "Search"
+      },
+      "statusBar": "NOT FOUND",
+      "editorContentPreview": ""
+    },
+    "panelAudit": {
+      "panelTabs": [
+        {
+          "label": "Controls",
+          "tag": "DIV",
+          "role": "NONE",
+          "tabindex": "NONE"
+        },
+        {
+          "label": "Preview",
+          "tag": "SPAN",
+          "role": "NONE",
+          "tabindex": "NONE"
+        }
+      ],
+      "addControlBtn": null,
+      "groupControlsFound": true,
+      "groupControlsEmpty": false,
+      "addSectionBtn": {
+        "tag": "DIV",
+        "text": "Push Elementor\nPreview\nCode\nPublish\nPush\nSave\nHTML\nCSS\nJAVASCRIPT\n0\nVariable\n1\n• 0 Characters\n• 1 Line\nLayout\nStyle\nAdd Section\nControls\nEdit\nData Controls\nText\nNumber\nTextarea\nWYSIWYG\nSwitcher\nPopover\nSelect\nSelect2\nChoose\nColor\nDateTime\nGallery\nRepeater\nDynamic Controls\nMultivalue Controls\nUnit Controls\nUI Controls\nGroup Controls\n Watch Video Tutorials\nBuild with AI",
+        "role": "NONE"
+      },
+      "sectionCount": 0,
+      "sectionNames": [],
+      "variablesTabFound": false
+    },
+    "previewAudit": {
+      "previewIframe": false,
+      "previewDiv": null,
+      "deviceToggles": []
+    },
+    "publishAudit": {
+      "publishBtn": {
+        "tag": "DIV",
+        "text": "Push Elementor\nPreview\nCode\nPublish\nPush",
+        "role": "NONE",
+        "ariaLabel": "MISSING"
+      },
+      "statusPill": "Draft"
+    },
+    "aiAudit": {
+      "buildWithAIBtn": {
+        "tag": "DIV",
+        "text": "Push Elementor\nPreview\nCode\nPublish\nPush\nSave\nHTML",
+        "role": "NONE",
+        "ariaLabel": "MISSING"
+      },
+      "aiPanelPresent": true
+    },
+    "aiPanelAudit": null,
+    "tabSwitchAudit": {
+      "worked": false,
+      "reason": "elementHandle.click: Timeout 30000ms exceeded.\nCall log:\n  - attempting click action\n    2 × waiting for element to be visible, enabled and stable\n      - element is visible, enabled and stable\n      - scrolling into view if needed\n      - done scrolling\n      - <div class=\"ai-chatbox-overlay\">…</div> intercepts pointer events\n    - retrying click action\n    - waiting 20ms\n    2 × waiting for element to be visible, enabled and stable\n      - element is visible, enabled and stable\n      - scrolling into view if needed\n      - done scrolling\n      - <div class=\"ai-chatbox-overlay\">…</div> intercepts pointer events\n    - retrying click action\n      - waiting 100ms\n    58 × waiting for element to be visible, enabled and stable\n       - element is visible, enabled and stable\n       - scrolling into view if needed\n       - done scrolling\n       - <div class=\"ai-chatbox-overlay\">…</div> intercepts pointer events\n     - retrying click action\n       - waiting 500ms\n"
+    },
+    "varTabAudit": {
+      "found": false
+    },
+    "publishDropAudit": {
+      "error": "elementHandle.click: Timeout 30000ms exceeded.\nCall log:\n  - attempting click action\n    2 × waiting for element to be visible, enabled and stable\n      - element is visible, enabled and stable\n      - scrolling into view if needed\n      - done scrolling\n      - <div class=\"ai-chatbox-overlay\">…</div> intercepts pointer events\n    - retrying click action\n    - waiting 20ms\n    2 × waiting for element to be visible, enabled and stable\n      - element is visible, enabled and stable\n      - scrolling into view if needed\n      - done scrolling\n      - <div class=\"ai-chatbox-overlay\">…</div> intercepts pointer events\n    - retrying click action\n      - waiting 100ms\n    57 × waiting for element to be visible, enabled and stable\n       - element is visible, enabled and stable\n       - scrolling into view if needed\n       - done scrolling\n       - <div class=\"ai-chatbox-overlay\">…</div> intercepts pointer events\n     - retrying click action\n       - waiting 500ms\n"
+    },
+    "addSectionAudit": {
+      "error": "elementHandle.click: Timeout 30000ms exceeded.\nCall log:\n  - attempting click action\n    2 × waiting for element to be visible, enabled and stable\n      - element is visible, enabled and stable\n      - scrolling into view if needed\n      - done scrolling\n      - <div class=\"ai-chatbox-overlay\">…</div> intercepts pointer events\n    - retrying click action\n    - waiting 20ms\n    2 × waiting for element to be visible, enabled and stable\n      - element is visible, enabled and stable\n      - scrolling into view if needed\n      - done scrolling\n      - <div class=\"ai-chatbox-overlay\">…</div> intercepts pointer events\n    - retrying click action\n      - waiting 100ms\n    58 × waiting for element to be visible, enabled and stable\n       - element is visible, enabled and stable\n       - scrolling into view if needed\n       - done scrolling\n       - <div class=\"ai-chatbox-overlay\">…</div> intercepts pointer events\n     - retrying click action\n       - waiting 500ms\n"
+    },
+    "a11yAudit": {
+      "interactiveSpansCount": 58,
+      "interactiveSpansSample": [
+        {
+          "text": "Preview",
+          "className": "flex items-center gap-2 px-2 py-1 cursor-pointer transition-",
+          "role": "MISSING",
+          "tabindex": "MISSING",
+          "ariaLabel": "MISSING"
+        },
+        {
+          "text": "Code",
+          "className": "flex items-center gap-2 px-2 py-1 cursor-pointer transition-",
+          "role": "MISSING",
+          "tabindex": "MISSING",
+          "ariaLabel": "MISSING"
+        },
+        {
+          "text": "Publish",
+          "className": "output",
+          "role": "MISSING",
+          "tabindex": "MISSING",
+          "ariaLabel": "MISSING"
+        },
+        {
+          "text": "Draft",
+          "className": "",
+          "role": "MISSING",
+          "tabindex": "MISSING",
+          "ariaLabel": "MISSING"
+        },
+        {
+          "text": "Publish",
+          "className": "",
+          "role": "MISSING",
+          "tabindex": "MISSING",
+          "ariaLabel": "MISSING"
+        },
+        {
+          "text": "Push",
+          "className": "",
+          "role": "MISSING",
+          "tabindex": "MISSING",
+          "ariaLabel": "MISSING"
+        },
+        {
+          "text": "HTML",
+          "className": "wkit-wb-editor-btns-label",
+          "role": "MISSING",
+          "tabindex": "MISSING",
+          "ariaLabel": "MISSING"
+        },
+        {
+          "text": "CSS",
+          "className": "wkit-wb-editor-btns-label",
+          "role": "MISSING",
+          "tabindex": "MISSING",
+          "ariaLabel": "MISSING"
+        }
+      ],
+      "imgsNoAltCount": 5,
+      "imgsNoAltSample": [
+        {
+          "src": "https://api.wdesignkit.com/images/website/widget-builder/wb-svg/elementor.webp",
+          "context": "wkit-wb-plus-icon wkit-elementor-icon"
+        },
+        {
+          "src": "https://api.wdesignkit.com/images/website/widget-builder/wb-svg/gutenberg.webp",
+          "context": "wkit-wb-plus-icon wkit-gutenberg-icon"
+        },
+        {
+          "src": "https://api.wdesignkit.com/images/website/widget-builder/wb-svg/gutenberg-core.w",
+          "context": "wkit-wb-plus-icon wkit-gutenberg-core-icon"
+        },
+        {
+          "src": "https://api.wdesignkit.com/images/website/widget-builder/wb-svg/bricks.webp",
+          "context": "wkit-wb-plus-icon wkit-bricks-icon"
+        },
+        {
+          "src": "https://api.wdesignkit.com/images/website/widget-builder/wb-svg/error_info.webp",
+          "context": "wkit-wb-loopError-icon"
+        }
+      ],
+      "unnamedBtnsCount": 0,
+      "unnamedBtnsSample": []
+    }
+  }
+}
