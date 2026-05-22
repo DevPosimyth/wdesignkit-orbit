@@ -1,0 +1,124 @@
+{
+  "bugs": [
+    {
+      "sev": "P2",
+      "area": "Code Quality",
+      "title": "CSS class name typo: \"decrpt\" instead of \"decrypt\"",
+      "steps": [
+        "Review widget HTML + CSS in original ZIP JSON"
+      ],
+      "current": "Class name is .wkit-scroll-to-decrpt-main (missing \"y\" in decrypt)",
+      "expected": "Class should be .wkit-scroll-to-decrypt-main",
+      "solution": "Rename across HTML template, CSS, and JS: s/decrpt/decrypt/g"
+    },
+    {
+      "sev": "P2",
+      "area": "Code Quality",
+      "title": "Duplicate scroll event listener registered in original widget JS",
+      "steps": [
+        "Review Editor_data.js in Scroll_to_Decrypt_cbi03x26.json"
+      ],
+      "current": "window.addEventListener(\"scroll\", decryptOnScroll) called twice — at end of animate() block AND again 2 lines later",
+      "expected": "Scroll listener registered exactly once",
+      "solution": "Remove the second/duplicate addEventListener call at bottom of JS file"
+    },
+    {
+      "sev": "P3",
+      "area": "Code Quality",
+      "title": "Duplicate width:100% property in CSS",
+      "steps": [
+        "Review .wkit-scroll-to-decrpt-main CSS rule"
+      ],
+      "current": "width:100% declared twice in same rule block",
+      "expected": "Each CSS property declared once per rule",
+      "solution": "Remove second width:100% from .wkit-scroll-to-decrpt-main"
+    },
+    {
+      "sev": "P2",
+      "area": "Accessibility",
+      "title": "Heading tag hardcoded as <h2> — no heading level control",
+      "steps": [
+        "Review HTML template: <h2 class=\"wkit-scroll-he-t\">"
+      ],
+      "current": "Heading level is always h2, cannot be changed by user",
+      "expected": "Heading tag should be selectable (h1–h6) for correct document outline",
+      "solution": "Add \"Heading Tag\" select control with h1–h6 options; use in template via {{headingTag}}"
+    },
+    {
+      "sev": "P1",
+      "area": "Accessibility",
+      "title": "Encrypted text color #777 on dark #111 background fails WCAG AA contrast (3.6:1)",
+      "steps": [
+        "Check computed CSS color of .is-encrypted spans against #111 background"
+      ],
+      "current": ".is-encrypted { color: #777 } on background #111 = ~3.6:1 contrast ratio",
+      "expected": "Minimum 4.5:1 ratio required for WCAG 2.1 AA (normal text)",
+      "solution": "Change .is-encrypted color to #949494 or lighter (minimum) to achieve 4.5:1 against #111"
+    },
+    {
+      "sev": "P2",
+      "area": "Accessibility",
+      "title": "No ARIA live region on the decrypting text container",
+      "steps": [
+        "Inspect .wkit-encrypted on rendered page"
+      ],
+      "current": "No aria-live, role, or aria-label on the animating text element",
+      "expected": "Screen readers should be informed when text finishes decrypting",
+      "solution": "Add aria-live=\"polite\" to .wkit-encrypted and update aria-label to the final decoded text when progress = 100%"
+    },
+    {
+      "sev": "P2",
+      "area": "Logic",
+      "title": "Some characters show as decrypted on initial page load before scrolling",
+      "steps": [
+        "Load the page without scrolling",
+        "Check span classes immediately"
+      ],
+      "current": "25 spans have is-decrypted class on initial load",
+      "expected": "All characters should start as encrypted (is-encrypted) before user scrolls",
+      "solution": "Check decryptOnScroll() initial call — if page starts scrolled or widget is above fold, initial call may over-decrypt; add scroll position guard"
+    },
+    {
+      "sev": "P2",
+      "area": "Accessibility",
+      "title": "Heading level hardcoded as h2 — not configurable",
+      "steps": [
+        "Inspect heading inside .wkit-encrypted on front-end"
+      ],
+      "current": "Always renders <h2> regardless of page heading hierarchy",
+      "expected": "Heading tag should be selectable to fit the page structure",
+      "solution": "Add Heading Tag select control (h1/h2/h3/h4/h5/h6) and replace hardcoded h2 in template"
+    }
+  ],
+  "passed": [
+    "Static code analysis done",
+    "Page title: \"Scroll to Decrypt – Pizza\"",
+    "Widget .wkit-scroll-to-decrpt-main rendered on front-end",
+    "data-text populated: \"Scroll to decrypt me — QA Test!...\"",
+    "data-scope populated: \"300\"",
+    "wrapText() JS ran — encrypted h2 heading rendered",
+    "31 character spans rendered for animation",
+    "25 spans have data-char attribute (needed for decryption)",
+    "Background color applied: rgb(17, 17, 17)",
+    "Scroll animation triggered — 25 characters decrypted on scroll",
+    "axe-core: No WCAG 2.1 AA violations detected",
+    "No images in widget (none expected — correct)",
+    "h2 heading present (1 found)",
+    "Widget visible on Desktop (1440px)",
+    "No horizontal overflow on Desktop",
+    "Widget visible on Tablet (768px)",
+    "No horizontal overflow on Tablet",
+    "Widget visible on Mobile (375px)",
+    "No horizontal overflow on Mobile",
+    "Mobile padding is responsive: 20px",
+    "Text fits within widget container on mobile",
+    "No product console errors on front-end",
+    "WDesignKit admin listing verified via MCP (widget active, status: active)"
+  ],
+  "totals": {
+    "P0": 0,
+    "P1": 1,
+    "P2": 6,
+    "P3": 1
+  }
+}
