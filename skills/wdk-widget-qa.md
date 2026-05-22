@@ -157,6 +157,204 @@ Read every source file. Run all checks below. Record every finding.
 
 ---
 
+### 1G — CONTROL PANEL VERIFICATION (MANDATORY)
+
+> **This check is non-negotiable.** Run it on every widget JSON before moving to Phase 2.
+> Parse the `section_data[0].layout` (content side) and `section_data[0].style` (style side) arrays from the widget JSON.
+> Use Python or `jq` to extract and cross-check programmatically — never eyeball it.
+
+---
+
+#### CONTENT SIDE — `layout` array
+
+For **every control** in every `inner_sec[]` (including all `repeater.fields[]` children):
+
+| Check | How to verify | Bug if... |
+|---|---|---|
+| **Control wired to HTML** | Search `{{control_name}}` in `Editor_data.html` | Control name doesn't appear → control has no effect |
+| **Condition references valid control** | `condition_value.values[].name` → confirm that name exists in the widget's full control list | References a non-existent control → group is permanently hidden or always shown |
+| **Switcher `return_value` consistency** | Extract `return_value`. Then check: (1) HTML class: `enable-{{name}}` = `enable-{return_value}`; (2) CSS: find selector containing that class; (3) JS: find any `=== "{value}"` or `attribute check` | CSS uses `.enable-1` but `return_value` is `"yes"` → feature broken |
+| **`sanitizer_value` set and spelled correctly** | Check field is not empty for `text`, `textarea`, `url` types. Check spelling — common typo: `wdk_senitize_js` | Empty sanitizer on user-output field → security gap. Typo → WDK builder may not apply escaping |
+| **`url` with `is_external: true`** | HTML must render `target="_blank"` — not `target="true"` | `target="true"` is invalid HTML — new tab never opens |
+| **Repeater children** | Apply all checks above to every field inside `repeater.fields[]` | Repeater child controls are missed just as often as top-level ones |
+
+**Script to run (Python):**
+
+```python
+import json, re
+
+with open('widget.json') as f:
+    data = json.load(f)
+
+html = data['Editor_data']['html']
+css  = data['Editor_data']['css']
+js   = data['Editor_data']['js']
+
+layout = data['section_data'][0]['layout']
+
+# Build full control name list first
+all_control_names = set()
+def collect_names(controls):
+    for ctrl in controls:
+        name = ctrl.get('name') or ctrl.get('name', '')
+        if name:
+            all_control_names.add(name)
+        for child in ctrl.get('fields', []):
+            child_name = child.get('name', '')
+            if child_name:
+                all_control_names.add(child_name)
+
+for group in layout:
+    collect_names(group.get('inner_sec', []))
+
+print(f"All control names: {sorted(all_control_names)}\n")
+
+# Now verify each control
+def check_control(ctrl, path=""):
+    ctype = ctrl.get('type', '')
+    name  = ctrl.get('name', '') or ctrl.get('name', '')
+    label = ctrl.get('lable', ctrl.get('label', '?'))
+    san   = ctrl.get('sanitizer_value', '')
+    cond  = ctrl.get('condition_value', {}).get('values', [])
+
+    issues = []
+
+    # 1. Wired to HTML?
+    if name and ctype not in ('heading', 'divider', 'separator') and name not in html:
+        issues.append(f"❌ NOT IN HTML: {{{{ {name} }}}} never appears in template")
+
+    # 2. Condition references valid control?
+    for c in cond:
+        ref = c.get('name', '')
+        if ref and ref not in all_control_names:
+            issues.append(f"❌ BROKEN CONDITION: references '{ref}' which does not exist")
+
+    # 3. Switcher return_value vs CSS/JS
+    if ctype == 'switcher':
+        rv = ctrl.get('return_value', '')
+        css_class = f"enable-{rv}"
+        if css_class not in css:
+            issues.append(f"❌ SWITCHER MISMATCH: return_value='{rv}' → class '{css_class}' not in CSS")
+        # Check JS too
+        if f'=== "{rv}"' not in js and f"=== '{rv}'" not in js:
+            issues.append(f"⚠️  SWITCHER JS: no === '{rv}' check found in JS (may still work via CSS class)")
+
+    # 4. Sanitizer
+    if ctype in ('text', 'textarea') and not san:
+        issues.append(f"⚠️  MISSING SANITIZER: text/textarea with no sanitizer_value")
+    if san and 'senitize' in san:
+        issues.append(f"⚠️  SANITIZER TYPO: '{san}' — likely 'wdk_sanitize_js'")
+
+    # 5. URL is_external
+    if ctype == 'url' and ctrl.get('is_external'):
+        if 'target="_blank"' not in html and 'target=\\"_blank\\"' not in html:
+            issues.append(f"⚠️  URL is_external=True but no target=\"_blank\" found in HTML")
+
+    if issues:
+        print(f"\n[{path} / {ctype}] {name} — '{label}'")
+        for i in issues:
+            print(f"  {i}")
+
+for group in layout:
+    section = group.get('section', group.get('name', '?'))
+    for ctrl in group.get('inner_sec', []):
+        check_control(ctrl, path=section)
+        for child in ctrl.get('fields', []):
+            check_control(child, path=f"{section} > repeater")
+```
+
+---
+
+#### STYLE SIDE — `style` array
+
+For **every control** in every `style[i].inner_sec[]`:
+
+| Check | How to verify | Bug if... |
+|---|---|---|
+| **`selectors` field exists in CSS** | Exact string search of `selectors` value in `Editor_data.css` | Selector not found → style control has zero effect in the editor |
+| **Closest actual CSS selector** | When selector is missing, find what the CSS actually uses for that element | Reports the fix path to the developer |
+| **Section condition references valid control** | `style[i].condition_value.values[].name` → must exist in content control list | References ghost control → section always hidden or always shown |
+| **Progress Bar style scoped correctly** | `.wkit-nav-loader.enable-X .wkit-progress` must exist — not just `.wkit-progress` globally | Track Color works, Progress Color affects whole page |
+
+**Script to run (Python):**
+
+```python
+import json
+
+with open('widget.json') as f:
+    data = json.load(f)
+
+css   = data['Editor_data']['css']
+style = data['section_data'][0]['style']
+
+for i, group in enumerate(style):
+    section = group.get('section', group.get('name', f'Group {i}'))
+    # Check group-level condition
+    gcond = group.get('condition_value', {}).get('values', [])
+    for c in gcond:
+        ref = c.get('name', '')
+        if ref and ref not in all_control_names:
+            print(f"\n[Style: {section}] ❌ BROKEN GROUP CONDITION: references '{ref}'")
+
+    for ctrl in group.get('inner_sec', []):
+        sel = ctrl.get('selectors', '')
+        if not sel:
+            continue  # controls like typography/background/border use internal WDK selector — skip
+        label = ctrl.get('lable', ctrl.get('label', '?'))
+        ctype = ctrl.get('type', '')
+        if sel in css:
+            print(f"  ✅ [{section}] {ctype} '{label}' → {sel}")
+        else:
+            # Find closest match in CSS
+            parts = sel.strip('.').split('.')
+            closest = [line.strip() for line in css.split('\n') if any(p in line for p in parts if len(p) > 3)]
+            print(f"\n  ❌ SELECTOR MISSING [{section}] {ctype} '{label}'")
+            print(f"     Expected: {sel}")
+            print(f"     Closest CSS rules found:")
+            for c in closest[:3]:
+                print(f"       {c}")
+```
+
+**For every missing selector — report as a bug:**
+
+```
+Severity: P2 | Area: Functionality
+Title: "{Section} style control has no effect — selector mismatch"
+Issue: The "{label}" control in the "{Section}" style panel targets selector "{X}" 
+       which does not exist in the widget CSS. The CSS uses "{Y}" instead. 
+       Any value set by the user in the editor is injected as an inline style 
+       on "{X}" but the widget HTML never renders that class/selector, 
+       so the style is silently ignored.
+Solution: Either update the control's `selectors` to match "{Y}", 
+          or add "{X}" as an alias in the widget CSS.
+```
+
+---
+
+#### FULL CONTROL AUDIT TABLE (output before triaging)
+
+After running both scripts, produce this table as a summary before triaging:
+
+```
+CONTENT SIDE
+────────────────────────────────────────────────────────────────
+Control           Type        In HTML   Sanitizer   Condition OK   Switcher Match
+select_qt1xxq25   select      ✅         ✅           ✅             —
+text_9h7apf25     text        ✅         ❌ MISSING   ✅             —
+switcher_urrkvx25 switcher    ✅         —            ✅             ❌ CSS mismatch
+...
+
+STYLE SIDE
+────────────────────────────────────────────────────────────────
+Section             Control Type   Selector                           In CSS
+Caption             color          .wkit-product-slider .product-cap  ✅
+Title               color          .wkit-product-captions .product-t  ❌ MISSING
+Navigation Icon     slider         .wkit-product-slider .nav-icon …   ❌ MISSING
+...
+```
+
+---
+
 ## PHASE 2 — FRONTEND QA (Playwright on Staging)
 
 Use the WordPress staging site via `mcp__wdesignkit-qa__*` tools.
@@ -574,6 +772,18 @@ Before closing the session, confirm every item is checked:
 - [ ] Logic: viewport guard, cleanup, null guards, init race
 - [ ] SEO: heading hierarchy, alt text
 
+**Control Panel Verification (Phase 1G) — MANDATORY**
+- [ ] Content side script run — every control's `name` verified against HTML template
+- [ ] Content side: all `condition_value` references verified against full control name list
+- [ ] Content side: all switchers — `return_value` cross-checked against CSS class + JS comparison
+- [ ] Content side: all text/textarea sanitizers verified (not blank, no typo)
+- [ ] Content side: all `url` controls with `is_external: true` → HTML renders `target="_blank"`
+- [ ] Content side: repeater child fields verified with all the same checks above
+- [ ] Style side script run — every `selectors` field verified against widget CSS
+- [ ] Style side: every missing selector documented as a bug with CSS closest-match
+- [ ] Style side: section conditions verified against content control name list
+- [ ] Full control audit table produced before triaging bugs
+
 **Frontend (Phase 2)**
 - [ ] Widget rendered on staging at 375 / 768 / 1440px
 - [ ] No console JS errors on load
@@ -600,6 +810,9 @@ Before closing the session, confirm every item is checked:
 - **Always** read `~/.claude.json` for the ClickUp token — never hardcode it
 - **Always** verify the widget's builder type before checking icon format
 - **Always** double-blank-line between all 6 comment sections
+- **Always** run Phase 1G control verification scripts before triaging — style selector mismatches and switcher `return_value` mismatches are the most commonly missed bugs in WDK widgets and will never be caught by visual inspection alone
+- **Never** assume a style control works because the section exists in the panel — always confirm `selectors` value exists in CSS
+- **Never** assume a switcher works because its HTML placeholder renders — always confirm the rendered class value matches the CSS selector and JS check
 - If ClickUp task creation fails → report the error and continue logging remaining bugs
 - If a screenshot script fails → post the comment without image and note it manually
 
