@@ -57,9 +57,9 @@ Use `mcp__clickup__create_task` with these exact settings:
 
 ### S1-B — Add the Bug in Card Activity
 
-After the card is created, add a comment using `mcp__clickup__create_task_comment` on the **newly created subtask**.
+Every bug comment is a **single comment** that contains all 6 sections — including the screenshot attachment. Never split bug details and attachment into separate comments.
 
-Use this format **exactly** — spacing and structure must be preserved:
+**If no screenshot is available** → use `mcp__clickup__create_task_comment` with this exact text format:
 
 ```
 📌 Issue:
@@ -82,20 +82,142 @@ Use this format **exactly** — spacing and structure must be preserved:
 
 🛠️ Solution:
 [Developer-friendly suggestion — where to look, what to fix, what approach to take. Be specific and actionable]
+
+
+📎 Attachments
 ```
+
+**If a screenshot IS available** → skip the MCP tool and use `curl` with ClickUp's rich comment format so the image renders as an inline preview (not a link):
+
+```bash
+curl -s -X POST "https://api.clickup.com/api/v2/task/{TASK_ID}/comment" \
+  -H "Authorization: {CLICKUP_TOKEN}" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "comment": [
+      {
+        "text": "📌 Issue:\n[issue text]\n\n\n🔁 Steps to Reproduce:\n  1. [step 1]\n  2. [step 2]\n  3. [step 3]\n\n\n⚠️ Current Result:\n[current result]\n\n\n✅ Expected Result:\n[expected result]\n\n\n🛠️ Solution:\n[solution text]\n\n\n📎 Attachments\n\n"
+      },
+      {
+        "type": "attachment",
+        "attachment": {
+          "id": "{ATTACHMENT_ID}",
+          "name": "bug-{slug}.png",
+          "url": "{ATTACHMENT_URL}"
+        }
+      }
+    ],
+    "notify_all": false
+  }'
+```
+
+Where:
+- `{ATTACHMENT_ID}` = the `id` field from the upload response (e.g. `ad32e146-4388-48c4-b383-f1706147067b.png`)
+- `{ATTACHMENT_URL}` = the `url` field from the upload response
+- The CLICKUP_TOKEN is in `~/.claude.json` → `mcpServers.clickup.env.CLICKUP_API_KEY`
+
+**To replace an existing comment** (e.g. to add a screenshot to a comment that was posted without one):
+1. `mcp__clickup__get_task_comments` — find all comment IDs on the task
+2. `mcp__clickup__delete_comment` — delete ALL existing comments on the task
+3. Re-post a single unified comment via curl with the full format above
 
 **Writing quality rules:**
 
 - **Issue** — Write like a senior QA: explain the feature context, what is broken, and why it matters. Not just "button doesn't work" but "The Save button in the Widget editor becomes unresponsive after toggling the Advanced Settings panel, preventing users from saving changes."
 - **Current Result** — Short and precise. One sentence. No "I noticed that" or "It seems like".
 - **Expected Result** — Write from the user's perspective. Short and unambiguous.
-- **Solution** — Write for the developer. Name the file, function, or logic area if known. Suggest a fix approach. E.g., "Check the event listener on `#save-btn` — it may be unbound after the Advanced Settings toggle fires. Re-attach the listener on panel close."
+- **Solution** — Write for the developer. Name the file, function, or logic area if known. Suggest a fix approach.
+- **Attachments** — Always the last section. If a screenshot is attached it renders as inline image preview. If no screenshot, leave the section header present with no content below it.
 - No "Actual Result" label — this format uses **Current Result** always
 
 ### S1-C — Confirm After Logging
 
 Output a one-line confirmation:
 > `✅ Bug card created: "[Card Name]" → [card URL] | Priority: [level] | Tag: QA`
+
+---
+
+## SCENARIO 1-S — Screenshot: Attach Evidence to a Bug Card
+
+Use when: The user asks to add a screenshot or visual evidence to an existing bug card.
+
+### How it works
+
+Screenshots are taken using **Playwright** (creates an annotated HTML visualization in headless Chrome), uploaded to ClickUp via **curl**, then linked in a card activity comment.
+
+### Step-by-step
+
+**S1-S-A — Generate the screenshot**
+
+Write a Playwright Node.js script to `/tmp/bug-{slug}.js` that:
+1. Builds a self-contained HTML page visualizing the bug — use dark GitHub-style theme (`#0d1117` background), syntax-highlighted code blocks with line numbers for code bugs, or a browser screenshot for UI bugs
+2. Highlights the exact problem: amber (`#fbbf24`) for context lines, red (`#f87171` / `#2d0a0a` bg) for the broken line(s)
+3. Includes a callout box at the bottom with badge (priority + area), bold title, bullet explanation, and fix hint
+4. Sets viewport to `width: 860px`, auto-sizes height to content
+5. Saves to `/tmp/bug-{slug}.png`
+
+Run it:
+```bash
+node /tmp/bug-{slug}.js
+```
+
+**S1-S-B — Upload to ClickUp**
+
+```bash
+curl -s -X POST "https://api.clickup.com/api/v2/task/{TASK_ID}/attachment" \
+  -H "Authorization: {CLICKUP_TOKEN}" \
+  -F "attachment=@/tmp/bug-{slug}.png;type=image/png;filename=bug-{slug}.png"
+```
+
+The token is in `~/.claude.json` → `mcpServers.clickup.env.CLICKUP_API_KEY`.
+
+Parse the response JSON — extract `.url` for the full-size image URL.
+
+**S1-S-C — Add Attachments comment with inline image preview**
+
+Do **NOT** use `mcp__clickup__create_task_comment` for this step — it only sends plain text, which renders the URL as a link, not an image preview.
+
+Instead, use `curl` with ClickUp's rich comment format so the image renders inline:
+
+```bash
+curl -s -X POST "https://api.clickup.com/api/v2/task/{TASK_ID}/comment" \
+  -H "Authorization: {CLICKUP_TOKEN}" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "comment": [
+      {
+        "text": "📎 Attachments\n\n[One line: what the screenshot shows, which lines/elements are highlighted]\n\n"
+      },
+      {
+        "type": "attachment",
+        "attachment": {
+          "id": "{ATTACHMENT_ID}",
+          "name": "bug-{slug}.png",
+          "url": "{ATTACHMENT_URL}"
+        }
+      }
+    ],
+    "notify_all": false
+  }'
+```
+
+Where:
+- `{ATTACHMENT_ID}` = the `id` field from the upload response (e.g. `ad32e146-4388-48c4-b383-f1706147067b.png`)
+- `{ATTACHMENT_URL}` = the `url` field from the upload response
+
+ClickUp stores the full thumbnail metadata (`thumbnail_small`, `thumbnail_medium`, `thumbnail_large`) and renders the image as an **inline preview** in the card activity — not a link.
+
+If you need to **replace** an existing Attachments comment:
+1. Get current comments: `mcp__clickup__get_task_comments`
+2. Delete the old one: `mcp__clickup__delete_comment` with the comment ID
+3. Post the new rich comment via curl (above)
+
+**Screenshot design rules:**
+- Code bugs → dark code block with line numbers + highlighted rows + callout box
+- UI bugs → Playwright navigation to the live page, annotate with `page.evaluate()` to inject red border/overlay on the broken element, then screenshot
+- Always include the bug severity badge and a plain-English fix hint in the callout
+- Keep width at 860px — consistent across all screenshots
+- Filename format: `bug-{short-slug}.png` (e.g. `bug-duplicate-width.png`, `bug-no-aria.png`)
 
 ---
 
@@ -135,8 +257,10 @@ Check:
 2. Add a retest comment using `mcp__clickup__create_task_comment` in this exact format:
 
 ```
+📊 Fix Status:  ☐ Unresolved   ☐ Partially Fixed   ☐ Regression
+
 📌 Issue:
-[Short, clear description of what is still broken after the fix]
+[What is still broken after the fix]
 
 
 🔁 Steps to Reproduce:
@@ -154,8 +278,13 @@ Check:
 
 
 🛠️ Solution:
-[Updated developer-friendly fix suggestion based on what you observed during retest]
+[Updated fix suggestion based on retest observation]
 ```
+
+**Fix Status rules — always check exactly one:**
+- `☑ Unresolved` — the original bug is exactly as it was, fix had no effect
+- `☑ Partially Fixed` — some part of the bug is resolved but the core issue remains
+- `☑ Regression` — the original bug is fixed but a new issue was introduced by the change
 
 3. Confirm: `❌ QA Failed — "[Card Name]" status updated + retest comment added`
 
@@ -219,6 +348,7 @@ Always call `mcp__clickup__get_task_details` first to confirm the card is access
 | Add activity comment | `mcp__clickup__create_task_comment` |
 | Update card status (QA Passed / QA Failed) | `mcp__clickup__update_task` |
 | Check list statuses if needed | `mcp__clickup__get_list` |
+| Upload screenshot attachment | `curl POST /api/v2/task/{id}/attachment` (multipart, see Scenario 1-S) |
 
 ---
 
